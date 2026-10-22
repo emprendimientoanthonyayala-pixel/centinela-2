@@ -862,6 +862,7 @@ function App() {
   const [mostrarFormularioEvento, setMostrarFormularioEvento] = useState(false);
   const [eventoSeleccionadoId, setEventoSeleccionadoId] = useState(null);
   const [fotosEvidencia, setFotosEvidencia] = useState([]);
+  const [eventosFiltroEstado, setEventosFiltroEstado] = useState('activos'); // 'activos' | 'historico'
 
   const [formularioEvento, setFormularioEvento] = useState({
     titulo: '',
@@ -978,25 +979,35 @@ function App() {
     (evento) => evento.estado === 'culminado'
   );
 
-  const publicacionesDeEventos = eventosCulminados.map((evento) => ({
-    id: `evento-${evento.id}`,
-    eventId: evento.id,
-    type: 'Evento culminado',
-    title: evento.titulo,
-    description: evento.descripcion,
-    territory:
-      evento.nivel === 'estadal'
-        ? 'Caracas · Evento estadal'
-        : `Caracas · ${evento.parroquia}`,
-    author: evento.creadoPor,
-    time: 'Evento culminado',
-    color: 'green',
-    asistentes: evento.asistentes.length,
-    evidencias: evento.asistentes.reduce(
-      (total, asistente) => total + asistente.evidencias.length,
-      0
-    ),
-  }));
+  const publicacionesDeEventos = eventosCulminados.map((evento) => {
+    const fotosGaleria = [];
+    evento.asistentes.forEach((asistente) => {
+      if (Array.isArray(asistente.evidencias)) {
+        asistente.evidencias.forEach((ev) => {
+          if (ev.dataUrl) {
+            fotosGaleria.push(ev.dataUrl);
+          }
+        });
+      }
+    });
+
+    return {
+      id: `evento-${evento.id}`,
+      eventId: evento.id,
+      type: 'Evento culminado',
+      title: evento.titulo,
+      description: evento.descripcion,
+      territory:
+        evento.nivel === 'estadal'
+          ? 'Caracas · Evento estadal'
+          : `Caracas · ${evento.parroquia}`,
+      author: evento.creadoPor,
+      time: 'Evento culminado',
+      color: 'green',
+      asistentes: evento.asistentes.length,
+      evidencias: fotosGaleria,
+    };
+  });
 
   const publicacionesFeed = [...publicacionesDeEventos, ...feedPosts];
 
@@ -1120,7 +1131,30 @@ function App() {
 
   const seleccionarFotosEvidencia = (event) => {
     const archivos = Array.from(event.target.files || []);
-    setFotosEvidencia(archivos);
+    if (archivos.length === 0) {
+      setFotosEvidencia([]);
+      return;
+    }
+
+    // Convert photos into base64 Data URLs using FileReader
+    const promesasLectura = archivos.map((archivo) => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          resolve({
+            nombre: archivo.name,
+            tipo: archivo.type,
+            tamaño: archivo.size,
+            dataUrl: e.target.result,
+          });
+        };
+        reader.readAsDataURL(archivo);
+      });
+    });
+
+    Promise.all(promesasLectura).then((evidenciasData) => {
+      setFotosEvidencia(evidenciasData);
+    });
   };
 
   const registrarAsistencia = () => {
@@ -1161,11 +1195,7 @@ function App() {
         formularioInicial.nombresApellidos || 'Usuario registrado',
       parroquia: formularioInicial.parroquia || 'No especificada',
       registradoEn: new Date().toISOString(),
-      evidencias: fotosEvidencia.map((foto) => ({
-        nombre: foto.name,
-        tipo: foto.type,
-        tamaño: foto.size,
-      })),
+      evidencias: fotosEvidencia,
     };
 
     setEventos((eventosAnteriores) =>
@@ -1708,6 +1738,13 @@ function App() {
     );
   }
 
+  const eventosMostrados = eventos.filter((e) => {
+    if (eventosFiltroEstado === 'historico') {
+      return e.estado === 'culminado';
+    }
+    return e.estado !== 'culminado';
+  });
+
   return (
     <div className="app-shell">
       <main className="app-content">
@@ -2027,10 +2064,10 @@ function App() {
           <section className="feed-page">
             <div className="page-heading">
               <div>
-                <p className="section-label">ACTUALIZACIONES</p>
+                <p className="section-label">ACTUALIZACIONES DE LA COMUNIDAD</p>
                 <h2>Feed estadal Caracas</h2>
                 <p className="page-description">
-                  Consulta los eventos culminados de Caracas y sus 22 parroquias.
+                  Noticias, convocatorias y fotos de eventos realizados.
                 </p>
               </div>
 
@@ -2106,6 +2143,33 @@ function App() {
                   <p className="feed-description">
                     {post.description}
                   </p>
+
+                  {/* Galería de evidencias de evento */}
+                  {Array.isArray(post.evidencias) && post.evidencias.length > 0 && (
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))',
+                        gap: '8px',
+                        margin: '12px 0',
+                      }}
+                    >
+                      {post.evidencias.map((foto, idx) => (
+                        <img
+                          key={idx}
+                          src={foto}
+                          alt={`Evidencia ${idx + 1}`}
+                          style={{
+                            width: '100%',
+                            height: '80px',
+                            objectFit: 'cover',
+                            borderRadius: '8px',
+                            border: '1px solid #e2e8f0',
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
 
                   <div className="feed-territory">
                     <span>⌖</span>
@@ -2194,7 +2258,7 @@ function App() {
                   ORGANIZACIÓN TERRITORIAL
                 </p>
 
-                <h2>Eventos de Caracas</h2>
+                <h2>Eventos y Actividades</h2>
 
                 <p className="page-description">
                   Administra eventos estadales y parroquiales,
@@ -2227,21 +2291,71 @@ function App() {
               </div>
             </div>
 
-            <button
-              type="button"
-              className="primary-button evento-create-button"
-              onClick={() =>
-                setMostrarFormularioEvento(
-                  (valorActual) => !valorActual
-                )
-              }
+            {/* Pestañas para cambiar entre Activos e Histórico */}
+            <div
+              style={{
+                display: 'flex',
+                gap: '8px',
+                marginBottom: '16px',
+                background: '#e2e8f0',
+                padding: '4px',
+                borderRadius: '12px',
+              }}
             >
-              {mostrarFormularioEvento
-                ? 'Cerrar formulario'
-                : '+ Crear evento'}
-            </button>
+              <button
+                type="button"
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  border: 0,
+                  borderRadius: '8px',
+                  background: eventosFiltroEstado === 'activos' ? '#ffffff' : 'transparent',
+                  fontWeight: eventosFiltroEstado === 'activos' ? '600' : 'normal',
+                  color: eventosFiltroEstado === 'activos' ? '#1e293b' : '#64748b',
+                  cursor: 'pointer',
+                  boxShadow: eventosFiltroEstado === 'activos' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                }}
+                onClick={() => setEventosFiltroEstado('activos')}
+              >
+                Próximos / En Curso
+              </button>
 
-            {mostrarFormularioEvento && (
+              <button
+                type="button"
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  border: 0,
+                  borderRadius: '8px',
+                  background: eventosFiltroEstado === 'historico' ? '#ffffff' : 'transparent',
+                  fontWeight: eventosFiltroEstado === 'historico' ? '600' : 'normal',
+                  color: eventosFiltroEstado === 'historico' ? '#1e293b' : '#64748b',
+                  cursor: 'pointer',
+                  boxShadow: eventosFiltroEstado === 'historico' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                }}
+                onClick={() => setEventosFiltroEstado('historico')}
+              >
+                Histórico Culminados ({eventosCulminados.length})
+              </button>
+            </div>
+
+            {eventosFiltroEstado === 'activos' && (
+              <button
+                type="button"
+                className="primary-button evento-create-button"
+                onClick={() =>
+                  setMostrarFormularioEvento(
+                    (valorActual) => !valorActual
+                  )
+                }
+              >
+                {mostrarFormularioEvento
+                  ? 'Cerrar formulario'
+                  : '+ Crear evento'}
+              </button>
+            )}
+
+            {mostrarFormularioEvento && eventosFiltroEstado === 'activos' && (
               <form
                 className="evento-form-card"
                 onSubmit={crearEvento}
@@ -2386,19 +2500,24 @@ function App() {
             )}
 
             <div className="eventos-list">
-              {eventos.length === 0 ? (
+              {eventosMostrados.length === 0 ? (
                 <div className="empty-page evento-empty-state">
                   <span className="empty-icon">◷</span>
 
-                  <h3>Aún no hay eventos registrados</h3>
+                  <h3>
+                    {eventosFiltroEstado === 'historico'
+                      ? 'No hay eventos culminados en el histórico'
+                      : 'Aún no hay eventos registrados'}
+                  </h3>
 
                   <p>
-                    Crea el primer evento estadal o parroquial
-                    para generar su QR de asistencia.
+                    {eventosFiltroEstado === 'historico'
+                      ? 'Los eventos culminados con evidencias aparecerán aquí.'
+                      : 'Crea el primer evento estadal o parroquial para generar su QR de asistencia.'}
                   </p>
                 </div>
               ) : (
-                eventos.map((evento) => (
+                eventosMostrados.map((evento) => (
                   <article
                     className="evento-card"
                     key={evento.id}
@@ -2589,15 +2708,28 @@ function App() {
                         </span>
 
                         {fotosEvidencia.length > 0 && (
-                          <ul className="photo-name-list">
-                            {fotosEvidencia.map(
-                              (foto, index) => (
-                                <li key={`${foto.name}-${index}`}>
-                                  {foto.name}
-                                </li>
-                              )
-                            )}
-                          </ul>
+                          <div
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(3, 1fr)',
+                              gap: '6px',
+                              margin: '8px 0',
+                            }}
+                          >
+                            {fotosEvidencia.map((ev, index) => (
+                              <img
+                                key={index}
+                                src={ev.dataUrl}
+                                alt={ev.nombre}
+                                style={{
+                                  width: '100%',
+                                  height: '60px',
+                                  objectFit: 'cover',
+                                  borderRadius: '6px',
+                                }}
+                              />
+                            ))}
+                          </div>
                         )}
 
                         <button
@@ -2651,7 +2783,7 @@ function App() {
                   {eventoSeleccionado.asistentes.length > 0 && (
                     <div className="evento-attendees-list">
                       <p className="section-label">
-                        ASISTENTES
+                        ASISTENTES Y EVIDENCIAS
                       </p>
 
                       {eventoSeleccionado.asistentes.map(
@@ -2659,27 +2791,46 @@ function App() {
                           <div
                             className="evento-attendee-row"
                             key={asistente.usuarioId}
+                            style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}
                           >
-                            <span className="avatar-small">
-                              {asistente.nombre
-                                .charAt(0)
-                                .toUpperCase()}
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span className="avatar-small">
+                                  {asistente.nombre
+                                    .charAt(0)
+                                    .toUpperCase()}
+                                </span>
 
-                            <div>
-                              <strong>
-                                {asistente.nombre}
-                              </strong>
+                                <div>
+                                  <strong>
+                                    {asistente.nombre}
+                                  </strong>
 
-                              <small>
-                                {asistente.evidencias.length}{' '}
-                                fotos de evidencia
-                              </small>
+                                  <small style={{ display: 'block' }}>
+                                    {asistente.evidencias.length}{' '}
+                                    fotos de evidencia
+                                  </small>
+                                </div>
+                              </div>
+
+                              <span className="validated-badge">
+                                Validada
+                              </span>
                             </div>
 
-                            <span className="validated-badge">
-                              Validada
-                            </span>
+                            {/* Mostrar miniaturas de evidencias */}
+                            {Array.isArray(asistente.evidencias) && (
+                              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', width: '100%' }}>
+                                {asistente.evidencias.map((ev, idx) => (
+                                  <img
+                                    key={idx}
+                                    src={ev.dataUrl || ev}
+                                    alt="Evidencia"
+                                    style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                                  />
+                                ))}
+                              </div>
+                            )}
                           </div>
                         )
                       )}
