@@ -2,6 +2,69 @@ import React, { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import './index.css';
 
+const comisionesDefinicion = [
+  {
+    id: 'produccion-economia',
+    nombre: 'Red de Producción y Economía',
+    icon: '₿',
+    color: 'orange',
+    descripcion: 'Emprendimientos, comercios, producción local, ferias y catálogo de productos.',
+  },
+  {
+    id: 'trabajo-formacion',
+    nombre: 'Aulas de Trabajo y Formación',
+    icon: '☷',
+    color: 'purple',
+    descripcion: 'Cursos, talleres, formación integral, vinculación con universidades y liceos.',
+  },
+  {
+    id: 'accion-socioterritorial',
+    nombre: 'Brigadas de Acción Socioterritorial',
+    icon: '⌖',
+    color: 'blue',
+    descripcion: 'Caracterización del territorio, visitas comunitarias, registro de necesidades.',
+  },
+  {
+    id: 'cultura-comunicacion',
+    nombre: 'Cultura, Memoria y Comunicación',
+    icon: '▣',
+    color: 'green',
+    descripcion: 'Comunicación popular, fotos, videos, historia local y difusión de agenda.',
+  },
+  {
+    id: 'solidaridad-proteccion',
+    nombre: 'Red de Solidaridad y Protección',
+    icon: '◎',
+    color: 'mint',
+    descripcion: 'Acompañamiento social, atención de vulnerabilidades y canalización de casos.',
+  },
+];
+
+const parroquiasCaracasInfo = [
+  { nombre: '23 de Enero', estadoColor: 'verde', registrados: 312, actividades: 18, emprendimientos: 24, eventos: 5, tareas: 4 },
+  { nombre: 'Altagracia', estadoColor: 'azul', registrados: 195, actividades: 12, emprendimientos: 14, eventos: 3, tareas: 6 },
+  { nombre: 'Antímano', estadoColor: 'naranja', registrados: 410, actividades: 22, emprendimientos: 38, eventos: 6, tareas: 8 },
+  { nombre: 'Candelaria', estadoColor: 'verde', registrados: 180, actividades: 10, emprendimientos: 16, eventos: 2, tareas: 3 },
+  { nombre: 'Caricuao', estadoColor: 'verde', registrados: 520, actividades: 31, emprendimientos: 45, eventos: 8, tareas: 5 },
+  { nombre: 'Catedral', estadoColor: 'amarillo', registrados: 140, actividades: 8, emprendimientos: 11, eventos: 2, tareas: 9 },
+  { nombre: 'Coche', estadoColor: 'naranja', registrados: 280, actividades: 16, emprendimientos: 29, eventos: 4, tareas: 7 },
+  { nombre: 'El Junquito', estadoColor: 'azul', registrados: 210, actividades: 14, emprendimientos: 19, eventos: 3, tareas: 4 },
+  { nombre: 'El Paraíso', estadoColor: 'verde', registrados: 340, actividades: 19, emprendimientos: 27, eventos: 5, tareas: 2 },
+  { nombre: 'El Recreo', estadoColor: 'amarillo', registrados: 220, actividades: 11, emprendimientos: 18, eventos: 3, tareas: 6 },
+  { nombre: 'El Valle', estadoColor: 'verde', registrados: 460, actividades: 28, emprendimientos: 42, eventos: 7, tareas: 5 },
+  { nombre: 'La Pastora', estadoColor: 'naranja', registrados: 290, actividades: 15, emprendimientos: 22, eventos: 4, tareas: 6 },
+  { nombre: 'La Vega', estadoColor: 'rojo', registrados: 380, actividades: 20, emprendimientos: 31, eventos: 5, tareas: 12 },
+  { nombre: 'Macarao', estadoColor: 'verde', registrados: 260, actividades: 13, emprendimientos: 20, eventos: 3, tareas: 3 },
+  { nombre: 'San Agustín', estadoColor: 'azul', registrados: 310, actividades: 21, emprendimientos: 26, eventos: 6, tareas: 4 },
+  { nombre: 'San Bernardino', estadoColor: 'verde', registrados: 165, actividades: 9, emprendimientos: 12, eventos: 2, tareas: 2 },
+  { nombre: 'San José', estadoColor: 'amarillo', registrados: 205, actividades: 11, emprendimientos: 15, eventos: 3, tareas: 7 },
+  { nombre: 'San Juan', estadoColor: 'naranja', registrados: 330, actividades: 17, emprendimientos: 28, eventos: 4, tareas: 5 },
+  { nombre: 'San Pedro', estadoColor: 'verde', registrados: 190, actividades: 12, emprendimientos: 17, eventos: 3, tareas: 3 },
+  { nombre: 'Santa Rosalía', estadoColor: 'verde', registrados: 350, actividades: 23, emprendimientos: 33, eventos: 6, tareas: 4 },
+  { nombre: 'Santa Teresa', estadoColor: 'amarillo', registrados: 155, actividades: 8, emprendimientos: 13, eventos: 2, tareas: 6 },
+  { nombre: 'Sucre', estadoColor: 'naranja', registrados: 680, actividades: 42, emprendimientos: 65, eventos: 12, tareas: 10 },
+];
+
 const quickAccessItems = [
   {
     id: "feed",
@@ -200,30 +263,7 @@ const voceriasData = [
   },
 ];
 
-const parroquiasCaracas = [
-  '23 de Enero',
-  'Altagracia',
-  'Antímano',
-  'Candelaria',
-  'Caricuao',
-  'Catedral',
-  'Coche',
-  'El Junquito',
-  'El Paraíso',
-  'El Recreo',
-  'El Valle',
-  'La Pastora',
-  'La Vega',
-  'Macarao',
-  'San Agustín',
-  'San Bernardino',
-  'San José',
-  'San Juan',
-  'San Pedro',
-  'Santa Rosalía',
-  'Santa Teresa',
-  'Sucre',
-];
+const parroquiasCaracas = parroquiasCaracasInfo.map((p) => p.nombre);
 
 const municipiosPorEstado = {
   Amazonas: [
@@ -648,30 +688,7 @@ const parroquiasPorMunicipio = {
     'Guatire',
   ],
 
-  'Distrito Capital|Libertador': [
-    '23 de Enero',
-    'Altagracia',
-    'Antímano',
-    'Candelaria',
-    'Caricuao',
-    'Catedral',
-    'Coche',
-    'El Junquito',
-    'El Paraíso',
-    'El Recreo',
-    'El Valle',
-    'La Pastora',
-    'La Vega',
-    'Macarao',
-    'San Agustín',
-    'San Bernardino',
-    'San José',
-    'San Juan',
-    'San Pedro',
-    'Santa Rosalía',
-    'Santa Teresa',
-    'Sucre',
-  ],
+  'Distrito Capital|Libertador': parroquiasCaracas,
 };
 
 const eventosEjemplo = [
@@ -841,6 +858,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('inicio');
   const [selectedVoceria, setSelectedVoceria] = useState(null);
   const [territoryType, setTerritoryType] = useState('estadal');
+  const [parroquiaSeleccionada, setParroquiaSeleccionada] = useState('Caricuao');
   const [selectedPost, setSelectedPost] = useState(null);
   const [activeFilter, setActiveFilter] = useState('Todo');
 
@@ -890,6 +908,9 @@ function App() {
           ...datosAnteriores,
           ...datos,
         }));
+        if (datos.parroquia) {
+          setParroquiaSeleccionada(datos.parroquia);
+        }
         setRegistroCompletado(true);
       } catch {
         localStorage.removeItem('perfilUsuario');
@@ -960,6 +981,10 @@ function App() {
       return [tab, ...currentTabs].slice(0, 3);
     });
   };
+
+  const infoParroquiaActual =
+    parroquiasCaracasInfo.find((p) => p.nombre === parroquiaSeleccionada) ||
+    parroquiasCaracasInfo[0];
 
   const eventoSeleccionado = eventos.find(
     (evento) => evento.id === eventoSeleccionadoId
@@ -1225,6 +1250,9 @@ function App() {
     }
 
     localStorage.setItem('perfilUsuario', JSON.stringify(formularioInicial));
+    if (formularioInicial.parroquia) {
+      setParroquiaSeleccionada(formularioInicial.parroquia);
+    }
     setRegistroCompletado(true);
   };
 
@@ -2023,7 +2051,111 @@ function App() {
           </>
         )}
 
-        {activeTab === 'feed' ? (
+        {(activeTab === 'territorio' || activeTab === 'territory') ? (
+          <section className="territorio-page">
+            <div className="page-heading">
+              <div>
+                <p className="section-label">ESTRUCTURA SOCIOTERRITORIAL</p>
+                <h2>Mi Territorio: Caracas</h2>
+                <p className="page-description">
+                  Explora las 22 Parroquias de Caracas y los Consejos Populares Parroquiales.
+                </p>
+              </div>
+
+              <button
+                className="back-button"
+                onClick={() => setActiveTab('inicio')}
+              >
+                Inicio
+              </button>
+            </div>
+
+            {/* Mapa Socioterritorial de Caracas */}
+            <section className="territory-card" style={{ marginBottom: '20px' }}>
+              <div className="card-heading">
+                <div>
+                  <p className="section-label">MAPA SOCIOTERRITORIAL DE CARACAS</p>
+                  <h3>22 Consejos Populares Parroquiales</h3>
+                </div>
+                <span className="status-badge">
+                  <b></b> Activos
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '12px 0 16px 0' }}>
+                <span className="location-icon">⌖</span>
+                <div>
+                  <strong>Parroquia activa: {parroquiaSeleccionada}</strong>
+                  <small style={{ display: 'block', color: '#64748b' }}>Selecciona una parroquia para ver su panel</small>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px', maxHeight: '220px', overflowY: 'auto', paddingRight: '4px' }}>
+                {parroquiasCaracasInfo.map((p) => {
+                  const isSelected = p.nombre === parroquiaSeleccionada;
+                  return (
+                    <button
+                      key={p.nombre}
+                      type="button"
+                      onClick={() => setParroquiaSeleccionada(p.nombre)}
+                      style={{
+                        padding: '10px 12px',
+                        borderRadius: '10px',
+                        border: isSelected ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                        background: isSelected ? '#eff6ff' : '#ffffff',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <strong style={{ display: 'block', fontSize: '13px', color: '#1e293b' }}>{p.nombre}</strong>
+                      <small style={{ fontSize: '11px', color: '#64748b' }}>{p.registrados} reg.</small>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* Dashboard del Consejo Popular Parroquial Seleccionado */}
+            <section className="organization-card" style={{ background: '#ffffff', borderRadius: '16px', padding: '16px', margin: '16px 0', border: '1px solid #e2e8f0' }}>
+              <div className="section-title-row">
+                <div>
+                  <p className="section-label">CONSEJO POPULAR PARROQUIAL</p>
+                  <h3 style={{ margin: '4px 0 0 0', fontSize: '20px' }}>Parroquia {infoParroquiaActual.nombre}</h3>
+                </div>
+                <span className="organization-number">22</span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', margin: '16px 0' }}>
+                <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '10px', textAlign: 'center' }}>
+                  <strong style={{ fontSize: '18px', color: '#2563eb', display: 'block' }}>{infoParroquiaActual.registrados}</strong>
+                  <small style={{ color: '#64748b', fontSize: '11px' }}>Registrados</small>
+                </div>
+                <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '10px', textAlign: 'center' }}>
+                  <strong style={{ fontSize: '18px', color: '#16a34a', display: 'block' }}>{infoParroquiaActual.actividades}</strong>
+                  <small style={{ color: '#64748b', fontSize: '11px' }}>Actividades</small>
+                </div>
+                <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '10px', textAlign: 'center' }}>
+                  <strong style={{ fontSize: '18px', color: '#d97706', display: 'block' }}>{infoParroquiaActual.emprendimientos}</strong>
+                  <small style={{ color: '#64748b', fontSize: '11px' }}>Emprendimientos</small>
+                </div>
+              </div>
+
+              {/* Lista de las 5 Comisiones Operativas */}
+              <p className="section-label" style={{ marginTop: '16px' }}>5 COMISIONES DE ACCIÓN SOCIOTERRITORIAL</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                {comisionesDefinicion.map((com) => (
+                  <div key={com.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ fontSize: '20px' }}>{com.icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <strong style={{ fontSize: '13px', display: 'block', color: '#1e293b' }}>{com.nombre}</strong>
+                      <small style={{ color: '#64748b', fontSize: '12px' }}>{com.descripcion}</small>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </section>
+        ) : activeTab === 'feed' ? (
           <section className="feed-page">
             <div className="page-heading">
               <div>
@@ -3034,7 +3166,7 @@ function App() {
         <NavButton
           icon="◎"
           label="Territorio"
-          active={activeTab === 'territorio'}
+          active={activeTab === 'territorio' || activeTab === 'territory'}
           onClick={() => setActiveTab('territorio')}
         />
         <NavButton
@@ -3070,6 +3202,7 @@ function getTabTitle(tab) {
   const titles = {
     feed: 'Feed nacional',
     territorio: 'Mi territorio',
+    territory: 'Mi territorio',
     vocerias: 'Vocerías',
     mesas: 'Mesas de trabajo',
     eventos: 'Eventos',
