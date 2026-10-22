@@ -64,6 +64,7 @@ const economicIndicators = [
   },
 ];
 import React, { useEffect, useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import './index.css'
 
 const quickActions = [
@@ -74,10 +75,10 @@ const quickActions = [
   { icon: '◷', label: 'Eventos', tab: 'eventos' },
   { icon: '▤', label: 'Reportes', tab: 'reportes' },
   {
-    icon: '₿',
-    label: 'Emprendimientos',
-    tab: 'economia',
-  },
+  icon: '₿',
+  label: 'Emprendimientos',
+  tab: 'emprendimientos',
+},
 ];
 
 const recentActivity = [
@@ -196,15 +197,550 @@ const voceriasData = [
     color: 'green',
   },
 ]
+const municipiosPorEstado = {
+  Amazonas: [
+    'Alto Orinoco',
+    'Atabapo',
+    'Atures',
+    'Autana',
+    'Maroa',
+    'Manapiare',
+    'Río Negro',
+  ],
+
+  Anzoátegui: [
+    'Anaco',
+    'Aragua',
+    'Diego Bautista Urbaneja',
+    'Fernando de Peñalver',
+    'Francisco de Miranda',
+    'Guanta',
+    'Independencia',
+    'Juan Antonio Sotillo',
+    'Libertad',
+    'McGregor',
+    'Pedro María Freites',
+    'Píritu',
+    'Simón Bolívar',
+    'Simón Rodríguez',
+  ],
+
+  Apure: [
+    'Achaguas',
+    'Biruaca',
+    'Muñoz',
+    'Páez',
+    'Pedro Camejo',
+    'Rómulo Gallegos',
+    'San Fernando',
+  ],
+
+  Aragua: [
+    'Bolívar',
+    'Camatagua',
+    'Francisco Linares Alcántara',
+    'Girardot',
+    'José Ángel Lamas',
+    'José Félix Ribas',
+    'Libertador',
+    'Mario Briceño Iragorry',
+    'Ocumare de la Costa de Oro',
+    'San Casimiro',
+    'San Sebastián',
+    'Santiago Mariño',
+    'Santos Michelena',
+    'Sucre',
+    'Tovar',
+    'Urdaneta',
+    'Zamora',
+  ],
+
+  Barinas: [
+    'Alberto Arvelo Torrealba',
+    'Andrés Eloy Blanco',
+    'Antonio José de Sucre',
+    'Arismendi',
+    'Barinas',
+    'Bolívar',
+    'Cruz Paredes',
+    'Ezequiel Zamora',
+    'Obispos',
+    'Pedraza',
+    'Rojas',
+    'Sosa',
+  ],
+
+  Carabobo: [
+    'Bejuma',
+    'Carlos Arvelo',
+    'Diego Ibarra',
+    'Guacara',
+    'Juan José Mora',
+    'Libertador',
+    'Los Guayos',
+    'Miranda',
+    'Montalbán',
+    'Naguanagua',
+    'Puerto Cabello',
+    'San Diego',
+    'San Joaquín',
+    'Valencia',
+  ],
+
+  'Distrito Capital': [
+    'Libertador',
+  ],
+
+  Falcón: [
+    'Acosta',
+    'Bolívar',
+    'Buchivacoa',
+    'Carirubana',
+    'Colina',
+    'Dabajuro',
+    'Democracia',
+    'Falcón',
+    'Federación',
+    'Jacura',
+    'Los Taques',
+    'Mauroa',
+    'Miranda',
+    'Monseñor Iturriza',
+    'Palmasola',
+    'Petit',
+    'Píritu',
+    'San Francisco',
+    'Sucre',
+    'Tocópero',
+    'Unión',
+    'Urumaco',
+    'Zamora',
+  ],
+
+  Lara: [
+    'Andrés Eloy Blanco',
+    'Crespo',
+    'Iribarren',
+    'Jiménez',
+    'Morán',
+    'Palavecino',
+    'Simón Planas',
+    'Torres',
+    'Urdaneta',
+  ],
+
+  Mérida: [
+    'Alberto Adriani',
+    'Andrés Bello',
+    'Antonio Pinto Salinas',
+    'Aricagua',
+    'Arzobispo Chacón',
+    'Campo Elías',
+    'Caracciolo Parra Olmedo',
+    'Cardenal Quintero',
+    'Guaraque',
+    'Julio César Salas',
+    'Justo Briceño',
+    'Libertador',
+    'Miranda',
+    'Obispo Ramos de Lora',
+    'Padre Noguera',
+    'Pueblo Llano',
+    'Rangel',
+    'Rivas Dávila',
+    'Santos Marquina',
+    'Sucre',
+    'Tovar',
+    'Tulio Febres Cordero',
+    'Zea',
+  ],
+
+  Miranda: [
+    'Acevedo',
+    'Andrés Bello',
+    'Baruta',
+    'Brión',
+    'Buroz',
+    'Carrizal',
+    'Chacao',
+    'Cristóbal Rojas',
+    'El Hatillo',
+    'Guaicaipuro',
+    'Independencia',
+    'Los Salias',
+    'Páez',
+    'Paz Castillo',
+    'Pedro Gual',
+    'Plaza',
+    'Simón Bolívar',
+    'Sucre',
+    'Urdaneta',
+    'Zamora',
+  ],
+
+  Monagas: [
+    'Acosta',
+    'Aguasay',
+    'Bolívar',
+    'Caripe',
+    'Cedeño',
+    'Ezequiel Zamora',
+    'Libertador',
+    'Maturín',
+    'Piar',
+    'Punceres',
+    'Santa Bárbara',
+    'Sotillo',
+    'Uracoa',
+  ],
+
+  Sucre: [
+    'Andrés Eloy Blanco',
+    'Andrés Mata',
+    'Arismendi',
+    'Benítez',
+    'Bermúdez',
+    'Bolívar',
+    'Cajigal',
+    'Cruz Salmerón Acosta',
+    'Libertador',
+    'Mariño',
+    'Mejía',
+    'Montes',
+    'Ribero',
+    'Sucre',
+    'Valdez',
+  ],
+
+  Táchira: [
+    'Andrés Bello',
+    'Antonio Rómulo Costa',
+    'Ayacucho',
+    'Bolívar',
+    'Cárdenas',
+    'Córdoba',
+    'Fernández Feo',
+    'Francisco de Miranda',
+    'García de Hevia',
+    'Guásimos',
+    'Independencia',
+    'Jáuregui',
+    'José María Vargas',
+    'Junín',
+    'Libertad',
+    'Libertador',
+    'Lobatera',
+    'Michelena',
+    'Panamericano',
+    'Pedro María Ureña',
+    'Rafael Urdaneta',
+    'Samuel Darío Maldonado',
+    'San Cristóbal',
+    'Seboruco',
+    'Simón Rodríguez',
+    'Sucre',
+    'Torbes',
+    'Uribante',
+  ],
+
+  Trujillo: [
+    'Andrés Bello',
+    'Boconó',
+    'Bolívar',
+    'Candelaria',
+    'Carache',
+    'Escuque',
+    'José Felipe Márquez Cañizales',
+    'Juan Vicente Campo Elías',
+    'La Ceiba',
+    'Miranda',
+    'Monte Carmelo',
+    'Motatán',
+    'Pampán',
+    'Pampanito',
+    'Rafael Rangel',
+    'San Rafael de Carvajal',
+    'Sucre',
+    'Trujillo',
+    'Urdaneta',
+    'Valera',
+  ],
+
+  Yaracuy: [
+    'Arístides Bastidas',
+    'Bolívar',
+    'Bruzual',
+    'Cocorote',
+    'Independencia',
+    'José Antonio Páez',
+    'La Trinidad',
+    'Manuel Monge',
+    'Nirgua',
+    'Peña',
+    'San Felipe',
+    'Sucre',
+    'Urachiche',
+    'Veroes',
+  ],
+
+  Zulia: [
+    'Almirante Padilla',
+    'Baralt',
+    'Cabimas',
+    'Catatumbo',
+    'Colón',
+    'Francisco Javier Pulgar',
+    'Jesús Enrique Lossada',
+    'Jesús María Semprún',
+    'La Cañada de Urdaneta',
+    'Lagunillas',
+    'Machiques de Perijá',
+    'Mara',
+    'Maracaibo',
+    'Miranda',
+    'Rosario de Perijá',
+    'San Francisco',
+    'Santa Rita',
+    'Simón Bolívar',
+    'Sucre',
+    'Valmore Rodríguez',
+  ],
+};
+const parroquiasPorMunicipio = {
+  'Miranda|Acevedo': [
+    'Caucagua',
+    'Aragüita',
+    'Arévalo González',
+    'Capaya',
+    'El Café',
+    'Panaquire',
+    'Ribas',
+    'Tapipa',
+  ],
+
+  'Miranda|Andrés Bello': [
+    'Cumbo',
+    'San José de Barlovento',
+  ],
+
+  'Miranda|Baruta': [
+    'Baruta',
+    'El Cafetal',
+    'Las Minas de Baruta',
+  ],
+
+  'Miranda|Brión': [
+    'Curiepe',
+    'Higuerote',
+    'Tacarigua de Brión',
+  ],
+
+  'Miranda|Buroz': [
+    'Mamporal',
+  ],
+
+  'Miranda|Carrizal': [
+    'Carrizal',
+  ],
+
+  'Miranda|Chacao': [
+    'Chacao',
+  ],
+
+  'Miranda|Cristóbal Rojas': [
+    'Charallave',
+    'Las Brisas',
+  ],
+
+  'Miranda|El Hatillo': [
+    'El Hatillo',
+  ],
+
+  'Miranda|Guaicaipuro': [
+    'Altagracia de la Montaña',
+    'Cecilio Acosta',
+    'El Jarillo',
+    'Los Teques',
+    'Paracotos',
+    'San Pedro',
+    'Tácata',
+  ],
+
+  'Miranda|Independencia': [
+    'Cartanal',
+    'Santa Teresa del Tuy',
+  ],
+
+  'Miranda|Los Salias': [
+    'San Antonio de los Altos',
+  ],
+
+  'Miranda|Páez': [
+    'El Guapo',
+    'Paparo',
+    'Río Chico',
+    'San Fernando del Guapo',
+    'Tacarigua de la Laguna',
+  ],
+
+  'Miranda|Paz Castillo': [
+    'Santa Lucía',
+  ],
+
+  'Miranda|Pedro Gual': [
+    'Cúpira',
+    'Machurucuto',
+  ],
+
+  'Miranda|Plaza': [
+    'Guarenas',
+  ],
+
+  'Miranda|Simón Bolívar': [
+    'San Antonio de Yare',
+    'San Francisco de Yare',
+  ],
+
+  'Miranda|Sucre': [
+    'Caucagüita',
+    'Filas de Mariche',
+    'La Dolorita',
+    'Leoncio Martínez',
+    'Petare',
+  ],
+
+  'Miranda|Urdaneta': [
+    'Cúa',
+    'Nueva Cúa',
+  ],
+
+   'Miranda|Zamora': [
+    'Araira',
+    'Guatire',
+  ],
+
+  'Distrito Capital|Libertador': [
+    '23 de Enero',
+    'Altagracia',
+    'Antímano',
+    'Candelaria',
+    'Caricuao',
+    'Catedral',
+    'Coche',
+    'El Junquito',
+    'El Paraíso',
+    'El Recreo',
+    'El Valle',
+    'La Pastora',
+    'La Vega',
+    'Macarao',
+    'San Agustín',
+    'San Bernardino',
+    'San José',
+    'San Juan',
+    'San Pedro',
+    'Santa Rosalía',
+    'Santa Teresa',
+    'Sucre',
+  ],
+};
+function obtenerFechaActualLocal() {
+  const hoy = new Date();
+
+  const año = hoy.getFullYear();
+  const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+  const dia = String(hoy.getDate()).padStart(2, '0');
+
+  return `${año}-${mes}-${dia}`;
+}
+
+function calcularEdad(fechaNacimiento) {
+  if (!fechaNacimiento) {
+    return '';
+  }
+
+  const partesFecha = fechaNacimiento.split('-').map(Number);
+
+  if (partesFecha.length !== 3) {
+    return '';
+  }
+
+  const [añoNacimiento, mesNacimiento, diaNacimiento] = partesFecha;
+
+  if (!añoNacimiento || !mesNacimiento || !diaNacimiento) {
+    return '';
+  }
+
+  const hoy = new Date();
+
+  let edad = hoy.getFullYear() - añoNacimiento;
+
+  const todavíaNoCumpleAños =
+    hoy.getMonth() + 1 < mesNacimiento ||
+    (hoy.getMonth() + 1 === mesNacimiento &&
+      hoy.getDate() < diaNacimiento);
+
+  if (todavíaNoCumpleAños) {
+    edad--;
+  }
+
+  if (edad < 0) {
+    return '';
+  }
+
+  return edad;
+}
+function crearIdEvento() {
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof crypto.randomUUID === 'function'
+  ) {
+    return crypto.randomUUID();
+  }
+
+  return `evento-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 9)}`;
+}
+
+function obtenerEtiquetaEstadoEvento(estado) {
+  const etiquetas = {
+    borrador: 'Borrador',
+    convocado: 'Convocado',
+    'en-curso': 'En curso',
+    culminado: 'Culminado',
+    cancelado: 'Cancelado',
+  };
+
+  return etiquetas[estado] || estado;
+}
+
+function obtenerColorEstadoEvento(estado) {
+  const colores = {
+    borrador: 'orange',
+    convocado: 'blue',
+    'en-curso': 'purple',
+    culminado: 'green',
+    cancelado: 'red',
+  };
+
+  return colores[estado] || 'blue';
+}
 function App() {
-const [showAllQuickActions, setShowAllQuickActions] = useState(false);
+  const [showAllQuickActions, setShowAllQuickActions] = useState(false);
 
   const [pinnedQuickActionTabs, setPinnedQuickActionTabs] = useState(() => {
     try {
       const savedPinnedActions = localStorage.getItem(
         'pinnedQuickActionTabs'
       );
+const obtenerValorQR = (evento) => {
+  if (typeof window === 'undefined') {
+    return `centinela://asistencia/${evento.id}`;
+  }
 
+  return `${window.location.origin}${window.location.pathname}#asistencia=${evento.id}`;
+};
       if (savedPinnedActions) {
         const parsedActions = JSON.parse(savedPinnedActions);
 
@@ -222,6 +758,75 @@ const [showAllQuickActions, setShowAllQuickActions] = useState(false);
 
     return quickActions.slice(0, 3).map((action) => action.tab);
   });
+
+  const [registroCompletado, setRegistroCompletado] = useState(false);
+  const [tieneEmprendimiento, setTieneEmprendimiento] = useState(null);
+
+  const [formularioInicial, setFormularioInicial] = useState({
+  cedula: '',
+  nombresApellidos: '',
+  genero: '',
+  fechaNacimiento: '',
+  estado: '',
+    municipio: '',
+    parroquia: '',
+    comuna: '',
+    concejoComunal: '',
+    telefono: '',
+    correo: '',
+    usuarioTelegram: '',
+  });
+
+  useEffect(() => {
+    const telegramWebApp = window.Telegram?.WebApp;
+
+    if (telegramWebApp) {
+      telegramWebApp.ready();
+    }
+
+    const usuarioTelegram = telegramWebApp?.initDataUnsafe?.user;
+
+    // Si la persona ya llenó el formulario antes,
+    // cargamos sus datos guardados.
+    const datosGuardados = localStorage.getItem('perfilUsuario');
+
+    if (datosGuardados) {
+      try {
+        const datos = JSON.parse(datosGuardados);
+
+        setFormularioInicial((datosAnteriores) => ({
+          ...datosAnteriores,
+          ...datos,
+        }));
+
+        setRegistroCompletado(true);
+      } catch {
+        localStorage.removeItem('perfilUsuario');
+      }
+    }
+
+    // Tomamos automáticamente los datos disponibles de Telegram.
+    if (usuarioTelegram) {
+      const nombresTelegram = [
+        usuarioTelegram.first_name,
+        usuarioTelegram.last_name,
+      ]
+        .filter(Boolean)
+        .join(' ');
+
+      const usuarioTelegramTexto = usuarioTelegram.username
+        ? `@${usuarioTelegram.username}`
+        : String(usuarioTelegram.id || '');
+
+      setFormularioInicial((datosAnteriores) => ({
+        ...datosAnteriores,
+        nombresApellidos:
+          datosAnteriores.nombresApellidos || nombresTelegram,
+        usuarioTelegram:
+          datosAnteriores.usuarioTelegram || usuarioTelegramTexto,
+      }));
+    }
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(
@@ -253,10 +858,98 @@ const [showAllQuickActions, setShowAllQuickActions] = useState(false);
   const [territoryMenuOpen, setTerritoryMenuOpen] = useState(false)
 const [selectedPost, setSelectedPost] = useState(null)
 const [activeFilter, setActiveFilter] = useState('Todo')
-  const visiblePosts =
+const [eventos, setEventos] = useState(() => {
+  try {
+    const eventosGuardados = localStorage.getItem('eventosCentinela');
+
+    return eventosGuardados
+      ? JSON.parse(eventosGuardados)
+      : [];
+  } catch {
+    return [];
+  }
+});
+
+const [mostrarFormularioEvento, setMostrarFormularioEvento] =
+  useState(false);
+
+const [eventoSeleccionadoId, setEventoSeleccionadoId] =
+  useState(null);
+
+const [fotosEvidencia, setFotosEvidencia] = useState([]);
+
+const [formularioEvento, setFormularioEvento] = useState({
+  titulo: '',
+  nivel: 'parroquial',
+  parroquia: '',
+  fecha: '',
+  horaInicio: '',
+  horaFin: '',
+  lugar: '',
+  descripcion: '',
+});
+
+const eventoSeleccionado = eventos.find(
+  (evento) => evento.id === eventoSeleccionadoId
+);
+
+const abrirEvento = (eventoId) => {
+  const eventoExiste = eventos.some(
+    (evento) => evento.id === eventoId
+  );
+
+  if (!eventoExiste) {
+    alert('No se encontró la información de este evento.');
+    return;
+  }
+
+  setEventoSeleccionadoId(eventoId);
+};
+
+const eventosCulminados = eventos.filter(
+  (evento) => evento.estado === 'culminado'
+);
+
+useEffect(() => {
+  localStorage.setItem(
+    'eventosCentinela',
+    JSON.stringify(eventos)
+  );
+}, [eventos]);
+  const publicacionesDeEventos = eventosCulminados.map(
+  (evento) => ({
+    id: `evento-${evento.id}`,
+    eventId: evento.id,
+    type: 'Evento culminado',
+    title: evento.titulo,
+    description: evento.descripcion,
+    territory:
+      evento.nivel === 'estadal'
+        ? 'Caracas · Evento estadal'
+        : `Caracas · ${evento.parroquia}`,
+    author: evento.creadoPor,
+    time: 'Evento culminado',
+    color: 'green',
+    asistentes: evento.asistentes.length,
+    evidencias: evento.asistentes.reduce(
+      (total, asistente) =>
+        total + asistente.evidencias.length,
+      0
+    ),
+  })
+);
+
+const publicacionesFeed = [
+  ...publicacionesDeEventos,
+  ...feedPosts,
+];
+
+const visiblePosts =
   activeFilter === 'Todo'
-    ? feedPosts
-    : feedPosts.filter((post) => post.type === activeFilter)
+    ? publicacionesFeed
+    : publicacionesFeed.filter(
+        (post) => post.type === activeFilter
+      );
 const territoryNames = {
     estadal: 'Consejo Popular Estadal',
     municipal: 'Consejo Popular Municipal',
@@ -265,8 +958,772 @@ const territoryNames = {
 
   const handleAction = (tab) => {
     setActiveTab(tab)
+    const actualizarFormularioEvento = (event) => {
+  const { name, value } = event.target;
+
+  setFormularioEvento((datosAnteriores) => ({
+    ...datosAnteriores,
+    [name]: value,
+    ...(name === 'nivel' && value === 'estadal'
+      ? { parroquia: '' }
+      : {}),
+  }));
+};
+
+const crearEvento = (event) => {
+  event.preventDefault();
+
+  if (
+    formularioEvento.nivel === 'parroquial' &&
+    !formularioEvento.parroquia
+  ) {
+    alert('Selecciona la parroquia del evento.');
+    return;
   }
 
+  const nuevoEvento = {
+    id: crearIdEvento(),
+    titulo: formularioEvento.titulo.trim(),
+    nivel: formularioEvento.nivel,
+    estado: 'convocado',
+    parroquia:
+      formularioEvento.nivel === 'parroquial'
+        ? formularioEvento.parroquia
+        : 'Todas las parroquias de Caracas',
+    estadoTerritorial: 'Distrito Capital',
+    municipio: 'Libertador',
+    fecha: formularioEvento.fecha,
+    horaInicio: formularioEvento.horaInicio,
+    horaFin: formularioEvento.horaFin,
+    lugar: formularioEvento.lugar.trim(),
+    descripcion: formularioEvento.descripcion.trim(),
+    creadoPor:
+      formularioInicial.nombresApellidos ||
+      formularioInicial.usuarioTelegram ||
+      'Coordinación estadal',
+    creadoEn: new Date().toISOString(),
+    asistentes: [],
+  };
+
+  setEventos((eventosAnteriores) => [
+    nuevoEvento,
+    ...eventosAnteriores,
+  ]);
+
+  setFormularioEvento({
+    titulo: '',
+    nivel: 'parroquial',
+    parroquia: '',
+    fecha: '',
+    horaInicio: '',
+    horaFin: '',
+    lugar: '',
+    descripcion: '',
+  });
+
+  setMostrarFormularioEvento(false);
+  setEventoSeleccionadoId(nuevoEvento.id);
+};
+
+const actualizarEstadoEvento = (eventoId, nuevoEstado) => {
+  setEventos((eventosAnteriores) =>
+    eventosAnteriores.map((evento) =>
+      evento.id === eventoId
+        ? {
+            ...evento,
+            estado: nuevoEstado,
+          }
+        : evento
+    )
+  );
+};
+
+const iniciarEvento = (eventoId) => {
+  actualizarEstadoEvento(eventoId, 'en-curso');
+};
+
+const culminarEvento = (eventoId) => {
+  const evento = eventos.find(
+    (eventoActual) => eventoActual.id === eventoId
+  );
+
+  if (!evento) {
+    return;
+  }
+
+  if (evento.asistentes.length === 0) {
+    alert(
+      'El evento necesita al menos una asistencia registrada antes de culminar.'
+    );
+    return;
+  }
+
+  const asistenciaIncompleta = evento.asistentes.some(
+    (asistente) => asistente.evidencias.length < 3
+  );
+
+  if (asistenciaIncompleta) {
+    alert(
+      'Todas las asistencias deben tener mínimo 3 fotos de evidencia.'
+    );
+    return;
+  }
+
+  actualizarEstadoEvento(eventoId, 'culminado');
+};
+
+const seleccionarFotosEvidencia = (event) => {
+  const archivos = Array.from(event.target.files || []);
+
+  setFotosEvidencia(archivos);
+};
+
+const registrarAsistencia = () => {
+  if (!eventoSeleccionado) {
+    return;
+  }
+
+  if (eventoSeleccionado.estado !== 'en-curso') {
+    alert(
+      'La asistencia solo se puede registrar mientras el evento esté en curso.'
+    );
+    return;
+  }
+
+  if (fotosEvidencia.length < 3) {
+    alert(
+      'Debes seleccionar mínimo 3 fotografías de evidencia.'
+    );
+    return;
+  }
+
+  const identificadorUsuario =
+    formularioInicial.cedula ||
+    formularioInicial.usuarioTelegram ||
+    formularioInicial.nombresApellidos;
+
+  const asistenciaExistente =
+    eventoSeleccionado.asistentes.some(
+      (asistente) =>
+        asistente.usuarioId === identificadorUsuario
+    );
+
+  if (asistenciaExistente) {
+    alert('Ya tienes una asistencia registrada en este evento.');
+    return;
+  }
+
+  const nuevaAsistencia = {
+    usuarioId: identificadorUsuario,
+    nombre:
+      formularioInicial.nombresApellidos ||
+      'Usuario registrado',
+    parroquia: formularioInicial.parroquia,
+    registradoEn: new Date().toISOString(),
+    evidencias: fotosEvidencia.map((foto) => ({
+      nombre: foto.name,
+      tipo: foto.type,
+      tamaño: foto.size,
+    })),
+  };
+
+  setEventos((eventosAnteriores) =>
+    eventosAnteriores.map((evento) =>
+      evento.id === eventoSeleccionado.id
+        ? {
+            ...evento,
+            asistentes: [
+              ...evento.asistentes,
+              nuevaAsistencia,
+            ],
+          }
+        : evento
+    )
+  );
+
+  setFotosEvidencia([]);
+
+  alert(
+    'Asistencia registrada correctamente con 3 fotos de evidencia.'
+  );
+};
+  }
+const actualizarFormulario = (event) => {
+  const { name, value } = event.target;
+
+  setFormularioInicial((datosAnteriores) => {
+    const datosActualizados = {
+      ...datosAnteriores,
+      [name]: value,
+    };
+
+    // Si cambia el Estado, se reinician los campos dependientes.
+    if (name === 'estado') {
+      datosActualizados.municipio = '';
+      datosActualizados.parroquia = '';
+      datosActualizados.comuna = '';
+    }
+
+    // Si cambia el Municipio, se reinician Parroquia y Comuna.
+    if (name === 'municipio') {
+      datosActualizados.parroquia = '';
+      datosActualizados.comuna = '';
+    }
+
+    // Si cambia la Parroquia, se reinicia Comuna.
+    if (name === 'parroquia') {
+      datosActualizados.comuna = '';
+    }
+
+    return datosActualizados;
+  });
+};
+
+const claveMunicipio = `${formularioInicial.estado}|${formularioInicial.municipio}`;
+
+const parroquiasDisponibles =
+  parroquiasPorMunicipio[claveMunicipio] || [];
+  const guardarRegistroInicial = (event) => {
+    event.preventDefault();
+
+    const parroquiasCaracas = [
+  '23 de Enero',
+  'Altagracia',
+  'Antímano',
+  'Candelaria',
+  'Caricuao',
+  'Catedral',
+  'Coche',
+  'El Junquito',
+  'El Paraíso',
+  'El Recreo',
+  'El Valle',
+  'La Pastora',
+  'La Vega',
+  'Macarao',
+  'San Agustín',
+  'San Bernardino',
+  'San José',
+  'San Juan',
+  'San Pedro',
+  'Santa Rosalía',
+  'Santa Teresa',
+  'Sucre',
+];
+
+    const edadCalculada = calcularEdad(
+      formularioInicial.fechaNacimiento
+    );
+
+    if (
+      !formularioInicial.fechaNacimiento ||
+      edadCalculada === ''
+    ) {
+      alert(
+        'Selecciona una fecha de nacimiento válida. La fecha no puede ser futura.'
+      );
+
+      return;
+    }
+
+    localStorage.setItem(
+      'perfilUsuario',
+      JSON.stringify(formularioInicial)
+    );
+
+    setRegistroCompletado(true);
+  };
+
+  if (!registroCompletado) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          padding: '24px',
+          background: '#f4f7fb',
+          boxSizing: 'border-box',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: '620px',
+            margin: '0 auto',
+            padding: '24px',
+            background: '#ffffff',
+            borderRadius: '18px',
+            boxShadow: '0 4px 18px rgba(0, 0, 0, 0.08)',
+          }}
+        >
+          <h1 style={{ marginTop: 0 }}>
+            Completa tu registro
+          </h1>
+
+          <p style={{ color: '#5f6b7a', lineHeight: 1.5 }}>
+            Antes de entrar a la aplicación necesitamos algunos datos.
+          </p>
+
+          <form onSubmit={guardarRegistroInicial}>
+            <label style={{ display: 'block', marginBottom: '14px' }}>
+              <span>Cédula</span>
+              <input
+                name="cedula"
+                type="text"
+                value={formularioInicial.cedula}
+                onChange={actualizarFormulario}
+                required
+                placeholder="Escribe tu cédula"
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  marginTop: '6px',
+                  padding: '12px',
+                  boxSizing: 'border-box',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '10px',
+                }}
+              />
+            </label>
+
+            <label style={{ display: 'block', marginBottom: '14px' }}>
+              <span>Nombres y apellidos</span>
+              <input
+                name="nombresApellidos"
+                type="text"
+                value={formularioInicial.nombresApellidos}
+                onChange={actualizarFormulario}
+                required
+                placeholder="Escribe tus nombres y apellidos"
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  marginTop: '6px',
+                  padding: '12px',
+                  boxSizing: 'border-box',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '10px',
+                }}
+              />
+            </label>
+
+             <label style={{ display: 'block', marginBottom: '14px' }}>
+              <span>Género</span>
+
+              <select
+                name="genero"
+                value={formularioInicial.genero}
+                onChange={actualizarFormulario}
+                required
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  marginTop: '6px',
+                  padding: '12px',
+                  boxSizing: 'border-box',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '10px',
+                  background: '#ffffff',
+                }}
+              >
+                <option value="">Selecciona una opción</option>
+                <option value="Femenino">Femenino</option>
+                <option value="Masculino">Masculino</option>
+              </select>
+            </label>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1.4fr 0.8fr',
+                gap: '12px',
+                marginBottom: '14px',
+              }}
+            >
+              <div>
+                <label
+                  htmlFor="fechaNacimiento"
+                  style={{
+                    display: 'block',
+                    marginBottom: '6px',
+                    color: '#263449',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                  }}
+                >
+                  Fecha de nacimiento
+                </label>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    minHeight: '50px',
+                    boxSizing: 'border-box',
+                    border: '1px solid #dbe4ef',
+                    borderRadius: '14px',
+                    background: '#f8fafc',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <span
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '32px',
+                      height: '32px',
+                      marginLeft: '8px',
+                      borderRadius: '9px',
+                      background: '#e8f0ff',
+                      color: '#2563eb',
+                      fontSize: '17px',
+                    }}
+                  >
+                    ◷
+                  </span>
+
+                  <input
+                    id="fechaNacimiento"
+                    name="fechaNacimiento"
+                    type="date"
+                    value={formularioInicial.fechaNacimiento}
+                    onChange={actualizarFormulario}
+                    max={obtenerFechaActualLocal()}
+                    required
+                    style={{
+                      width: '100%',
+                      minWidth: 0,
+                      padding: '14px 6px',
+                      border: 0,
+                      outline: 'none',
+                      background: 'transparent',
+                      color: '#263449',
+                      fontFamily: 'inherit',
+                      fontSize: '13px',
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <span
+                  style={{
+                    display: 'block',
+                    marginBottom: '6px',
+                    color: '#263449',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                  }}
+                >
+                  Edad
+                </span>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    minHeight: '50px',
+                    boxSizing: 'border-box',
+                    border: '1px solid #d8eee6',
+                    borderRadius: '14px',
+                    background: '#f1f7f5',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <span
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '32px',
+                      height: '32px',
+                      marginLeft: '8px',
+                      borderRadius: '9px',
+                      background: '#e8f7f1',
+                      color: '#159570',
+                      fontSize: '16px',
+                    }}
+                  >
+                    ✦
+                  </span>
+
+                  <span
+                    style={{
+                      padding: '14px 8px',
+                      color: '#475569',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {formularioInicial.fechaNacimiento
+                      ? `${calcularEdad(
+                          formularioInicial.fechaNacimiento
+                        )} años`
+                      : '—'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            
+            <label style={{ display: 'block', marginBottom: '14px' }}>
+  <span>Estado</span>
+
+  <select
+    name="estado"
+    value={formularioInicial.estado}
+    onChange={actualizarFormulario}
+    required
+    style={{
+      display: 'block',
+      width: '100%',
+      marginTop: '6px',
+      padding: '12px',
+      boxSizing: 'border-box',
+      border: '1px solid #cbd5e1',
+      borderRadius: '10px',
+      background: '#ffffff',
+    }}
+  >
+    <option value="">Selecciona tu estado</option>
+    <option value="Amazonas">Amazonas</option>
+    <option value="Anzoátegui">Anzoátegui</option>
+    <option value="Apure">Apure</option>
+    <option value="Aragua">Aragua</option>
+    <option value="Barinas">Barinas</option>
+    <option value="Bolívar">Bolívar</option>
+    <option value="Carabobo">Carabobo</option>
+    <option value="Cojedes">Cojedes</option>
+    <option value="Delta Amacuro">Delta Amacuro</option>
+    <option value="Distrito Capital">Distrito Capital</option>
+    <option value="Falcón">Falcón</option>
+    <option value="Guárico">Guárico</option>
+    <option value="La Guaira">La Guaira</option>
+    <option value="Lara">Lara</option>
+    <option value="Mérida">Mérida</option>
+    <option value="Miranda">Miranda</option>
+    <option value="Monagas">Monagas</option>
+    <option value="Nueva Esparta">Nueva Esparta</option>
+    <option value="Portuguesa">Portuguesa</option>
+    <option value="Sucre">Sucre</option>
+    <option value="Táchira">Táchira</option>
+    <option value="Trujillo">Trujillo</option>
+    <option value="Yaracuy">Yaracuy</option>
+    <option value="Zulia">Zulia</option>
+  </select>
+</label>
+
+            <label style={{ display: 'block', marginBottom: '14px' }}>
+  <span>Municipio</span>
+
+  <select
+    name="municipio"
+    value={formularioInicial.municipio}
+    onChange={actualizarFormulario}
+    required
+    disabled={!formularioInicial.estado}
+    style={{
+      display: 'block',
+      width: '100%',
+      marginTop: '6px',
+      padding: '12px',
+      boxSizing: 'border-box',
+      border: '1px solid #cbd5e1',
+      borderRadius: '10px',
+      background: '#ffffff',
+    }}
+  >
+    <option value="">
+      {formularioInicial.estado
+        ? 'Selecciona tu municipio'
+        : 'Primero selecciona un estado'}
+    </option>
+
+    {(municipiosPorEstado[formularioInicial.estado] || []).map(
+      (municipio) => (
+        <option key={municipio} value={municipio}>
+          {municipio}
+        </option>
+      )
+    )}
+  </select>
+</label>
+
+            <label style={{ display: 'block', marginBottom: '14px' }}>
+  <span>Parroquia</span>
+
+  <select
+    name="parroquia"
+    value={formularioInicial.parroquia}
+    onChange={actualizarFormulario}
+    required={parroquiasDisponibles.length > 0}
+    disabled={!formularioInicial.municipio}
+    style={{
+      display: 'block',
+      width: '100%',
+      marginTop: '6px',
+      padding: '12px',
+      boxSizing: 'border-box',
+      border: '1px solid #cbd5e1',
+      borderRadius: '10px',
+      background: '#ffffff',
+    }}
+  >
+    <option value="">
+      {!formularioInicial.municipio
+        ? 'Primero selecciona un municipio'
+        : parroquiasDisponibles.length > 0
+          ? 'Selecciona tu parroquia'
+          : 'No hay parroquias cargadas para este municipio'}
+    </option>
+
+    {parroquiasDisponibles.map((parroquia) => (
+      <option key={parroquia} value={parroquia}>
+        {parroquia}
+      </option>
+    ))}
+  </select>
+
+  {formularioInicial.municipio &&
+    parroquiasDisponibles.length === 0 && (
+      <small
+        style={{
+          display: 'block',
+          marginTop: '6px',
+          color: '#b45309',
+        }}
+      >
+        Este municipio todavía no tiene su catálogo de parroquias agregado.
+      </small>
+    )}
+</label>
+
+            <label style={{ display: 'block', marginBottom: '14px' }}>
+              <span>Comuna</span>
+              <input
+                name="comuna"
+                type="text"
+                value={formularioInicial.comuna}
+                onChange={actualizarFormulario}
+                required
+                placeholder="Escribe tu comuna"
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  marginTop: '6px',
+                  padding: '12px',
+                  boxSizing: 'border-box',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '10px',
+                }}
+              />
+            </label>
+
+            <label style={{ display: 'block', marginBottom: '14px' }}>
+              <span>Concejo comunal</span>
+              <input
+                name="concejoComunal"
+                type="text"
+                value={formularioInicial.concejoComunal}
+                onChange={actualizarFormulario}
+                required
+                placeholder="Escribe el concejo comunal"
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  marginTop: '6px',
+                  padding: '12px',
+                  boxSizing: 'border-box',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '10px',
+                }}
+              />
+            </label>
+
+            <label style={{ display: 'block', marginBottom: '14px' }}>
+              <span>Teléfono</span>
+              <input
+                name="telefono"
+                type="tel"
+                value={formularioInicial.telefono}
+                onChange={actualizarFormulario}
+                required
+                placeholder="Escribe tu teléfono"
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  marginTop: '6px',
+                  padding: '12px',
+                  boxSizing: 'border-box',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '10px',
+                }}
+              />
+            </label>
+
+            <label style={{ display: 'block', marginBottom: '14px' }}>
+              <span>Correo</span>
+              <input
+                name="correo"
+                type="email"
+                value={formularioInicial.correo}
+                onChange={actualizarFormulario}
+                required
+                placeholder="Escribe tu correo"
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  marginTop: '6px',
+                  padding: '12px',
+                  boxSizing: 'border-box',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '10px',
+                }}
+              />
+            </label>
+
+            <label style={{ display: 'block', marginBottom: '18px' }}>
+              <span>Usuario de Telegram</span>
+              <input
+                name="usuarioTelegram"
+                type="text"
+                value={formularioInicial.usuarioTelegram}
+                readOnly
+                placeholder="Se completará automáticamente en Telegram"
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  marginTop: '6px',
+                  padding: '12px',
+                  boxSizing: 'border-box',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '10px',
+                  background: '#eef2f7',
+                }}
+              />
+            </label>
+
+            <button
+              type="submit"
+              style={{
+                width: '100%',
+                padding: '14px',
+                border: 0,
+                borderRadius: '10px',
+                background: '#2563eb',
+                color: '#ffffff',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: 'pointer',
+              }}
+            >
+              Guardar y continuar
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="app-shell">
       <main className="app-content">
@@ -566,6 +2023,16 @@ const territoryNames = {
                   Ver todo
                 </button>
               </div>
+              <button
+  className={`filter-button ${
+    activeFilter === 'Evento culminado'
+      ? 'active-filter'
+      : ''
+  }`}
+  onClick={() => setActiveFilter('Evento culminado')}
+>
+  Eventos culminados
+</button>
 
               <div className="activity-list">
                 {recentActivity.map((activity) => (
@@ -592,10 +2059,10 @@ const territoryNames = {
     <div className="page-heading">
       <div>
         <p className="section-label">ACTUALIZACIONES</p>
-        <h2>Feed nacional</h2>
+        <h2>Feed estadal Caracas</h2>
         <p className="page-description">
-          Revisa las actividades y novedades de la organización.
-        </p>
+  Consulta los eventos culminados de Caracas y sus 22 parroquias.
+</p>
       </div>
 
       <button
@@ -734,6 +2201,509 @@ const territoryNames = {
     </div>
   </div>
 )}
+  </section>
+  ) : activeTab === 'eventos' ? (
+  <section className="eventos-page">
+    <div className="page-heading">
+      <div>
+        <p className="section-label">
+          ORGANIZACIÓN TERRITORIAL
+        </p>
+
+        <h2>Eventos de Caracas</h2>
+
+        <p className="page-description">
+          Administra eventos estadales y parroquiales,
+          registra asistencias y reúne evidencias.
+        </p>
+      </div>
+
+      <button
+        className="back-button"
+        onClick={() => setActiveTab('inicio')}
+      >
+        Inicio
+      </button>
+    </div>
+
+    <div className="eventos-summary">
+      <div className="summary-item">
+        <strong>{eventos.length}</strong>
+        <span>Eventos registrados</span>
+      </div>
+
+      <div className="summary-item">
+        <strong>{eventosCulminados.length}</strong>
+        <span>Eventos culminados</span>
+      </div>
+
+      <div className="summary-item">
+        <strong>22</strong>
+        <span>Parroquias disponibles</span>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      className="primary-button evento-create-button"
+      onClick={() =>
+        setMostrarFormularioEvento(
+          (valorActual) => !valorActual
+        )
+      }
+    >
+      {mostrarFormularioEvento
+        ? 'Cerrar formulario'
+        : '+ Crear evento'}
+    </button>
+
+    {mostrarFormularioEvento && (
+      <form
+        className="evento-form-card"
+        onSubmit={crearEvento}
+      >
+        <div className="section-title-row">
+          <div>
+            <p className="section-label">
+              NUEVA ACTIVIDAD
+            </p>
+
+            <h3>Crear evento</h3>
+          </div>
+        </div>
+
+        <label className="evento-form-field">
+          <span>Nombre del evento</span>
+
+          <input
+            name="titulo"
+            value={formularioEvento.titulo}
+            onChange={actualizarFormularioEvento}
+            placeholder="Ejemplo: Jornada comunitaria"
+            required
+          />
+        </label>
+
+        <label className="evento-form-field">
+          <span>Nivel del evento</span>
+
+          <select
+            name="nivel"
+            value={formularioEvento.nivel}
+            onChange={actualizarFormularioEvento}
+            required
+          >
+            <option value="estadal">
+              Evento estadal
+            </option>
+
+            <option value="parroquial">
+              Evento parroquial
+            </option>
+          </select>
+        </label>
+
+        {formularioEvento.nivel === 'parroquial' && (
+          <label className="evento-form-field">
+            <span>Parroquia</span>
+
+            <select
+              name="parroquia"
+              value={formularioEvento.parroquia}
+              onChange={actualizarFormularioEvento}
+              required
+            >
+              <option value="">
+                Selecciona una parroquia
+              </option>
+
+              {parroquiasCaracas.map((parroquia) => (
+                <option
+                  key={parroquia}
+                  value={parroquia}
+                >
+                  {parroquia}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        <div className="evento-form-grid">
+          <label className="evento-form-field">
+            <span>Fecha</span>
+
+            <input
+              name="fecha"
+              type="date"
+              value={formularioEvento.fecha}
+              onChange={actualizarFormularioEvento}
+              required
+            />
+          </label>
+
+          <label className="evento-form-field">
+            <span>Hora de inicio</span>
+
+            <input
+              name="horaInicio"
+              type="time"
+              value={formularioEvento.horaInicio}
+              onChange={actualizarFormularioEvento}
+              required
+            />
+          </label>
+
+          <label className="evento-form-field">
+            <span>Hora de culminación</span>
+
+            <input
+              name="horaFin"
+              type="time"
+              value={formularioEvento.horaFin}
+              onChange={actualizarFormularioEvento}
+              required
+            />
+          </label>
+        </div>
+
+        <label className="evento-form-field">
+          <span>Lugar</span>
+
+          <input
+            name="lugar"
+            value={formularioEvento.lugar}
+            onChange={actualizarFormularioEvento}
+            placeholder="Ejemplo: Plaza de Caricuao"
+            required
+          />
+        </label>
+
+        <label className="evento-form-field">
+          <span>Descripción</span>
+
+          <textarea
+            name="descripcion"
+            value={formularioEvento.descripcion}
+            onChange={actualizarFormularioEvento}
+            placeholder="Describe el objetivo de la actividad"
+            rows="4"
+            required
+          />
+        </label>
+
+        <button
+          type="submit"
+          className="primary-button"
+        >
+          Crear evento y generar QR
+        </button>
+      </form>
+    )}
+
+    <div className="eventos-list">
+      {eventos.length === 0 ? (
+        <div className="empty-page evento-empty-state">
+          <span className="empty-icon">◷</span>
+
+          <h3>Aún no hay eventos registrados</h3>
+
+          <p>
+            Crea el primer evento estadal o parroquial
+            para generar su QR de asistencia.
+          </p>
+        </div>
+      ) : (
+        eventos.map((evento) => (
+          <article
+            className="evento-card"
+            key={evento.id}
+          >
+            <div className="evento-card-top">
+              <span
+                className={`activity-dot ${
+                  obtenerColorEstadoEvento(
+                    evento.estado
+                  )
+                }`}
+              ></span>
+
+              <span className="evento-level">
+                {evento.nivel === 'estadal'
+                  ? 'ESTADAL'
+                  : 'PARROQUIAL'}
+              </span>
+
+              <span className="evento-status">
+                {obtenerEtiquetaEstadoEvento(
+                  evento.estado
+                )}
+              </span>
+            </div>
+
+            <h3>{evento.titulo}</h3>
+
+            <p className="evento-location">
+              ⌖ {evento.parroquia}
+            </p>
+
+            <p className="evento-date">
+              ◷ {evento.fecha} · {evento.horaInicio}
+            </p>
+
+            <div className="evento-card-footer">
+              <span>
+                {evento.asistentes.length} asistentes
+              </span>
+
+              <button
+  type="button"
+  className="detail-button"
+  onClick={() => abrirEvento(evento.id)}
+>
+  Ver evento
+</button>
+            </div>
+          </article>
+        ))
+      )}
+    </div>
+
+    {eventoSeleccionado && (
+      <div
+        className="detail-overlay"
+        onClick={() =>
+          setEventoSeleccionadoId(null)
+        }
+      >
+        <div
+          className="detail-bubble evento-detail-bubble"
+          onClick={(event) =>
+            event.stopPropagation()
+          }
+        >
+          <div className="bubble-handle"></div>
+
+          <div className="detail-panel-header">
+            <div>
+              <p className="section-label">
+                {eventoSeleccionado.nivel ===
+                'estadal'
+                  ? 'EVENTO ESTADAL'
+                  : 'EVENTO PARROQUIAL'}
+              </p>
+
+              <h3>{eventoSeleccionado.titulo}</h3>
+            </div>
+
+            <button
+  type="button"
+  className="close-button"
+  onClick={() => setEventoSeleccionadoId(null)}
+  aria-label="Cerrar evento"
+>
+  ×
+</button>
+          </div>
+
+          <div className="evento-detail-layout">
+            <div className="evento-detail-information">
+              <p>
+                <strong>Estado:</strong>{' '}
+                {obtenerEtiquetaEstadoEvento(
+                  eventoSeleccionado.estado
+                )}
+              </p>
+
+              <p>
+                <strong>Territorio:</strong>{' '}
+                {eventoSeleccionado.parroquia}
+              </p>
+
+              <p>
+                <strong>Fecha:</strong>{' '}
+                {eventoSeleccionado.fecha}
+              </p>
+
+              <p>
+                <strong>Horario:</strong>{' '}
+                {eventoSeleccionado.horaInicio} -{' '}
+                {eventoSeleccionado.horaFin}
+              </p>
+
+              <p>
+                <strong>Lugar:</strong>{' '}
+                {eventoSeleccionado.lugar}
+              </p>
+
+              <p>
+                <strong>Descripción:</strong>{' '}
+                {eventoSeleccionado.descripcion}
+              </p>
+            </div>
+
+            <div className="evento-qr-card">
+              <p className="section-label">
+                QR DE ASISTENCIA
+              </p>
+
+              <QRCodeSVG
+                value={obtenerValorQR(
+                  eventoSeleccionado
+                )}
+                size={190}
+                includeMargin
+              />
+
+              <small>
+                Cada usuario registrado debe escanear
+                este código durante el evento.
+              </small>
+            </div>
+          </div>
+
+          <div className="evento-actions">
+            {eventoSeleccionado.estado ===
+              'convocado' && (
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() =>
+                  iniciarEvento(
+                    eventoSeleccionado.id
+                  )
+                }
+              >
+                Marcar como en curso
+              </button>
+            )}
+
+            {eventoSeleccionado.estado ===
+              'en-curso' && (
+              <div className="evento-attendance-card">
+                <p className="section-label">
+                  REGISTRAR MI ASISTENCIA
+                </p>
+
+                <p>
+                  Debes cargar mínimo 3 fotografías
+                  propias de evidencia.
+                </p>
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={
+                    seleccionarFotosEvidencia
+                  }
+                />
+
+                <span className="photo-counter">
+                  {fotosEvidencia.length} de 3 fotos
+                  seleccionadas
+                </span>
+
+                {fotosEvidencia.length > 0 && (
+                  <ul className="photo-name-list">
+                    {fotosEvidencia.map(
+                      (foto, index) => (
+                        <li key={`${foto.name}-${index}`}>
+                          {foto.name}
+                        </li>
+                      )
+                    )}
+                  </ul>
+                )}
+
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={registrarAsistencia}
+                >
+                  Confirmar asistencia
+                </button>
+              </div>
+            )}
+
+            {eventoSeleccionado.estado ===
+              'en-curso' && (
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() =>
+                  culminarEvento(
+                    eventoSeleccionado.id
+                  )
+                }
+              >
+                Culminar evento
+              </button>
+            )}
+          </div>
+
+          <div className="evento-attendees-summary">
+            <div>
+              <strong>
+                {eventoSeleccionado.asistentes.length}
+              </strong>
+
+              <span>Asistentes registrados</span>
+            </div>
+
+            <div>
+              <strong>
+                {eventoSeleccionado.asistentes.reduce(
+                  (total, asistente) =>
+                    total + asistente.evidencias.length,
+                  0
+                )}
+              </strong>
+
+              <span>Fotos de evidencia</span>
+            </div>
+          </div>
+
+          {eventoSeleccionado.asistentes.length > 0 && (
+            <div className="evento-attendees-list">
+              <p className="section-label">
+                ASISTENTES
+              </p>
+
+              {eventoSeleccionado.asistentes.map(
+                (asistente) => (
+                  <div
+                    className="evento-attendee-row"
+                    key={asistente.usuarioId}
+                  >
+                    <span className="avatar-small">
+                      {asistente.nombre
+                        .charAt(0)
+                        .toUpperCase()}
+                    </span>
+
+                    <div>
+                      <strong>
+                        {asistente.nombre}
+                      </strong>
+
+                      <small>
+                        {asistente.evidencias.length}{' '}
+                        fotos de evidencia
+                      </small>
+                    </div>
+
+                    <span className="validated-badge">
+                      Validada
+                    </span>
+                  </div>
+                )
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    )}
   </section>
 ) : activeTab === 'vocerias' ? (
   <section className="vocerias-page">
