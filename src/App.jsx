@@ -65,84 +65,14 @@ const parroquiasCaracasInfo = [
   { nombre: 'Sucre', estadoColor: 'naranja', registrados: 680, actividades: 42, emprendimientos: 65, eventos: 12, tareas: 10 },
 ];
 
-const quickAccessItems = [
-  {
-    id: "feed",
-    label: "Feed nacional",
-    description: "Noticias y actividad nacional",
-    icon: "▣",
-  },
-  {
-    id: "territory",
-    label: "Mi territorio",
-    description: "Información territorial",
-    icon: "⌂",
-  },
-  {
-    id: "vocerias",
-    label: "Vocerías",
-    description: "Gestión de vocerías",
-    icon: "◎",
-  },
-  {
-    id: "mesas",
-    label: "Mesas de trabajo",
-    description: "Organización y seguimiento",
-    icon: "☷",
-  },
-  {
-    id: "eventos",
-    label: "Eventos",
-    description: "Agenda de actividades",
-    icon: "◷",
-  },
-  {
-    id: "reportes",
-    label: "Reportes",
-    description: "Informes y resultados",
-    icon: "▤",
-  },
-];
-
-const economicIndicators = [
-  {
-    id: "bcv",
-    label: "Dólar BCV",
-    symbol: "$",
-    value: null,
-    change: null,
-    series: [],
-  },
-  {
-    id: "euro",
-    label: "Euro",
-    symbol: "€",
-    value: null,
-    change: null,
-    series: [],
-  },
-  {
-    id: "usdt",
-    label: "USDT",
-    symbol: "₮",
-    value: null,
-    change: null,
-    series: [],
-  },
-];
-
 const quickActions = [
   { icon: '▣', label: 'Feed nacional', tab: 'feed' },
   { icon: '⌂', label: 'Mi territorio', tab: 'territorio' },
   { icon: '◎', label: 'Vocerías', tab: 'vocerias' },
   { icon: '☷', label: 'Mesas de trabajo', tab: 'mesas' },
   { icon: '◷', label: 'Eventos', tab: 'eventos' },
-  { icon: '▤', label: 'Reportes', tab: 'reportes' },
-  {
-    icon: '₿',
-    label: 'Emprendimientos',
-    tab: 'emprendimientos',
-  },
+  { icon: '✓', label: 'Tareas', tab: 'tareas' },
+  { icon: '₿', label: 'Emprendimientos', tab: 'emprendimientos' },
 ];
 
 const recentActivity = [
@@ -174,8 +104,7 @@ const feedPosts = [
     id: 1,
     type: 'Convocatoria',
     title: 'Reunión de coordinación territorial',
-    description:
-      'Espacio de encuentro para revisar las actividades de organización y los próximos compromisos del territorio.',
+    description: 'Espacio de encuentro para revisar las actividades de organización y los próximos compromisos del territorio.',
     territory: 'Caracas · Consejo Popular Estadal',
     author: 'Coordinación territorial',
     time: 'Hace 25 min',
@@ -185,509 +114,35 @@ const feedPosts = [
     id: 2,
     type: 'Actividad',
     title: 'Jornada de organización comunitaria',
-    description:
-      'Actividad de articulación con vocerías comunitarias para identificar necesidades y construir una agenda de trabajo.',
+    description: 'Actividad de articulación con vocerías comunitarias para identificar necesidades y construir una agenda de trabajo.',
     territory: 'Miranda · Consejo Popular Municipal',
     author: 'Vocerías comunitarias',
     time: 'Hace 1 h',
     color: 'green',
-  },
-  {
-    id: 3,
-    type: 'Reporte',
-    title: 'Actualización de mesa de trabajo',
-    description:
-      'Se actualizó el estado de los compromisos registrados durante la última reunión de seguimiento.',
-    territory: 'Zulia · Consejo Popular Parroquial',
-    author: 'Mesa de organización',
-    time: 'Ayer',
-    color: 'orange',
   },
 ];
 
 const voceriasData = [
   {
     id: 'voceria-1',
-    estado: 'Estado 1',
-    nombre: 'Vocería estadal 1',
-    mesa: 'Mesa de trabajo 1',
+    estado: 'Caracas',
+    nombre: 'Vocería Estadal de Organización',
+    mesa: 'Mesa de Articulación Comunitaria',
     area: 'Organización territorial',
-    descripcion:
-      'Espacio de representación y seguimiento de las necesidades del estado.',
-    responsable: 'Por asignar',
+    descripcion: 'Espacio de representación y seguimiento de las necesidades del Distrito Capital.',
+    responsable: 'Coordinación Estadal',
     color: 'mint',
-  },
-  {
-    id: 'voceria-2',
-    estado: 'Estado 2',
-    nombre: 'Vocería estadal 2',
-    mesa: 'Mesa de trabajo 2',
-    area: 'Participación comunitaria',
-    descripcion:
-      'Articulación de propuestas, actividades y acuerdos con las comunidades.',
-    responsable: 'Por asignar',
-    color: 'blue',
-  },
-  {
-    id: 'voceria-3',
-    estado: 'Estado 3',
-    nombre: 'Vocería estadal 3',
-    mesa: 'Mesa de trabajo 3',
-    area: 'Producción y emprendimiento',
-    descripcion:
-      'Seguimiento a iniciativas productivas y oportunidades para el territorio.',
-    responsable: 'Por asignar',
-    color: 'orange',
-  },
-  {
-    id: 'voceria-4',
-    estado: 'Estado 4',
-    nombre: 'Vocería estadal 4',
-    mesa: 'Mesa de trabajo 4',
-    area: 'Formación y desarrollo',
-    descripcion:
-      'Impulso de actividades formativas, encuentros y procesos de capacitación.',
-    responsable: 'Por asignar',
-    color: 'purple',
-  },
-  {
-    id: 'voceria-5',
-    estado: 'Estado 5',
-    nombre: 'Vocería estadal 5',
-    mesa: 'Mesa de trabajo 5',
-    area: 'Atención territorial',
-    descripcion:
-      'Canal de enlace para reportar necesidades y coordinar respuestas.',
-    responsable: 'Por asignar',
-    color: 'green',
   },
 ];
 
 const parroquiasCaracas = parroquiasCaracasInfo.map((p) => p.nombre);
 
 const municipiosPorEstado = {
-  Amazonas: [
-    'Alto Orinoco',
-    'Atabapo',
-    'Atures',
-    'Autana',
-    'Maroa',
-    'Manapiare',
-    'Río Negro',
-  ],
-
-  Anzoátegui: [
-    'Anaco',
-    'Aragua',
-    'Diego Bautista Urbaneja',
-    'Fernando de Peñalver',
-    'Francisco de Miranda',
-    'Guanta',
-    'Independencia',
-    'Juan Antonio Sotillo',
-    'Libertad',
-    'McGregor',
-    'Pedro María Freites',
-    'Píritu',
-    'Simón Bolívar',
-    'Simón Rodríguez',
-  ],
-
-  Apure: [
-    'Achaguas',
-    'Biruaca',
-    'Muñoz',
-    'Páez',
-    'Pedro Camejo',
-    'Rómulo Gallegos',
-    'San Fernando',
-  ],
-
-  Aragua: [
-    'Bolívar',
-    'Camatagua',
-    'Francisco Linares Alcántara',
-    'Girardot',
-    'José Ángel Lamas',
-    'José Félix Ribas',
-    'Libertador',
-    'Mario Briceño Iragorry',
-    'Ocumare de la Costa de Oro',
-    'San Casimiro',
-    'San Sebastián',
-    'Santiago Mariño',
-    'Santos Michelena',
-    'Sucre',
-    'Tovar',
-    'Urdaneta',
-    'Zamora',
-  ],
-
-  Barinas: [
-    'Alberto Arvelo Torrealba',
-    'Andrés Eloy Blanco',
-    'Antonio José de Sucre',
-    'Arismendi',
-    'Barinas',
-    'Bolívar',
-    'Cruz Paredes',
-    'Ezequiel Zamora',
-    'Obispos',
-    'Pedraza',
-    'Rojas',
-    'Sosa',
-  ],
-
-  Carabobo: [
-    'Bejuma',
-    'Carlos Arvelo',
-    'Diego Ibarra',
-    'Guacara',
-    'Juan José Mora',
-    'Libertador',
-    'Los Guayos',
-    'Miranda',
-    'Montalbán',
-    'Naguanagua',
-    'Puerto Cabello',
-    'San Diego',
-    'San Joaquín',
-    'Valencia',
-  ],
-
-  'Distrito Capital': [
-    'Libertador',
-  ],
-
-  Falcón: [
-    'Acosta',
-    'Bolívar',
-    'Buchivacoa',
-    'Carirubana',
-    'Colina',
-    'Dabajuro',
-    'Democracia',
-    'Falcón',
-    'Federación',
-    'Jacura',
-    'Los Taques',
-    'Mauroa',
-    'Miranda',
-    'Monseñor Iturriza',
-    'Palmasola',
-    'Petit',
-    'Píritu',
-    'San Francisco',
-    'Sucre',
-    'Tocópero',
-    'Unión',
-    'Urumaco',
-    'Zamora',
-  ],
-
-  Lara: [
-    'Andrés Eloy Blanco',
-    'Crespo',
-    'Iribarren',
-    'Jiménez',
-    'Morán',
-    'Palavecino',
-    'Simón Planas',
-    'Torres',
-    'Urdaneta',
-  ],
-
-  Mérida: [
-    'Alberto Adriani',
-    'Andrés Bello',
-    'Antonio Pinto Salinas',
-    'Aricagua',
-    'Arzobispo Chacón',
-    'Campo Elías',
-    'Caracciolo Parra Olmedo',
-    'Cardenal Quintero',
-    'Guaraque',
-    'Julio César Salas',
-    'Justo Briceño',
-    'Libertador',
-    'Miranda',
-    'Obispo Ramos de Lora',
-    'Padre Noguera',
-    'Pueblo Llano',
-    'Rangel',
-    'Rivas Dávila',
-    'Santos Marquina',
-    'Sucre',
-    'Tovar',
-    'Tulio Febres Cordero',
-    'Zea',
-  ],
-
-  Miranda: [
-    'Acevedo',
-    'Andrés Bello',
-    'Baruta',
-    'Brión',
-    'Buroz',
-    'Carrizal',
-    'Chacao',
-    'Cristóbal Rojas',
-    'El Hatillo',
-    'Guaicaipuro',
-    'Independencia',
-    'Los Salias',
-    'Páez',
-    'Paz Castillo',
-    'Pedro Gual',
-    'Plaza',
-    'Simón Bolívar',
-    'Sucre',
-    'Urdaneta',
-    'Zamora',
-  ],
-
-  Monagas: [
-    'Acosta',
-    'Aguasay',
-    'Bolívar',
-    'Caripe',
-    'Cedeño',
-    'Ezequiel Zamora',
-    'Libertador',
-    'Maturín',
-    'Piar',
-    'Punceres',
-    'Santa Bárbara',
-    'Sotillo',
-    'Uracoa',
-  ],
-
-  Sucre: [
-    'Andrés Eloy Blanco',
-    'Andrés Mata',
-    'Arismendi',
-    'Benítez',
-    'Bermúdez',
-    'Bolívar',
-    'Cajigal',
-    'Cruz Salmerón Acosta',
-    'Libertador',
-    'Mariño',
-    'Mejía',
-    'Montes',
-    'Ribero',
-    'Sucre',
-    'Valdez',
-  ],
-
-  Táchira: [
-    'Andrés Bello',
-    'Antonio Rómulo Costa',
-    'Ayacucho',
-    'Bolívar',
-    'Cárdenas',
-    'Córdoba',
-    'Fernández Feo',
-    'Francisco de Miranda',
-    'García de Hevia',
-    'Guásimos',
-    'Independencia',
-    'Jáuregui',
-    'José María Vargas',
-    'Junín',
-    'Libertad',
-    'Libertador',
-    'Lobatera',
-    'Michelena',
-    'Panamericano',
-    'Pedro María Ureña',
-    'Rafael Urdaneta',
-    'Samuel Darío Maldonado',
-    'San Cristóbal',
-    'Seboruco',
-    'Simón Rodríguez',
-    'Sucre',
-    'Torbes',
-    'Uribante',
-  ],
-
-  Trujillo: [
-    'Andrés Bello',
-    'Boconó',
-    'Bolívar',
-    'Candelaria',
-    'Carache',
-    'Escuque',
-    'José Felipe Márquez Cañizales',
-    'Juan Vicente Campo Elías',
-    'La Ceiba',
-    'Miranda',
-    'Monte Carmelo',
-    'Motatán',
-    'Pampán',
-    'Pampanito',
-    'Rafael Rangel',
-    'San Rafael de Carvajal',
-    'Sucre',
-    'Trujillo',
-    'Urdaneta',
-    'Valera',
-  ],
-
-  Yaracuy: [
-    'Arístides Bastidas',
-    'Bolívar',
-    'Bruzual',
-    'Cocorote',
-    'Independencia',
-    'José Antonio Páez',
-    'La Trinidad',
-    'Manuel Monge',
-    'Nirgua',
-    'Peña',
-    'San Felipe',
-    'Sucre',
-    'Urachiche',
-    'Veroes',
-  ],
-
-  Zulia: [
-    'Almirante Padilla',
-    'Baralt',
-    'Cabimas',
-    'Catatumbo',
-    'Colón',
-    'Francisco Javier Pulgar',
-    'Jesús Enrique Lossada',
-    'Jesús María Semprún',
-    'La Cañada de Urdaneta',
-    'Lagunillas',
-    'Machiques de Perijá',
-    'Mara',
-    'Maracaibo',
-    'Miranda',
-    'Rosario de Perijá',
-    'San Francisco',
-    'Santa Rita',
-    'Simón Bolívar',
-    'Sucre',
-    'Valmore Rodríguez',
-  ],
+  'Distrito Capital': ['Libertador'],
+  Miranda: ['Acevedo', 'Baruta', 'Chacao', 'Guaicaipuro', 'Sucre'],
 };
 
 const parroquiasPorMunicipio = {
-  'Miranda|Acevedo': [
-    'Caucagua',
-    'Aragüita',
-    'Arévalo González',
-    'Capaya',
-    'El Café',
-    'Panaquire',
-    'Ribas',
-    'Tapipa',
-  ],
-
-  'Miranda|Andrés Bello': [
-    'Cumbo',
-    'San José de Barlovento',
-  ],
-
-  'Miranda|Baruta': [
-    'Baruta',
-    'El Cafetal',
-    'Las Minas de Baruta',
-  ],
-
-  'Miranda|Brión': [
-    'Curiepe',
-    'Higuerote',
-    'Tacarigua de Brión',
-  ],
-
-  'Miranda|Buroz': [
-    'Mamporal',
-  ],
-
-  'Miranda|Carrizal': [
-    'Carrizal',
-  ],
-
-  'Miranda|Chacao': [
-    'Chacao',
-  ],
-
-  'Miranda|Cristóbal Rojas': [
-    'Charallave',
-    'Las Brisas',
-  ],
-
-  'Miranda|El Hatillo': [
-    'El Hatillo',
-  ],
-
-  'Miranda|Guaicaipuro': [
-    'Altagracia de la Montaña',
-    'Cecilio Acosta',
-    'El Jarillo',
-    'Los Teques',
-    'Paracotos',
-    'San Pedro',
-    'Tácata',
-  ],
-
-  'Miranda|Independencia': [
-    'Cartanal',
-    'Santa Teresa del Tuy',
-  ],
-
-  'Miranda|Los Salias': [
-    'San Antonio de los Altos',
-  ],
-
-  'Miranda|Páez': [
-    'El Guapo',
-    'Paparo',
-    'Río Chico',
-    'San Fernando del Guapo',
-    'Tacarigua de la Laguna',
-  ],
-
-  'Miranda|Paz Castillo': [
-    'Santa Lucía',
-  ],
-
-  'Miranda|Pedro Gual': [
-    'Cúpira',
-    'Machurucuto',
-  ],
-
-  'Miranda|Plaza': [
-    'Guarenas',
-  ],
-
-  'Miranda|Simón Bolívar': [
-    'San Antonio de Yare',
-    'San Francisco de Yare',
-  ],
-
-  'Miranda|Sucre': [
-    'Caucagüita',
-    'Filas de Mariche',
-    'La Dolorita',
-    'Leoncio Martínez',
-    'Petare',
-  ],
-
-  'Miranda|Urdaneta': [
-    'Cúa',
-    'Nueva Cúa',
-  ],
-
-   'Miranda|Zamora': [
-    'Araira',
-    'Guatire',
-  ],
-
   'Distrito Capital|Libertador': parroquiasCaracas,
 };
 
@@ -697,7 +152,8 @@ const eventosEjemplo = [
     titulo: 'Asamblea Popular Estadal',
     nivel: 'estadal',
     estado: 'en-curso',
-    parroquia: 'Todas las parroquias de Caracas',
+    parroquia: 'Caricuao',
+    comision: 'accion-socioterritorial',
     estadoTerritorial: 'Distrito Capital',
     municipio: 'Libertador',
     fecha: obtenerFechaActualLocal(),
@@ -711,20 +167,67 @@ const eventosEjemplo = [
   },
   {
     id: 'evento-ejemplo-2',
-    titulo: 'Jornada Comunal de Caricuao',
+    titulo: 'Feria de Emprendimiento Comunal',
     nivel: 'parroquial',
     estado: 'convocado',
     parroquia: 'Caricuao',
+    comision: 'produccion-economia',
     estadoTerritorial: 'Distrito Capital',
     municipio: 'Libertador',
     fecha: obtenerFechaActualLocal(),
     horaInicio: '14:00',
     horaFin: '17:00',
     lugar: 'Bulevar de Caricuao',
-    descripcion: 'Jornada de organización comunitaria y recepción de propuestas.',
-    creadoPor: 'Mesa de Trabajo Caricuao',
+    descripcion: 'Jornada de exhibición productiva e impulso a la economía comunal.',
+    creadoPor: 'Red de Producción Caricuao',
     creadoEn: new Date().toISOString(),
     asistentes: [],
+  },
+];
+
+const emprendimientosEjemplo = [
+  {
+    id: 'emp-1',
+    nombre: 'Textiles Comunitarios Caricuao',
+    categoria: 'Textil y Calzado',
+    parroquia: 'Caricuao',
+    comision: 'produccion-economia',
+    responsable: 'María Rodríguez',
+    contacto: '0412-1112233',
+    descripcion: 'Unidad de producción familiar dedicada a la confección de prendas y uniformes escolares.',
+  },
+  {
+    id: 'emp-2',
+    nombre: 'Panadería Artesanal El Valle',
+    categoria: 'Alimentos y Bebidas',
+    parroquia: 'El Valle',
+    comision: 'produccion-economia',
+    responsable: 'Carlos Gómez',
+    contacto: '0414-3334455',
+    descripcion: 'Producción de pan artesanal y repostería comunitaria para abastecer la localidad.',
+  },
+];
+
+const tareasEjemplo = [
+  {
+    id: 'tarea-1',
+    titulo: 'Censo de productores locales en Caricuao',
+    parroquia: 'Caricuao',
+    comision: 'produccion-economia',
+    estado: 'En Proceso',
+    prioridad: 'Alta',
+    responsable: 'Brigada Productiva',
+    fechaLimite: obtenerFechaActualLocal(),
+  },
+  {
+    id: 'tarea-2',
+    titulo: 'Jornada de saneamiento y caracterización comunitaria',
+    parroquia: '23 de Enero',
+    comision: 'accion-socioterritorial',
+    estado: 'Pendiente',
+    prioridad: 'Media',
+    responsable: 'Vocería de Hábitat',
+    fechaLimite: obtenerFechaActualLocal(),
   },
 ];
 
@@ -737,50 +240,25 @@ function obtenerFechaActualLocal() {
 }
 
 function calcularEdad(fechaNacimiento) {
-  if (!fechaNacimiento) {
-    return '';
-  }
-
+  if (!fechaNacimiento) return '';
   const partesFecha = fechaNacimiento.split('-').map(Number);
-  if (partesFecha.length !== 3) {
-    return '';
-  }
-
+  if (partesFecha.length !== 3) return '';
   const [añoNacimiento, mesNacimiento, diaNacimiento] = partesFecha;
-  if (!añoNacimiento || !mesNacimiento || !diaNacimiento) {
-    return '';
-  }
-
+  if (!añoNacimiento || !mesNacimiento || !diaNacimiento) return '';
   const hoy = new Date();
   let edad = hoy.getFullYear() - añoNacimiento;
-
   const todavíaNoCumpleAños =
     hoy.getMonth() + 1 < mesNacimiento ||
-    (hoy.getMonth() + 1 === mesNacimiento &&
-      hoy.getDate() < diaNacimiento);
-
-  if (todavíaNoCumpleAños) {
-    edad--;
-  }
-
-  if (edad < 0) {
-    return '';
-  }
-
-  return edad;
+    (hoy.getMonth() + 1 === mesNacimiento && hoy.getDate() < diaNacimiento);
+  if (todavíaNoCumpleAños) edad--;
+  return edad < 0 ? '' : edad;
 }
 
-function crearIdEvento() {
-  if (
-    typeof crypto !== 'undefined' &&
-    typeof crypto.randomUUID === 'function'
-  ) {
-    return crypto.randomUUID();
+function crearIdUnico(prefijo) {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `${prefijo}-${crypto.randomUUID()}`;
   }
-
-  return `evento-${Date.now()}-${Math.random()
-    .toString(36)
-    .slice(2, 9)}`;
+  return `${prefijo}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
 function obtenerEtiquetaEstadoEvento(estado) {
@@ -791,7 +269,6 @@ function obtenerEtiquetaEstadoEvento(estado) {
     culminado: 'Culminado',
     cancelado: 'Cancelado',
   };
-
   return etiquetas[estado] || estado;
 }
 
@@ -803,7 +280,6 @@ function obtenerColorEstadoEvento(estado) {
     culminado: 'green',
     cancelado: 'red',
   };
-
   return colores[estado] || 'blue';
 }
 
@@ -811,13 +287,11 @@ function obtenerValorQR(evento) {
   if (typeof window === 'undefined') {
     return `centinela://asistencia/${evento.id}`;
   }
-
   return `${window.location.origin}${window.location.pathname}#asistencia=${evento.id}`;
 }
 
 function App() {
   const [showAllQuickActions, setShowAllQuickActions] = useState(false);
-
   const [pinnedQuickActionTabs, setPinnedQuickActionTabs] = useState(() => {
     try {
       const savedPinnedActions = localStorage.getItem('pinnedQuickActionTabs');
@@ -826,20 +300,13 @@ function App() {
         const validActions = parsedActions.filter((tab) =>
           quickActions.some((action) => action.tab === tab)
         );
-
-        if (validActions.length === 3) {
-          return validActions;
-        }
+        if (validActions.length === 3) return validActions;
       }
-    } catch {
-      // Si no existe una configuración válida, se usan los primeros tres.
-    }
-
+    } catch {}
     return quickActions.slice(0, 3).map((action) => action.tab);
   });
 
   const [registroCompletado, setRegistroCompletado] = useState(false);
-
   const [formularioInicial, setFormularioInicial] = useState({
     cedula: '',
     nombresApellidos: '',
@@ -859,32 +326,32 @@ function App() {
   const [selectedVoceria, setSelectedVoceria] = useState(null);
   const [territoryType, setTerritoryType] = useState('estadal');
   const [parroquiaSeleccionada, setParroquiaSeleccionada] = useState('Caricuao');
+  const [comisionSeleccionada, setComisionSeleccionada] = useState('todas');
   const [selectedPost, setSelectedPost] = useState(null);
   const [activeFilter, setActiveFilter] = useState('Todo');
 
+  // Eventos state
   const [eventos, setEventos] = useState(() => {
     try {
-      const eventosGuardados = localStorage.getItem('eventosCentinela');
-      if (eventosGuardados) {
-        const parsed = JSON.parse(eventosGuardados);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
+      const guardados = localStorage.getItem('eventosCentinela');
+      if (guardados) {
+        const parsed = JSON.parse(guardados);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-    } catch {
-      // Fallback
-    }
+    } catch {}
     return eventosEjemplo;
   });
 
   const [mostrarFormularioEvento, setMostrarFormularioEvento] = useState(false);
   const [eventoSeleccionadoId, setEventoSeleccionadoId] = useState(null);
   const [fotosEvidencia, setFotosEvidencia] = useState([]);
+  const [eventosFiltroEstado, setEventosFiltroEstado] = useState('activos');
 
   const [formularioEvento, setFormularioEvento] = useState({
     titulo: '',
     nivel: 'parroquial',
-    parroquia: '',
+    parroquia: 'Caricuao',
+    comision: 'accion-socioterritorial',
     fecha: '',
     horaInicio: '',
     horaFin: '',
@@ -892,11 +359,52 @@ function App() {
     descripcion: '',
   });
 
+  // Emprendimientos State
+  const [emprendimientos, setEmprendimientos] = useState(() => {
+    try {
+      const guardados = localStorage.getItem('emprendimientosCentinela');
+      if (guardados) {
+        const parsed = JSON.parse(guardados);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return emprendimientosEjemplo;
+  });
+  const [mostrarFormEmprendimiento, setMostrarFormEmprendimiento] = useState(false);
+  const [formEmprendimiento, setFormEmprendimiento] = useState({
+    nombre: '',
+    categoria: 'Textil y Calzado',
+    parroquia: 'Caricuao',
+    comision: 'produccion-economia',
+    responsable: '',
+    contacto: '',
+    descripcion: '',
+  });
+
+  // Tareas State
+  const [tareas, setTareas] = useState(() => {
+    try {
+      const guardados = localStorage.getItem('tareasCentinela');
+      if (guardados) {
+        const parsed = JSON.parse(guardados);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return tareasEjemplo;
+  });
+  const [mostrarFormTarea, setMostrarFormTarea] = useState(false);
+  const [formTarea, setFormTarea] = useState({
+    titulo: '',
+    parroquia: 'Caricuao',
+    comision: 'accion-socioterritorial',
+    prioridad: 'Media',
+    responsable: '',
+    fechaLimite: obtenerFechaActualLocal(),
+  });
+
   useEffect(() => {
     const telegramWebApp = window.Telegram?.WebApp;
-    if (telegramWebApp) {
-      telegramWebApp.ready();
-    }
+    if (telegramWebApp) telegramWebApp.ready();
 
     const usuarioTelegram = telegramWebApp?.initDataUnsafe?.user;
     const datosGuardados = localStorage.getItem('perfilUsuario');
@@ -904,13 +412,8 @@ function App() {
     if (datosGuardados) {
       try {
         const datos = JSON.parse(datosGuardados);
-        setFormularioInicial((datosAnteriores) => ({
-          ...datosAnteriores,
-          ...datos,
-        }));
-        if (datos.parroquia) {
-          setParroquiaSeleccionada(datos.parroquia);
-        }
+        setFormularioInicial((prev) => ({ ...prev, ...datos }));
+        if (datos.parroquia) setParroquiaSeleccionada(datos.parroquia);
         setRegistroCompletado(true);
       } catch {
         localStorage.removeItem('perfilUsuario');
@@ -918,35 +421,31 @@ function App() {
     }
 
     if (usuarioTelegram) {
-      const nombresTelegram = [
-        usuarioTelegram.first_name,
-        usuarioTelegram.last_name,
-      ]
-        .filter(Boolean)
-        .join(' ');
-
-      const usuarioTelegramTexto = usuarioTelegram.username
-        ? `@${usuarioTelegram.username}`
-        : String(usuarioTelegram.id || '');
-
-      setFormularioInicial((datosAnteriores) => ({
-        ...datosAnteriores,
-        nombresApellidos: datosAnteriores.nombresApellidos || nombresTelegram,
-        usuarioTelegram: datosAnteriores.usuarioTelegram || usuarioTelegramTexto,
+      const nombresTelegram = [usuarioTelegram.first_name, usuarioTelegram.last_name].filter(Boolean).join(' ');
+      const usuarioTelegramTexto = usuarioTelegram.username ? `@${usuarioTelegram.username}` : String(usuarioTelegram.id || '');
+      setFormularioInicial((prev) => ({
+        ...prev,
+        nombresApellidos: prev.nombresApellidos || nombresTelegram,
+        usuarioTelegram: prev.usuarioTelegram || usuarioTelegramTexto,
       }));
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(
-      'pinnedQuickActionTabs',
-      JSON.stringify(pinnedQuickActionTabs)
-    );
+    localStorage.setItem('pinnedQuickActionTabs', JSON.stringify(pinnedQuickActionTabs));
   }, [pinnedQuickActionTabs]);
 
   useEffect(() => {
     localStorage.setItem('eventosCentinela', JSON.stringify(eventos));
   }, [eventos]);
+
+  useEffect(() => {
+    localStorage.setItem('emprendimientosCentinela', JSON.stringify(emprendimientos));
+  }, [emprendimientos]);
+
+  useEffect(() => {
+    localStorage.setItem('tareasCentinela', JSON.stringify(tareas));
+  }, [tareas]);
 
   useEffect(() => {
     const revisarHashYAsistencia = () => {
@@ -962,7 +461,6 @@ function App() {
         }
       }
     };
-
     revisarHashYAsistencia();
     window.addEventListener('hashchange', revisarHashYAsistencia);
     return () => window.removeEventListener('hashchange', revisarHashYAsistencia);
@@ -974,24 +472,19 @@ function App() {
 
   const pinQuickAction = (tab) => {
     setPinnedQuickActionTabs((currentTabs) => {
-      const alreadyPinned = currentTabs.includes(tab);
-      if (alreadyPinned) {
-        return currentTabs;
-      }
+      if (currentTabs.includes(tab)) return currentTabs;
       return [tab, ...currentTabs].slice(0, 3);
     });
   };
 
-  const infoParroquiaActual =
-    parroquiasCaracasInfo.find((p) => p.nombre === parroquiaSeleccionada) ||
-    parroquiasCaracasInfo[0];
+  const infoParroquiaActual = parroquiasCaracasInfo.find(
+    (p) => p.nombre === parroquiaSeleccionada
+  ) || parroquiasCaracasInfo[0];
 
-  const eventoSeleccionado = eventos.find(
-    (evento) => evento.id === eventoSeleccionadoId
-  );
+  const eventoSeleccionado = eventos.find((e) => e.id === eventoSeleccionadoId);
 
   const abrirEvento = (eventoId) => {
-    const eventoExiste = eventos.some((evento) => evento.id === eventoId);
+    const eventoExiste = eventos.some((e) => e.id === eventoId);
     if (!eventoExiste) {
       alert('No se encontró la información de este evento.');
       return;
@@ -999,29 +492,32 @@ function App() {
     setEventoSeleccionadoId(eventoId);
   };
 
-  const eventosCulminados = eventos.filter(
-    (evento) => evento.estado === 'culminado'
-  );
+  const eventosCulminados = eventos.filter((e) => e.estado === 'culminado');
 
-  const publicacionesDeEventos = eventosCulminados.map((evento) => ({
-    id: `evento-${evento.id}`,
-    eventId: evento.id,
-    type: 'Evento culminado',
-    title: evento.titulo,
-    description: evento.descripcion,
-    territory:
-      evento.nivel === 'estadal'
-        ? 'Caracas · Evento estadal'
-        : `Caracas · ${evento.parroquia}`,
-    author: evento.creadoPor,
-    time: 'Evento culminado',
-    color: 'green',
-    asistentes: evento.asistentes.length,
-    evidencias: evento.asistentes.reduce(
-      (total, asistente) => total + asistente.evidencias.length,
-      0
-    ),
-  }));
+  const publicacionesDeEventos = eventosCulminados.map((evento) => {
+    const fotosGaleria = [];
+    evento.asistentes.forEach((asistente) => {
+      if (Array.isArray(asistente.evidencias)) {
+        asistente.evidencias.forEach((ev) => {
+          if (ev.dataUrl) fotosGaleria.push(ev.dataUrl);
+        });
+      }
+    });
+
+    return {
+      id: `evento-${evento.id}`,
+      eventId: evento.id,
+      type: 'Evento culminado',
+      title: evento.titulo,
+      description: evento.descripcion,
+      territory: `Caracas · ${evento.parroquia}`,
+      author: evento.creadoPor,
+      time: 'Evento culminado',
+      color: 'green',
+      asistentes: evento.asistentes.length,
+      evidencias: fotosGaleria,
+    };
+  });
 
   const publicacionesFeed = [...publicacionesDeEventos, ...feedPosts];
 
@@ -1040,35 +536,25 @@ function App() {
     setActiveTab(tab);
   };
 
+  // Eventos Handlers
   const actualizarFormularioEvento = (event) => {
     const { name, value } = event.target;
-    setFormularioEvento((datosAnteriores) => ({
-      ...datosAnteriores,
+    setFormularioEvento((prev) => ({
+      ...prev,
       [name]: value,
-      ...(name === 'nivel' && value === 'estadal' ? { parroquia: '' } : {}),
     }));
   };
 
   const crearEvento = (event) => {
     event.preventDefault();
 
-    if (
-      formularioEvento.nivel === 'parroquial' &&
-      !formularioEvento.parroquia
-    ) {
-      alert('Selecciona la parroquia del evento.');
-      return;
-    }
-
     const nuevoEvento = {
-      id: crearIdEvento(),
+      id: crearIdUnico('evento'),
       titulo: formularioEvento.titulo.trim(),
       nivel: formularioEvento.nivel,
       estado: 'convocado',
-      parroquia:
-        formularioEvento.nivel === 'parroquial'
-          ? formularioEvento.parroquia
-          : 'Todas las parroquias de Caracas',
+      parroquia: formularioEvento.parroquia || parroquiaSeleccionada,
+      comision: formularioEvento.comision,
       estadoTerritorial: 'Distrito Capital',
       municipio: 'Libertador',
       fecha: formularioEvento.fecha,
@@ -1079,87 +565,80 @@ function App() {
       creadoPor:
         formularioInicial.nombresApellidos ||
         formularioInicial.usuarioTelegram ||
-        'Coordinación estadal',
+        'Consejo Popular Parroquial',
       creadoEn: new Date().toISOString(),
       asistentes: [],
     };
 
-    setEventos((eventosAnteriores) => [nuevoEvento, ...eventosAnteriores]);
-
+    setEventos((prev) => [nuevoEvento, ...prev]);
     setFormularioEvento({
       titulo: '',
       nivel: 'parroquial',
-      parroquia: '',
+      parroquia: parroquiaSeleccionada,
+      comision: 'accion-socioterritorial',
       fecha: '',
       horaInicio: '',
       horaFin: '',
       lugar: '',
       descripcion: '',
     });
-
     setMostrarFormularioEvento(false);
     setEventoSeleccionadoId(nuevoEvento.id);
   };
 
   const actualizarEstadoEvento = (eventoId, nuevoEstado) => {
-    setEventos((eventosAnteriores) =>
-      eventosAnteriores.map((evento) =>
-        evento.id === eventoId
-          ? {
-              ...evento,
-              estado: nuevoEstado,
-            }
-          : evento
-      )
+    setEventos((prev) =>
+      prev.map((e) => (e.id === eventoId ? { ...e, estado: nuevoEstado } : e))
     );
   };
 
-  const iniciarEvento = (eventoId) => {
-    actualizarEstadoEvento(eventoId, 'en-curso');
-  };
+  const iniciarEvento = (eventoId) => actualizarEstadoEvento(eventoId, 'en-curso');
 
   const culminarEvento = (eventoId) => {
-    const evento = eventos.find((eventoActual) => eventoActual.id === eventoId);
-    if (!evento) {
-      return;
-    }
-
+    const evento = eventos.find((e) => e.id === eventoId);
+    if (!evento) return;
     if (evento.asistentes.length === 0) {
-      alert(
-        'El evento necesita al menos una asistencia registrada antes de culminar.'
-      );
+      alert('El evento necesita al menos una asistencia registrada antes de culminar.');
       return;
     }
-
-    const asistenciaIncompleta = evento.asistentes.some(
-      (asistente) => asistente.evidencias.length < 3
-    );
-
+    const asistenciaIncompleta = evento.asistentes.some((a) => a.evidencias.length < 3);
     if (asistenciaIncompleta) {
       alert('Todas las asistencias deben tener mínimo 3 fotos de evidencia.');
       return;
     }
-
     actualizarEstadoEvento(eventoId, 'culminado');
   };
 
   const seleccionarFotosEvidencia = (event) => {
     const archivos = Array.from(event.target.files || []);
-    setFotosEvidencia(archivos);
+    if (archivos.length === 0) {
+      setFotosEvidencia([]);
+      return;
+    }
+    const promesasLectura = archivos.map((archivo) => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          resolve({
+            nombre: archivo.name,
+            tipo: archivo.type,
+            tamaño: archivo.size,
+            dataUrl: e.target.result,
+          });
+        };
+        reader.readAsDataURL(archivo);
+      });
+    });
+
+    Promise.all(promesasLectura).then((data) => setFotosEvidencia(data));
   };
 
   const registrarAsistencia = () => {
-    if (!eventoSeleccionado) {
-      return;
-    }
-
+    if (!eventoSeleccionado) return;
     if (eventoSeleccionado.estado !== 'en-curso') {
-      alert(
-        'La asistencia solo se puede registrar mientras el evento esté en curso.'
-      );
+      alert('La asistencia solo se puede registrar mientras el evento esté en curso.');
       return;
     }
-
     if (fotosEvidencia.length < 3) {
       alert('Debes seleccionar mínimo 3 fotografías de evidencia.');
       return;
@@ -1171,570 +650,232 @@ function App() {
       formularioInicial.nombresApellidos ||
       'usuario-invitado';
 
-    const asistenciaExistente = eventoSeleccionado.asistentes.some(
-      (asistente) => asistente.usuarioId === identificadorUsuario
-    );
-
-    if (asistenciaExistente) {
+    if (eventoSeleccionado.asistentes.some((a) => a.usuarioId === identificadorUsuario)) {
       alert('Ya tienes una asistencia registrada en este evento.');
       return;
     }
 
     const nuevaAsistencia = {
       usuarioId: identificadorUsuario,
-      nombre:
-        formularioInicial.nombresApellidos || 'Usuario registrado',
+      nombre: formularioInicial.nombresApellidos || 'Usuario registrado',
       parroquia: formularioInicial.parroquia || 'No especificada',
       registradoEn: new Date().toISOString(),
-      evidencias: fotosEvidencia.map((foto) => ({
-        nombre: foto.name,
-        tipo: foto.type,
-        tamaño: foto.size,
-      })),
+      evidencias: fotosEvidencia,
     };
 
-    setEventos((eventosAnteriores) =>
-      eventosAnteriores.map((evento) =>
-        evento.id === eventoSeleccionado.id
-          ? {
-              ...evento,
-              asistentes: [...evento.asistentes, nuevaAsistencia],
-            }
-          : evento
+    setEventos((prev) =>
+      prev.map((e) =>
+        e.id === eventoSeleccionado.id
+          ? { ...e, asistentes: [...e.asistentes, nuevaAsistencia] }
+          : e
       )
     );
-
     setFotosEvidencia([]);
     alert('Asistencia registrada correctamente con 3 fotos de evidencia.');
   };
 
+  // Emprendimientos Handlers
+  const crearEmprendimiento = (e) => {
+    e.preventDefault();
+    const nuevoEmp = {
+      id: crearIdUnico('emp'),
+      nombre: formEmprendimiento.nombre.trim(),
+      categoria: formEmprendimiento.categoria,
+      parroquia: formEmprendimiento.parroquia || parroquiaSeleccionada,
+      comision: formEmprendimiento.comision,
+      responsable: formEmprendimiento.responsable.trim() || formularioInicial.nombresApellidos || 'Emprendedor Local',
+      contacto: formEmprendimiento.contacto.trim(),
+      descripcion: formEmprendimiento.descripcion.trim(),
+    };
+
+    setEmprendimientos((prev) => [nuevoEmp, ...prev]);
+    setFormEmprendimiento({
+      nombre: '',
+      categoria: 'Textil y Calzado',
+      parroquia: parroquiaSeleccionada,
+      comision: 'produccion-economia',
+      responsable: '',
+      contacto: '',
+      descripcion: '',
+    });
+    setMostrarFormEmprendimiento(false);
+    alert('Emprendimiento registrado exitosamente.');
+  };
+
+  // Tareas Handlers
+  const crearTarea = (e) => {
+    e.preventDefault();
+    const nuevaTarea = {
+      id: crearIdUnico('tarea'),
+      titulo: formTarea.titulo.trim(),
+      parroquia: formTarea.parroquia || parroquiaSeleccionada,
+      comision: formTarea.comision,
+      estado: 'Pendiente',
+      prioridad: formTarea.prioridad,
+      responsable: formTarea.responsable.trim() || formularioInicial.nombresApellidos || 'Vocería Asignada',
+      fechaLimite: formTarea.fechaLimite,
+    };
+
+    setTareas((prev) => [nuevaTarea, ...prev]);
+    setFormTarea({
+      titulo: '',
+      parroquia: parroquiaSeleccionada,
+      comision: 'accion-socioterritorial',
+      prioridad: 'Media',
+      responsable: '',
+      fechaLimite: obtenerFechaActualLocal(),
+    });
+    setMostrarFormTarea(false);
+    alert('Tarea comunitaria asignada correctamente.');
+  };
+
+  const cambiarEstadoTarea = (id, nuevoEstado) => {
+    setTareas((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, estado: nuevoEstado } : t))
+    );
+  };
+
   const actualizarFormulario = (event) => {
     const { name, value } = event.target;
-
-    setFormularioInicial((datosAnteriores) => {
-      const datosActualizados = {
-        ...datosAnteriores,
-        [name]: value,
-      };
-
+    setFormularioInicial((prev) => {
+      const updated = { ...prev, [name]: value };
       if (name === 'estado') {
-        datosActualizados.municipio = '';
-        datosActualizados.parroquia = '';
-        datosActualizados.comuna = '';
+        updated.municipio = '';
+        updated.parroquia = '';
+        updated.comuna = '';
       }
-
       if (name === 'municipio') {
-        datosActualizados.parroquia = '';
-        datosActualizados.comuna = '';
+        updated.parroquia = '';
+        updated.comuna = '';
       }
-
-      if (name === 'parroquia') {
-        datosActualizados.comuna = '';
-      }
-
-      return datosActualizados;
+      return updated;
     });
   };
 
-  const claveMunicipio = `${formularioInicial.estado}|${formularioInicial.municipio}`;
-  const parroquiasDisponibles = parroquiasPorMunicipio[claveMunicipio] || [];
-
   const guardarRegistroInicial = (event) => {
     event.preventDefault();
-
     const edadCalculada = calcularEdad(formularioInicial.fechaNacimiento);
-
     if (!formularioInicial.fechaNacimiento || edadCalculada === '') {
-      alert('Selecciona una fecha de nacimiento válida. La fecha no puede ser futura.');
+      alert('Selecciona una fecha de nacimiento válida.');
       return;
     }
-
     localStorage.setItem('perfilUsuario', JSON.stringify(formularioInicial));
-    if (formularioInicial.parroquia) {
-      setParroquiaSeleccionada(formularioInicial.parroquia);
-    }
+    if (formularioInicial.parroquia) setParroquiaSeleccionada(formularioInicial.parroquia);
     setRegistroCompletado(true);
   };
 
   if (!registroCompletado) {
     return (
-      <div
-        style={{
-          minHeight: '100vh',
-          padding: '24px',
-          background: '#f4f7fb',
-          boxSizing: 'border-box',
-        }}
-      >
-        <div
-          style={{
-            maxWidth: '620px',
-            margin: '0 auto',
-            padding: '24px',
-            background: '#ffffff',
-            borderRadius: '18px',
-            boxShadow: '0 4px 18px rgba(0, 0, 0, 0.08)',
-          }}
-        >
+      <div style={{ minHeight: '100vh', padding: '24px', background: '#f4f7fb', boxSizing: 'border-box' }}>
+        <div style={{ maxWidth: '620px', margin: '0 auto', padding: '24px', background: '#ffffff', borderRadius: '18px', boxShadow: '0 4px 18px rgba(0, 0, 0, 0.08)' }}>
           <h1 style={{ marginTop: 0 }}>Completa tu registro</h1>
           <p style={{ color: '#5f6b7a', lineHeight: 1.5 }}>
-            Antes de entrar a la aplicación necesitamos algunos datos.
+            Antes de entrar a Centinela 2.0 necesitamos tus datos territoriales.
           </p>
-
           <form onSubmit={guardarRegistroInicial}>
             <label style={{ display: 'block', marginBottom: '14px' }}>
               <span>Cédula</span>
-              <input
-                name="cedula"
-                type="text"
-                value={formularioInicial.cedula}
-                onChange={actualizarFormulario}
-                required
-                placeholder="Escribe tu cédula"
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  marginTop: '6px',
-                  padding: '12px',
-                  boxSizing: 'border-box',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '10px',
-                }}
-              />
+              <input name="cedula" value={formularioInicial.cedula} onChange={actualizarFormulario} required placeholder="Ej. V-12345678" style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px' }} />
             </label>
 
             <label style={{ display: 'block', marginBottom: '14px' }}>
               <span>Nombres y apellidos</span>
-              <input
-                name="nombresApellidos"
-                type="text"
-                value={formularioInicial.nombresApellidos}
-                onChange={actualizarFormulario}
-                required
-                placeholder="Escribe tus nombres y apellidos"
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  marginTop: '6px',
-                  padding: '12px',
-                  boxSizing: 'border-box',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '10px',
-                }}
-              />
+              <input name="nombresApellidos" value={formularioInicial.nombresApellidos} onChange={actualizarFormulario} required placeholder="Escribe tus nombres y apellidos" style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px' }} />
             </label>
 
             <label style={{ display: 'block', marginBottom: '14px' }}>
               <span>Género</span>
-              <select
-                name="genero"
-                value={formularioInicial.genero}
-                onChange={actualizarFormulario}
-                required
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  marginTop: '6px',
-                  padding: '12px',
-                  boxSizing: 'border-box',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '10px',
-                  background: '#ffffff',
-                }}
-              >
+              <select name="genero" value={formularioInicial.genero} onChange={actualizarFormulario} required style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px', background: '#ffffff' }}>
                 <option value="">Selecciona una opción</option>
                 <option value="Femenino">Femenino</option>
                 <option value="Masculino">Masculino</option>
               </select>
             </label>
 
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1.4fr 0.8fr',
-                gap: '12px',
-                marginBottom: '14px',
-              }}
-            >
+            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.8fr', gap: '12px', marginBottom: '14px' }}>
               <div>
-                <label
-                  htmlFor="fechaNacimiento"
-                  style={{
-                    display: 'block',
-                    marginBottom: '6px',
-                    color: '#263449',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                  }}
-                >
-                  Fecha de nacimiento
-                </label>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    minHeight: '50px',
-                    boxSizing: 'border-box',
-                    border: '1px solid #dbe4ef',
-                    borderRadius: '14px',
-                    background: '#f8fafc',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <span
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: '32px',
-                      height: '32px',
-                      marginLeft: '8px',
-                      borderRadius: '9px',
-                      background: '#e8f0ff',
-                      color: '#2563eb',
-                      fontSize: '17px',
-                    }}
-                  >
-                    ◷
-                  </span>
-
-                  <input
-                    id="fechaNacimiento"
-                    name="fechaNacimiento"
-                    type="date"
-                    value={formularioInicial.fechaNacimiento}
-                    onChange={actualizarFormulario}
-                    max={obtenerFechaActualLocal()}
-                    required
-                    style={{
-                      width: '100%',
-                      minWidth: 0,
-                      padding: '14px 6px',
-                      border: 0,
-                      outline: 'none',
-                      background: 'transparent',
-                      color: '#263449',
-                      fontFamily: 'inherit',
-                      fontSize: '13px',
-                    }}
-                  />
-                </div>
+                <label htmlFor="fechaNacimiento" style={{ display: 'block', marginBottom: '6px', color: '#263449', fontSize: '14px', fontWeight: '600' }}>Fecha de nacimiento</label>
+                <input id="fechaNacimiento" name="fechaNacimiento" type="date" value={formularioInicial.fechaNacimiento} onChange={actualizarFormulario} max={obtenerFechaActualLocal()} required style={{ width: '100%', padding: '12px', border: '1px solid #cbd5e1', borderRadius: '10px' }} />
               </div>
-
               <div>
-                <span
-                  style={{
-                    display: 'block',
-                    marginBottom: '6px',
-                    color: '#263449',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                  }}
-                >
-                  Edad
-                </span>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    minHeight: '50px',
-                    boxSizing: 'border-box',
-                    border: '1px solid #d8eee6',
-                    borderRadius: '14px',
-                    background: '#f1f7f5',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <span
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: '32px',
-                      height: '32px',
-                      marginLeft: '8px',
-                      borderRadius: '9px',
-                      background: '#e8f7f1',
-                      color: '#159570',
-                      fontSize: '16px',
-                    }}
-                  >
-                    ✦
-                  </span>
-
-                  <span
-                    style={{
-                      padding: '14px 8px',
-                      color: '#475569',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {formularioInicial.fechaNacimiento
-                      ? `${calcularEdad(
-                          formularioInicial.fechaNacimiento
-                        )} años`
-                      : '—'}
-                  </span>
+                <span style={{ display: 'block', marginBottom: '6px', color: '#263449', fontSize: '14px', fontWeight: '600' }}>Edad</span>
+                <div style={{ padding: '12px', background: '#f1f7f5', border: '1px solid #d8eee6', borderRadius: '10px', fontWeight: '500' }}>
+                  {formularioInicial.fechaNacimiento ? `${calcularEdad(formularioInicial.fechaNacimiento)} años` : '—'}
                 </div>
               </div>
             </div>
 
             <label style={{ display: 'block', marginBottom: '14px' }}>
               <span>Estado</span>
-              <select
-                name="estado"
-                value={formularioInicial.estado}
-                onChange={actualizarFormulario}
-                required
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  marginTop: '6px',
-                  padding: '12px',
-                  boxSizing: 'border-box',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '10px',
-                  background: '#ffffff',
-                }}
-              >
-                <option value="">Selecciona tu estado</option>
-                <option value="Amazonas">Amazonas</option>
-                <option value="Anzoátegui">Anzoátegui</option>
-                <option value="Apure">Apure</option>
-                <option value="Aragua">Aragua</option>
-                <option value="Barinas">Barinas</option>
-                <option value="Bolívar">Bolívar</option>
-                <option value="Carabobo">Carabobo</option>
-                <option value="Cojedes">Cojedes</option>
-                <option value="Delta Amacuro">Delta Amacuro</option>
+              <select name="estado" value={formularioInicial.estado} onChange={actualizarFormulario} required style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px', background: '#ffffff' }}>
+                <option value="">Selecciona estado</option>
                 <option value="Distrito Capital">Distrito Capital</option>
-                <option value="Falcón">Falcón</option>
-                <option value="Guárico">Guárico</option>
-                <option value="La Guaira">La Guaira</option>
-                <option value="Lara">Lara</option>
-                <option value="Mérida">Mérida</option>
                 <option value="Miranda">Miranda</option>
-                <option value="Monagas">Monagas</option>
-                <option value="Nueva Esparta">Nueva Esparta</option>
-                <option value="Portuguesa">Portuguesa</option>
-                <option value="Sucre">Sucre</option>
-                <option value="Táchira">Táchira</option>
-                <option value="Trujillo">Trujillo</option>
-                <option value="Yaracuy">Yaracuy</option>
-                <option value="Zulia">Zulia</option>
               </select>
             </label>
 
             <label style={{ display: 'block', marginBottom: '14px' }}>
               <span>Municipio</span>
-              <select
-                name="municipio"
-                value={formularioInicial.municipio}
-                onChange={actualizarFormulario}
-                required
-                disabled={!formularioInicial.estado}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  marginTop: '6px',
-                  padding: '12px',
-                  boxSizing: 'border-box',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '10px',
-                  background: '#ffffff',
-                }}
-              >
-                <option value="">
-                  {formularioInicial.estado
-                    ? 'Selecciona tu municipio'
-                    : 'Primero selecciona un estado'}
-                </option>
-                {(municipiosPorEstado[formularioInicial.estado] || []).map(
-                  (municipio) => (
-                    <option key={municipio} value={municipio}>
-                      {municipio}
-                    </option>
-                  )
-                )}
+              <select name="municipio" value={formularioInicial.municipio} onChange={actualizarFormulario} required disabled={!formularioInicial.estado} style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px', background: '#ffffff' }}>
+                <option value="">Selecciona municipio</option>
+                {(municipiosPorEstado[formularioInicial.estado] || []).map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
               </select>
             </label>
 
             <label style={{ display: 'block', marginBottom: '14px' }}>
-              <span>Parroquia</span>
-              <select
-                name="parroquia"
-                value={formularioInicial.parroquia}
-                onChange={actualizarFormulario}
-                required={parroquiasDisponibles.length > 0}
-                disabled={!formularioInicial.municipio}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  marginTop: '6px',
-                  padding: '12px',
-                  boxSizing: 'border-box',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '10px',
-                  background: '#ffffff',
-                }}
-              >
-                <option value="">
-                  {!formularioInicial.municipio
-                    ? 'Primero selecciona un municipio'
-                    : parroquiasDisponibles.length > 0
-                      ? 'Selecciona tu parroquia'
-                      : 'No hay parroquias cargadas para este municipio'}
-                </option>
-                {parroquiasDisponibles.map((parroquia) => (
-                  <option key={parroquia} value={parroquia}>
-                    {parroquia}
-                  </option>
+              <span>Parroquia (Consejo Popular Parroquial)</span>
+              <select name="parroquia" value={formularioInicial.parroquia} onChange={actualizarFormulario} required disabled={!formularioInicial.municipio} style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px', background: '#ffffff' }}>
+                <option value="">Selecciona parroquia</option>
+                {parroquiasCaracas.map((p) => (
+                  <option key={p} value={p}>{p}</option>
                 ))}
               </select>
-              {formularioInicial.municipio &&
-                parroquiasDisponibles.length === 0 && (
-                  <small
-                    style={{
-                      display: 'block',
-                      marginTop: '6px',
-                      color: '#b45309',
-                    }}
-                  >
-                    Este municipio todavía no tiene su catálogo de parroquias agregado.
-                  </small>
-                )}
             </label>
 
             <label style={{ display: 'block', marginBottom: '14px' }}>
               <span>Comuna</span>
-              <input
-                name="comuna"
-                type="text"
-                value={formularioInicial.comuna}
-                onChange={actualizarFormulario}
-                required
-                placeholder="Escribe tu comuna"
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  marginTop: '6px',
-                  padding: '12px',
-                  boxSizing: 'border-box',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '10px',
-                }}
-              />
+              <input name="comuna" value={formularioInicial.comuna} onChange={actualizarFormulario} required placeholder="Nombre de tu comuna" style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px' }} />
             </label>
 
             <label style={{ display: 'block', marginBottom: '14px' }}>
               <span>Concejo comunal</span>
-              <input
-                name="concejoComunal"
-                type="text"
-                value={formularioInicial.concejoComunal}
-                onChange={actualizarFormulario}
-                required
-                placeholder="Escribe el concejo comunal"
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  marginTop: '6px',
-                  padding: '12px',
-                  boxSizing: 'border-box',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '10px',
-                }}
-              />
+              <input name="concejoComunal" value={formularioInicial.concejoComunal} onChange={actualizarFormulario} required placeholder="Nombre de tu concejo comunal" style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px' }} />
             </label>
 
             <label style={{ display: 'block', marginBottom: '14px' }}>
               <span>Teléfono</span>
-              <input
-                name="telefono"
-                type="tel"
-                value={formularioInicial.telefono}
-                onChange={actualizarFormulario}
-                required
-                placeholder="Escribe tu teléfono"
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  marginTop: '6px',
-                  padding: '12px',
-                  boxSizing: 'border-box',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '10px',
-                }}
-              />
+              <input name="telefono" type="tel" value={formularioInicial.telefono} onChange={actualizarFormulario} required placeholder="Teléfono de contacto" style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px' }} />
             </label>
 
-            <label style={{ display: 'block', marginBottom: '14px' }}>
-              <span>Correo</span>
-              <input
-                name="correo"
-                type="email"
-                value={formularioInicial.correo}
-                onChange={actualizarFormulario}
-                required
-                placeholder="Escribe tu correo"
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  marginTop: '6px',
-                  padding: '12px',
-                  boxSizing: 'border-box',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '10px',
-                }}
-              />
-            </label>
-
-            <label style={{ display: 'block', marginBottom: '18px' }}>
-              <span>Usuario de Telegram</span>
-              <input
-                name="usuarioTelegram"
-                type="text"
-                value={formularioInicial.usuarioTelegram}
-                readOnly
-                placeholder="Se completará automáticamente en Telegram"
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  marginTop: '6px',
-                  padding: '12px',
-                  boxSizing: 'border-box',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '10px',
-                  background: '#eef2f7',
-                }}
-              />
-            </label>
-
-            <button
-              type="submit"
-              style={{
-                width: '100%',
-                padding: '14px',
-                border: 0,
-                borderRadius: '10px',
-                background: '#2563eb',
-                color: '#ffffff',
-                fontSize: '16px',
-                fontWeight: '600',
-                cursor: 'pointer',
-              }}
-            >
-              Guardar y continuar
+            <button type="submit" style={{ width: '100%', padding: '14px', border: 0, borderRadius: '10px', background: '#2563eb', color: '#ffffff', fontSize: '16px', fontWeight: '600', cursor: 'pointer' }}>
+              Ingresar a mi Consejo Popular
             </button>
           </form>
         </div>
       </div>
     );
   }
+
+  const eventosMostrados = eventos.filter((e) => {
+    const coincideParroquia = e.parroquia === parroquiaSeleccionada || e.nivel === 'estadal';
+    const coincideComision = comisionSeleccionada === 'todas' || e.comision === comisionSeleccionada;
+    if (!coincideParroquia || !coincideComision) return false;
+    return eventosFiltroEstado === 'historico' ? e.estado === 'culminado' : e.estado !== 'culminado';
+  });
+
+  const emprendimientosFiltrados = emprendimientos.filter((e) => {
+    const coincideParroquia = !parroquiaSeleccionada || e.parroquia === parroquiaSeleccionada;
+    const coincideComision = comisionSeleccionada === 'todas' || e.comision === comisionSeleccionada;
+    return coincideParroquia && coincideComision;
+  });
+
+  const tareasFiltradas = tareas.filter((t) => {
+    const coincideParroquia = !parroquiaSeleccionada || t.parroquia === parroquiaSeleccionada;
+    const coincideComision = comisionSeleccionada === 'todas' || t.comision === comisionSeleccionada;
+    return coincideParroquia && coincideComision;
+  });
 
   return (
     <div className="app-shell">
@@ -2239,6 +1380,14 @@ function App() {
                     {post.description}
                   </p>
 
+                  {Array.isArray(post.evidencias) && post.evidencias.length > 0 && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '8px', margin: '12px 0' }}>
+                      {post.evidencias.map((foto, idx) => (
+                        <img key={idx} src={foto} alt={`Evidencia ${idx + 1}`} style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                      ))}
+                    </div>
+                  )}
+
                   <div className="feed-territory">
                     <span>⌖</span>
                     <span>{post.territory}</span>
@@ -2323,14 +1472,13 @@ function App() {
             <div className="page-heading">
               <div>
                 <p className="section-label">
-                  ORGANIZACIÓN TERRITORIAL
+                  CONSEJO POPULAR PARROQUIAL: {parroquiaSeleccionada.toUpperCase()}
                 </p>
 
-                <h2>Eventos de Caracas</h2>
+                <h2>Eventos y Actividades</h2>
 
                 <p className="page-description">
-                  Administra eventos estadales y parroquiales,
-                  registra asistencias y reúne evidencias.
+                  Administra eventos por parroquia y comisión, registra asistencias con QR y fotos.
                 </p>
               </div>
 
@@ -2340,6 +1488,16 @@ function App() {
               >
                 Inicio
               </button>
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '12px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '4px' }}>FILTRAR POR COMISIÓN:</label>
+              <select value={comisionSeleccionada} onChange={(e) => setComisionSeleccionada(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff' }}>
+                <option value="todas">Todas las comisiones</option>
+                {comisionesDefinicion.map((c) => (
+                  <option key={c.id} value={c.id}>{c.nombre}</option>
+                ))}
+              </select>
             </div>
 
             <div className="eventos-summary">
@@ -2355,25 +1513,36 @@ function App() {
 
               <div className="summary-item">
                 <strong>22</strong>
-                <span>Parroquias disponibles</span>
+                <span>Parroquias</span>
               </div>
             </div>
 
-            <button
-              type="button"
-              className="primary-button evento-create-button"
-              onClick={() =>
-                setMostrarFormularioEvento(
-                  (valorActual) => !valorActual
-                )
-              }
-            >
-              {mostrarFormularioEvento
-                ? 'Cerrar formulario'
-                : '+ Crear evento'}
-            </button>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', background: '#e2e8f0', padding: '4px', borderRadius: '12px' }}>
+              <button type="button" style={{ flex: 1, padding: '10px', border: 0, borderRadius: '8px', background: eventosFiltroEstado === 'activos' ? '#ffffff' : 'transparent', fontWeight: eventosFiltroEstado === 'activos' ? '600' : 'normal', color: eventosFiltroEstado === 'activos' ? '#1e293b' : '#64748b', cursor: 'pointer' }} onClick={() => setEventosFiltroEstado('activos')}>
+                Próximos / En Curso
+              </button>
+              <button type="button" style={{ flex: 1, padding: '10px', border: 0, borderRadius: '8px', background: eventosFiltroEstado === 'historico' ? '#ffffff' : 'transparent', fontWeight: eventosFiltroEstado === 'historico' ? '600' : 'normal', color: eventosFiltroEstado === 'historico' ? '#1e293b' : '#64748b', cursor: 'pointer' }} onClick={() => setEventosFiltroEstado('historico')}>
+                Histórico Culminados ({eventosCulminados.length})
+              </button>
+            </div>
 
-            {mostrarFormularioEvento && (
+            {eventosFiltroEstado === 'activos' && (
+              <button
+                type="button"
+                className="primary-button evento-create-button"
+                onClick={() =>
+                  setMostrarFormularioEvento(
+                    (valorActual) => !valorActual
+                  )
+                }
+              >
+                {mostrarFormularioEvento
+                  ? 'Cerrar formulario'
+                  : `+ Crear evento para ${parroquiaSeleccionada}`}
+              </button>
+            )}
+
+            {mostrarFormularioEvento && eventosFiltroEstado === 'activos' && (
               <form
                 className="evento-form-card"
                 onSubmit={crearEvento}
@@ -2384,7 +1553,7 @@ function App() {
                       NUEVA ACTIVIDAD
                     </p>
 
-                    <h3>Crear evento</h3>
+                    <h3>Crear evento en {parroquiaSeleccionada}</h3>
                   </div>
                 </div>
 
@@ -2401,49 +1570,13 @@ function App() {
                 </label>
 
                 <label className="evento-form-field">
-                  <span>Nivel del evento</span>
-
-                  <select
-                    name="nivel"
-                    value={formularioEvento.nivel}
-                    onChange={actualizarFormularioEvento}
-                    required
-                  >
-                    <option value="estadal">
-                      Evento estadal
-                    </option>
-
-                    <option value="parroquial">
-                      Evento parroquial
-                    </option>
+                  <span>Comisión organizadora</span>
+                  <select name="comision" value={formularioEvento.comision} onChange={actualizarFormularioEvento} required>
+                    {comisionesDefinicion.map((c) => (
+                      <option key={c.id} value={c.id}>{c.nombre}</option>
+                    ))}
                   </select>
                 </label>
-
-                {formularioEvento.nivel === 'parroquial' && (
-                  <label className="evento-form-field">
-                    <span>Parroquia</span>
-
-                    <select
-                      name="parroquia"
-                      value={formularioEvento.parroquia}
-                      onChange={actualizarFormularioEvento}
-                      required
-                    >
-                      <option value="">
-                        Selecciona una parroquia
-                      </option>
-
-                      {parroquiasCaracas.map((parroquia) => (
-                        <option
-                          key={parroquia}
-                          value={parroquia}
-                        >
-                          {parroquia}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
 
                 <div className="evento-form-grid">
                   <label className="evento-form-field">
@@ -2518,19 +1651,18 @@ function App() {
             )}
 
             <div className="eventos-list">
-              {eventos.length === 0 ? (
+              {eventosMostrados.length === 0 ? (
                 <div className="empty-page evento-empty-state">
                   <span className="empty-icon">◷</span>
 
-                  <h3>Aún no hay eventos registrados</h3>
+                  <h3>{eventosFiltroEstado === 'historico' ? 'No hay eventos en el histórico' : `No hay eventos próximos en ${parroquiaSeleccionada}`}</h3>
 
                   <p>
-                    Crea el primer evento estadal o parroquial
-                    para generar su QR de asistencia.
+                    Crea una actividad para esta parroquia o selecciona otra en Mi Territorio.
                   </p>
                 </div>
               ) : (
-                eventos.map((evento) => (
+                eventosMostrados.map((evento) => (
                   <article
                     className="evento-card"
                     key={evento.id}
@@ -2545,9 +1677,7 @@ function App() {
                       ></span>
 
                       <span className="evento-level">
-                        {evento.nivel === 'estadal'
-                          ? 'ESTADAL'
-                          : 'PARROQUIAL'}
+                        {evento.parroquia}
                       </span>
 
                       <span className="evento-status">
@@ -2560,7 +1690,7 @@ function App() {
                     <h3>{evento.titulo}</h3>
 
                     <p className="evento-location">
-                      ⌖ {evento.parroquia}
+                      ⌖ {evento.lugar}
                     </p>
 
                     <p className="evento-date">
@@ -2603,10 +1733,7 @@ function App() {
                   <div className="detail-panel-header">
                     <div>
                       <p className="section-label">
-                        {eventoSeleccionado.nivel ===
-                        'estadal'
-                          ? 'EVENTO ESTADAL'
-                          : 'EVENTO PARROQUIAL'}
+                        {eventoSeleccionado.parroquia.toUpperCase()}
                       </p>
 
                       <h3>{eventoSeleccionado.titulo}</h3>
@@ -2721,15 +1848,11 @@ function App() {
                         </span>
 
                         {fotosEvidencia.length > 0 && (
-                          <ul className="photo-name-list">
-                            {fotosEvidencia.map(
-                              (foto, index) => (
-                                <li key={`${foto.name}-${index}`}>
-                                  {foto.name}
-                                </li>
-                              )
-                            )}
-                          </ul>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', margin: '8px 0' }}>
+                            {fotosEvidencia.map((ev, index) => (
+                              <img key={index} src={ev.dataUrl} alt={ev.nombre} style={{ width: '100%', height: '60px', objectFit: 'cover', borderRadius: '6px' }} />
+                            ))}
+                          </div>
                         )}
 
                         <button
@@ -2820,6 +1943,133 @@ function App() {
                 </div>
               </div>
             )}
+          </section>
+        ) : activeTab === 'tareas' ? (
+          <section className="tareas-page">
+            <div className="page-heading">
+              <div>
+                <p className="section-label">GESTIÓN OPERATIVA: {parroquiaSeleccionada.toUpperCase()}</p>
+                <h2>Tareas y Compromisos</h2>
+                <p className="page-description">Seguimiento de tareas comunitarias asignadas a las comisiones.</p>
+              </div>
+              <button className="back-button" onClick={() => setActiveTab('inicio')}>Inicio</button>
+            </div>
+
+            <button
+              type="button"
+              className="primary-button"
+              style={{ marginBottom: '16px' }}
+              onClick={() => setMostrarFormTarea((prev) => !prev)}
+            >
+              {mostrarFormTarea ? 'Cerrar formulario' : '+ Asignar nueva tarea'}
+            </button>
+
+            {mostrarFormTarea && (
+              <form className="evento-form-card" onSubmit={crearTarea}>
+                <div className="section-title-row">
+                  <div>
+                    <p className="section-label">NUEVA TAREA</p>
+                    <h3>Registrar tarea para {parroquiaSeleccionada}</h3>
+                  </div>
+                </div>
+
+                <label className="evento-form-field">
+                  <span>Título de la tarea</span>
+                  <input
+                    value={formTarea.titulo}
+                    onChange={(e) => setFormTarea((prev) => ({ ...prev, titulo: e.target.value }))}
+                    placeholder="Ej. Censo de emprendimientos"
+                    required
+                  />
+                </label>
+
+                <label className="evento-form-field">
+                  <span>Comisión responsable</span>
+                  <select
+                    value={formTarea.comision}
+                    onChange={(e) => setFormTarea((prev) => ({ ...prev, comision: e.target.value }))}
+                    required
+                  >
+                    {comisionesDefinicion.map((c) => (
+                      <option key={c.id} value={c.id}>{c.nombre}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <div className="evento-form-grid">
+                  <label className="evento-form-field">
+                    <span>Prioridad</span>
+                    <select
+                      value={formTarea.prioridad}
+                      onChange={(e) => setFormTarea((prev) => ({ ...prev, prioridad: e.target.value }))}
+                    >
+                      <option value="Baja">Baja</option>
+                      <option value="Media">Media</option>
+                      <option value="Alta">Alta</option>
+                    </select>
+                  </label>
+
+                  <label className="evento-form-field">
+                    <span>Fecha límite</span>
+                    <input
+                      type="date"
+                      value={formTarea.fechaLimite}
+                      onChange={(e) => setFormTarea((prev) => ({ ...prev, fechaLimite: e.target.value }))}
+                      required
+                    />
+                  </label>
+                </div>
+
+                <label className="evento-form-field">
+                  <span>Responsable o Brigada</span>
+                  <input
+                    value={formTarea.responsable}
+                    onChange={(e) => setFormTarea((prev) => ({ ...prev, responsable: e.target.value }))}
+                    placeholder="Ej. Vocería de Producción"
+                    required
+                  />
+                </label>
+
+                <button type="submit" className="primary-button">Guardar tarea</button>
+              </form>
+            )}
+
+            <div className="eventos-list">
+              {tareasFiltradas.length === 0 ? (
+                <div className="empty-page evento-empty-state">
+                  <span className="empty-icon">✓</span>
+                  <h3>No hay tareas registradas en {parroquiaSeleccionada}</h3>
+                  <p>Asigna una tarea a la comunidad usando el botón superior.</p>
+                </div>
+              ) : (
+                tareasFiltradas.map((tarea) => (
+                  <article className="evento-card" key={tarea.id}>
+                    <div className="evento-card-top">
+                      <span className={`activity-dot ${tarea.estado === 'Cumplida' ? 'green' : tarea.estado === 'En Proceso' ? 'purple' : 'orange'}`}></span>
+                      <span className="evento-level">{tarea.parroquia}</span>
+                      <span className="evento-status">{tarea.estado}</span>
+                    </div>
+
+                    <h3>{tarea.titulo}</h3>
+                    <p className="evento-location">👤 Responsable: {tarea.responsable}</p>
+                    <p className="evento-date">◷ Límite: {tarea.fechaLimite} · Prioridad: {tarea.prioridad}</p>
+
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                      {tarea.estado !== 'En Proceso' && tarea.estado !== 'Cumplida' && (
+                        <button type="button" className="secondary-button" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={() => cambiarEstadoTarea(tarea.id, 'En Proceso')}>
+                          Marcar En Proceso
+                        </button>
+                      )}
+                      {tarea.estado !== 'Cumplida' && (
+                        <button type="button" className="primary-button" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={() => cambiarEstadoTarea(tarea.id, 'Cumplida')}>
+                          Marcar Cumplida ✓
+                        </button>
+                      )}
+                    </div>
+                  </article>
+                ))
+              )}
+            </div>
           </section>
         ) : activeTab === 'vocerias' ? (
           <section className="vocerias-page">
@@ -3060,11 +2310,10 @@ function App() {
           <section className="emprendimientos-page">
             <div className="page-heading">
               <div>
-                <p className="section-label">IMPULSO PRODUCTIVO</p>
-                <h2>Emprendimientos</h2>
+                <p className="section-label">RED DE PRODUCCIÓN Y ECONOMÍA: {parroquiaSeleccionada.toUpperCase()}</p>
+                <h2>Emprendimientos Locales</h2>
                 <p className="page-description">
-                  Espacio para visibilizar iniciativas, proyectos y oportunidades
-                  productivas del territorio.
+                  Iniciativas, proyectos productivos y comercios populares comunitarios.
                 </p>
               </div>
 
@@ -3076,53 +2325,101 @@ function App() {
               </button>
             </div>
 
-            <div className="emprendimientos-highlight">
-              <span className="emprendimiento-highlight-icon">✦</span>
+            <button
+              type="button"
+              className="primary-button"
+              style={{ marginBottom: '16px' }}
+              onClick={() => setMostrarFormEmprendimiento((prev) => !prev)}
+            >
+              {mostrarFormEmprendimiento ? 'Cerrar formulario' : '+ Registrar mi emprendimiento'}
+            </button>
 
-              <div>
-                <p className="section-label">NUEVO MÓDULO</p>
-                <h3>Impulsa tu iniciativa</h3>
-                <p>
-                  Registra, consulta y comparte información sobre emprendimientos
-                  vinculados con las comunidades y los territorios.
-                </p>
-              </div>
-            </div>
+            {mostrarFormEmprendimiento && (
+              <form className="evento-form-card" onSubmit={crearEmprendimiento}>
+                <div className="section-title-row">
+                  <div>
+                    <p className="section-label">NUEVA INICIATIVA</p>
+                    <h3>Registrar emprendimiento en {parroquiaSeleccionada}</h3>
+                  </div>
+                </div>
+
+                <label className="evento-form-field">
+                  <span>Nombre del emprendimiento</span>
+                  <input
+                    value={formEmprendimiento.nombre}
+                    onChange={(e) => setFormEmprendimiento((prev) => ({ ...prev, nombre: e.target.value }))}
+                    placeholder="Ej. Panadería Artesanal Caricuao"
+                    required
+                  />
+                </label>
+
+                <label className="evento-form-field">
+                  <span>Categoría</span>
+                  <select
+                    value={formEmprendimiento.categoria}
+                    onChange={(e) => setFormEmprendimiento((prev) => ({ ...prev, categoria: e.target.value }))}
+                  >
+                    <option value="Textil y Calzado">Textil y Calzado</option>
+                    <option value="Alimentos y Bebidas">Alimentos y Bebidas</option>
+                    <option value="Artesanía y Cultura">Artesanía y Cultura</option>
+                    <option value="Servicios Comunitarios">Servicios Comunitarios</option>
+                    <option value="Tecnología e Innovación">Tecnología e Innovación</option>
+                  </select>
+                </label>
+
+                <label className="evento-form-field">
+                  <span>Responsable</span>
+                  <input
+                    value={formEmprendimiento.responsable}
+                    onChange={(e) => setFormEmprendimiento((prev) => ({ ...prev, responsable: e.target.value }))}
+                    placeholder="Nombre del emprendedor"
+                    required
+                  />
+                </label>
+
+                <label className="evento-form-field">
+                  <span>Teléfono o contacto</span>
+                  <input
+                    value={formEmprendimiento.contacto}
+                    onChange={(e) => setFormEmprendimiento((prev) => ({ ...prev, contacto: e.target.value }))}
+                    placeholder="Ej. 0412-1234567"
+                    required
+                  />
+                </label>
+
+                <label className="evento-form-field">
+                  <span>Descripción del proyecto</span>
+                  <textarea
+                    value={formEmprendimiento.descripcion}
+                    onChange={(e) => setFormEmprendimiento((prev) => ({ ...prev, descripcion: e.target.value }))}
+                    placeholder="Describe los productos o servicios que ofreces"
+                    rows="3"
+                    required
+                  />
+                </label>
+
+                <button type="submit" className="primary-button">Guardar e integrar a la Red</button>
+              </form>
+            )}
 
             <div className="emprendimientos-cards">
-              <article className="emprendimiento-card">
-                <span>01</span>
-                <h3>Registrar iniciativa</h3>
-                <p>
-                  Agrega información básica de un emprendimiento o proyecto
-                  productivo.
-                </p>
-                <button className="secondary-button">
-                  Próximamente
-                </button>
-              </article>
-
-              <article className="emprendimiento-card">
-                <span>02</span>
-                <h3>Explorar proyectos</h3>
-                <p>
-                  Consulta las iniciativas organizadas por territorio y área.
-                </p>
-                <button className="secondary-button">
-                  Próximamente
-                </button>
-              </article>
-
-              <article className="emprendimiento-card">
-                <span>03</span>
-                <h3>Conectar oportunidades</h3>
-                <p>
-                  Encuentra espacios de colaboración, apoyo y crecimiento.
-                </p>
-                <button className="secondary-button">
-                  Próximamente
-                </button>
-              </article>
+              {emprendimientosFiltrados.length === 0 ? (
+                <div className="empty-page evento-empty-state">
+                  <span className="empty-icon">₿</span>
+                  <h3>No hay emprendimientos registrados en {parroquiaSeleccionada}</h3>
+                  <p>Sé el primero en registrar una iniciativa productiva en esta parroquia.</p>
+                </div>
+              ) : (
+                emprendimientosFiltrados.map((emp, index) => (
+                  <article className="emprendimiento-card" key={emp.id}>
+                    <span>{String(index + 1).padStart(2, '0')}</span>
+                    <h3>{emp.nombre}</h3>
+                    <p style={{ color: '#2563eb', fontWeight: '600', fontSize: '13px' }}>🏷 {emp.categoria} · {emp.parroquia}</p>
+                    <p>{emp.descripcion}</p>
+                    <p style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>👤 Responsable: {emp.responsable} · 📞 {emp.contacto}</p>
+                  </article>
+                ))
+              )}
             </div>
           </section>
         ) : activeTab !== 'inicio' ? (
