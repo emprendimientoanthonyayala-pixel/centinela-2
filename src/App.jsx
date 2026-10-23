@@ -72,6 +72,7 @@ const quickActions = [
   { icon: '☷', label: 'Mesas de trabajo', tab: 'mesas' },
   { icon: '◷', label: 'Eventos', tab: 'eventos' },
   { icon: '✓', label: 'Tareas', tab: 'tareas' },
+  { icon: '▤', label: 'Reportes', tab: 'reportes' },
   { icon: '₿', label: 'Emprendimientos', tab: 'emprendimientos' },
 ];
 
@@ -165,24 +166,6 @@ const eventosEjemplo = [
     creadoEn: new Date().toISOString(),
     asistentes: [],
   },
-  {
-    id: 'evento-ejemplo-2',
-    titulo: 'Feria de Emprendimiento Comunal',
-    nivel: 'parroquial',
-    estado: 'convocado',
-    parroquia: 'Caricuao',
-    comision: 'produccion-economia',
-    estadoTerritorial: 'Distrito Capital',
-    municipio: 'Libertador',
-    fecha: obtenerFechaActualLocal(),
-    horaInicio: '14:00',
-    horaFin: '17:00',
-    lugar: 'Bulevar de Caricuao',
-    descripcion: 'Jornada de exhibición productiva e impulso a la economía comunal.',
-    creadoPor: 'Red de Producción Caricuao',
-    creadoEn: new Date().toISOString(),
-    asistentes: [],
-  },
 ];
 
 const emprendimientosEjemplo = [
@@ -195,16 +178,6 @@ const emprendimientosEjemplo = [
     responsable: 'María Rodríguez',
     contacto: '0412-1112233',
     descripcion: 'Unidad de producción familiar dedicada a la confección de prendas y uniformes escolares.',
-  },
-  {
-    id: 'emp-2',
-    nombre: 'Panadería Artesanal El Valle',
-    categoria: 'Alimentos y Bebidas',
-    parroquia: 'El Valle',
-    comision: 'produccion-economia',
-    responsable: 'Carlos Gómez',
-    contacto: '0414-3334455',
-    descripcion: 'Producción de pan artesanal y repostería comunitaria para abastecer la localidad.',
   },
 ];
 
@@ -219,15 +192,28 @@ const tareasEjemplo = [
     responsable: 'Brigada Productiva',
     fechaLimite: obtenerFechaActualLocal(),
   },
+];
+
+const reportesEjemplo = [
   {
-    id: 'tarea-2',
-    titulo: 'Jornada de saneamiento y caracterización comunitaria',
-    parroquia: '23 de Enero',
+    id: 'rep-1',
+    servicio: 'Agua',
+    parroquia: 'Caricuao',
     comision: 'accion-socioterritorial',
-    estado: 'Pendiente',
-    prioridad: 'Media',
-    responsable: 'Vocería de Hábitat',
-    fechaLimite: obtenerFechaActualLocal(),
+    estadoServicio: 'Regular',
+    observacion: 'Ciclo de bombeo con variaciones. Se requiere mantenimiento preventivo en la estación.',
+    reportadoPor: 'Mesa Técnica de Agua',
+    fecha: obtenerFechaActualLocal(),
+  },
+  {
+    id: 'rep-2',
+    servicio: 'Electricidad',
+    parroquia: 'Caricuao',
+    comision: 'accion-socioterritorial',
+    estadoServicio: 'Óptimo',
+    observacion: 'Alumbrado público sustituido en avenidas principales.',
+    reportadoPor: 'Brigada de Servicios',
+    fecha: obtenerFechaActualLocal(),
   },
 ];
 
@@ -259,6 +245,12 @@ function crearIdUnico(prefijo) {
     return `${prefijo}-${crypto.randomUUID()}`;
   }
   return `${prefijo}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function vibrarHaptico() {
+  if (window.Telegram?.WebApp?.HapticFeedback) {
+    window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+  }
 }
 
 function obtenerEtiquetaEstadoEvento(estado) {
@@ -402,6 +394,27 @@ function App() {
     fechaLimite: obtenerFechaActualLocal(),
   });
 
+  // Reportes State
+  const [reportes, setReportes] = useState(() => {
+    try {
+      const guardados = localStorage.getItem('reportesCentinela');
+      if (guardados) {
+        const parsed = JSON.parse(guardados);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return reportesEjemplo;
+  });
+  const [mostrarFormReporte, setMostrarFormReporte] = useState(false);
+  const [formReporte, setFormReporte] = useState({
+    servicio: 'Agua',
+    parroquia: 'Caricuao',
+    comision: 'accion-socioterritorial',
+    estadoServicio: 'Regular',
+    observacion: '',
+    reportadoPor: '',
+  });
+
   useEffect(() => {
     const telegramWebApp = window.Telegram?.WebApp;
     if (telegramWebApp) telegramWebApp.ready();
@@ -448,6 +461,10 @@ function App() {
   }, [tareas]);
 
   useEffect(() => {
+    localStorage.setItem('reportesCentinela', JSON.stringify(reportes));
+  }, [reportes]);
+
+  useEffect(() => {
     const revisarHashYAsistencia = () => {
       const hash = window.location.hash;
       if (hash.includes('asistencia=')) {
@@ -471,6 +488,7 @@ function App() {
     .filter(Boolean);
 
   const pinQuickAction = (tab) => {
+    vibrarHaptico();
     setPinnedQuickActionTabs((currentTabs) => {
       if (currentTabs.includes(tab)) return currentTabs;
       return [tab, ...currentTabs].slice(0, 3);
@@ -484,6 +502,7 @@ function App() {
   const eventoSeleccionado = eventos.find((e) => e.id === eventoSeleccionadoId);
 
   const abrirEvento = (eventoId) => {
+    vibrarHaptico();
     const eventoExiste = eventos.some((e) => e.id === eventoId);
     if (!eventoExiste) {
       alert('No se encontró la información de este evento.');
@@ -533,6 +552,7 @@ function App() {
   };
 
   const handleAction = (tab) => {
+    vibrarHaptico();
     setActiveTab(tab);
   };
 
@@ -547,6 +567,7 @@ function App() {
 
   const crearEvento = (event) => {
     event.preventDefault();
+    vibrarHaptico();
 
     const nuevoEvento = {
       id: crearIdUnico('evento'),
@@ -587,6 +608,7 @@ function App() {
   };
 
   const actualizarEstadoEvento = (eventoId, nuevoEstado) => {
+    vibrarHaptico();
     setEventos((prev) =>
       prev.map((e) => (e.id === eventoId ? { ...e, estado: nuevoEstado } : e))
     );
@@ -663,6 +685,7 @@ function App() {
       evidencias: fotosEvidencia,
     };
 
+    vibrarHaptico();
     setEventos((prev) =>
       prev.map((e) =>
         e.id === eventoSeleccionado.id
@@ -677,6 +700,7 @@ function App() {
   // Emprendimientos Handlers
   const crearEmprendimiento = (e) => {
     e.preventDefault();
+    vibrarHaptico();
     const nuevoEmp = {
       id: crearIdUnico('emp'),
       nombre: formEmprendimiento.nombre.trim(),
@@ -705,6 +729,7 @@ function App() {
   // Tareas Handlers
   const crearTarea = (e) => {
     e.preventDefault();
+    vibrarHaptico();
     const nuevaTarea = {
       id: crearIdUnico('tarea'),
       titulo: formTarea.titulo.trim(),
@@ -730,9 +755,38 @@ function App() {
   };
 
   const cambiarEstadoTarea = (id, nuevoEstado) => {
+    vibrarHaptico();
     setTareas((prev) =>
       prev.map((t) => (t.id === id ? { ...t, estado: nuevoEstado } : t))
     );
+  };
+
+  // Reportes Handlers
+  const crearReporte = (e) => {
+    e.preventDefault();
+    vibrarHaptico();
+    const nuevoReporte = {
+      id: crearIdUnico('rep'),
+      servicio: formReporte.servicio,
+      parroquia: formReporte.parroquia || parroquiaSeleccionada,
+      comision: formReporte.comision,
+      estadoServicio: formReporte.estadoServicio,
+      observacion: formReporte.observacion.trim(),
+      reportadoPor: formReporte.reportadoPor.trim() || formularioInicial.nombresApellidos || 'Vocería Comunitario',
+      fecha: obtenerFechaActualLocal(),
+    };
+
+    setReportes((prev) => [nuevoReporte, ...prev]);
+    setFormReporte({
+      servicio: 'Agua',
+      parroquia: parroquiaSeleccionada,
+      comision: 'accion-socioterritorial',
+      estadoServicio: 'Regular',
+      observacion: '',
+      reportadoPor: '',
+    });
+    setMostrarFormReporte(false);
+    alert('Reporte de diagnóstico territorial registrado.');
   };
 
   const actualizarFormulario = (event) => {
@@ -877,6 +931,12 @@ function App() {
     return coincideParroquia && coincideComision;
   });
 
+  const reportesFiltrados = reportes.filter((r) => {
+    const coincideParroquia = !parroquiaSeleccionada || r.parroquia === parroquiaSeleccionada;
+    const coincideComision = comisionSeleccionada === 'todas' || r.comision === comisionSeleccionada;
+    return coincideParroquia && coincideComision;
+  });
+
   return (
     <div className="app-shell">
       <main className="app-content">
@@ -886,7 +946,7 @@ function App() {
             <h1>Centinela <span>2.0</span></h1>
           </div>
 
-          <button className="notification-button" aria-label="Notificaciones">
+          <button className="notification-button" aria-label="Notificaciones" onClick={() => vibrarHaptico()}>
             <span>♢</span>
             <i></i>
           </button>
@@ -955,6 +1015,7 @@ function App() {
                           : ''
                       }`}
                       onClick={(event) => {
+                        vibrarHaptico();
                         setTerritoryType('estadal');
                         event.currentTarget.closest('details').open = false;
                       }}
@@ -976,6 +1037,7 @@ function App() {
                           : ''
                       }`}
                       onClick={(event) => {
+                        vibrarHaptico();
                         setTerritoryType('municipal');
                         event.currentTarget.closest('details').open = false;
                       }}
@@ -997,6 +1059,7 @@ function App() {
                           : ''
                       }`}
                       onClick={(event) => {
+                        vibrarHaptico();
                         setTerritoryType('parroquial');
                         event.currentTarget.closest('details').open = false;
                       }}
@@ -1026,9 +1089,10 @@ function App() {
                 <button
                   type="button"
                   className="more-quick-actions-button"
-                  onClick={() =>
-                    setShowAllQuickActions((currentValue) => !currentValue)
-                  }
+                  onClick={() => {
+                    vibrarHaptico();
+                    setShowAllQuickActions((currentValue) => !currentValue);
+                  }}
                 >
                   {showAllQuickActions ? 'Cerrar' : 'Más'}
                 </button>
@@ -1166,7 +1230,7 @@ function App() {
                 <h3>Actividad reciente</h3>
                 <button
                   className="text-button"
-                  onClick={() => setActiveTab('feed')}
+                  onClick={() => handleAction('feed')}
                 >
                   Ver todo
                 </button>
@@ -1205,7 +1269,7 @@ function App() {
 
               <button
                 className="back-button"
-                onClick={() => setActiveTab('inicio')}
+                onClick={() => handleAction('inicio')}
               >
                 Inicio
               </button>
@@ -1238,7 +1302,10 @@ function App() {
                     <button
                       key={p.nombre}
                       type="button"
-                      onClick={() => setParroquiaSeleccionada(p.nombre)}
+                      onClick={() => {
+                        vibrarHaptico();
+                        setParroquiaSeleccionada(p.nombre);
+                      }}
                       style={{
                         padding: '10px 12px',
                         borderRadius: '10px',
@@ -1296,6 +1363,116 @@ function App() {
               </div>
             </section>
           </section>
+        ) : activeTab === 'reportes' ? (
+          <section className="reportes-page">
+            <div className="page-heading">
+              <div>
+                <p className="section-label">DIAGNÓSTICO SOCIOTERRITORIAL: {parroquiaSeleccionada.toUpperCase()}</p>
+                <h2>Reportes de Servicios Comunitarios</h2>
+                <p className="page-description">
+                  Estado y diagnóstico de Agua, Electricidad, Gas, Salud y Vialidad.
+                </p>
+              </div>
+
+              <button className="back-button" onClick={() => handleAction('inicio')}>Inicio</button>
+            </div>
+
+            <button
+              type="button"
+              className="primary-button"
+              style={{ marginBottom: '16px' }}
+              onClick={() => {
+                vibrarHaptico();
+                setMostrarFormReporte((prev) => !prev);
+              }}
+            >
+              {mostrarFormReporte ? 'Cerrar formulario' : '+ Nuevo reporte de servicio'}
+            </button>
+
+            {mostrarFormReporte && (
+              <form className="evento-form-card" onSubmit={crearReporte}>
+                <div className="section-title-row">
+                  <div>
+                    <p className="section-label">NUEVO DIAGNÓSTICO</p>
+                    <h3>Reporte para {parroquiaSeleccionada}</h3>
+                  </div>
+                </div>
+
+                <label className="evento-form-field">
+                  <span>Servicio comunitario</span>
+                  <select
+                    value={formReporte.servicio}
+                    onChange={(e) => setFormReporte((prev) => ({ ...prev, servicio: e.target.value }))}
+                  >
+                    <option value="Agua">Agua Potable</option>
+                    <option value="Electricidad">Electricidad / Alumbrado</option>
+                    <option value="Gas">Gas Comunal</option>
+                    <option value="Salud">Salud / Barrio Adentro</option>
+                    <option value="Vialidad">Vialidad y Transporte</option>
+                  </select>
+                </label>
+
+                <label className="evento-form-field">
+                  <span>Estado del servicio</span>
+                  <select
+                    value={formReporte.estadoServicio}
+                    onChange={(e) => setFormReporte((prev) => ({ ...prev, estadoServicio: e.target.value }))}
+                  >
+                    <option value="Óptimo">Óptimo (Funcionando bien)</option>
+                    <option value="Regular">Regular (Fallas intermitentes)</option>
+                    <option value="Crítico">Crítico (Sin servicio / Avería grave)</option>
+                  </select>
+                </label>
+
+                <label className="evento-form-field">
+                  <span>Observaciones y detalles</span>
+                  <textarea
+                    value={formReporte.observacion}
+                    onChange={(e) => setFormReporte((prev) => ({ ...prev, observacion: e.target.value }))}
+                    placeholder="Describe la situación actual del servicio"
+                    rows="3"
+                    required
+                  />
+                </label>
+
+                <label className="evento-form-field">
+                  <span>Reportado por / Vocería</span>
+                  <input
+                    value={formReporte.reportadoPor}
+                    onChange={(e) => setFormReporte((prev) => ({ ...prev, reportadoPor: e.target.value }))}
+                    placeholder="Ej. Mesa Técnica de Agua"
+                    required
+                  />
+                </label>
+
+                <button type="submit" className="primary-button">Guardar reporte</button>
+              </form>
+            )}
+
+            <div className="eventos-list">
+              {reportesFiltrados.length === 0 ? (
+                <div className="empty-page evento-empty-state">
+                  <span className="empty-icon">▤</span>
+                  <h3>No hay reportes cargados en {parroquiaSeleccionada}</h3>
+                  <p>Registra el primer diagnóstico de servicios comunitarios.</p>
+                </div>
+              ) : (
+                reportesFiltrados.map((rep) => (
+                  <article className="evento-card" key={rep.id}>
+                    <div className="evento-card-top">
+                      <span className={`activity-dot ${rep.estadoServicio === 'Óptimo' ? 'green' : rep.estadoServicio === 'Regular' ? 'orange' : 'red'}`}></span>
+                      <span className="evento-level">{rep.parroquia}</span>
+                      <span className="evento-status">{rep.estadoServicio}</span>
+                    </div>
+
+                    <h3>🛠 Servicio: {rep.servicio}</h3>
+                    <p className="feed-description">{rep.observacion}</p>
+                    <p className="evento-date">👤 Reportado por: {rep.reportadoPor} · ◷ {rep.fecha}</p>
+                  </article>
+                ))
+              )}
+            </div>
+          </section>
         ) : activeTab === 'feed' ? (
           <section className="feed-page">
             <div className="page-heading">
@@ -1309,7 +1486,7 @@ function App() {
 
               <button
                 className="back-button"
-                onClick={() => setActiveTab('inicio')}
+                onClick={() => handleAction('inicio')}
               >
                 Inicio
               </button>
@@ -1320,7 +1497,10 @@ function App() {
                 className={`filter-button ${
                   activeFilter === 'Todo' ? 'active-filter' : ''
                 }`}
-                onClick={() => setActiveFilter('Todo')}
+                onClick={() => {
+                  vibrarHaptico();
+                  setActiveFilter('Todo');
+                }}
               >
                 Todo
               </button>
@@ -1329,7 +1509,10 @@ function App() {
                 className={`filter-button ${
                   activeFilter === 'Evento culminado' ? 'active-filter' : ''
                 }`}
-                onClick={() => setActiveFilter('Evento culminado')}
+                onClick={() => {
+                  vibrarHaptico();
+                  setActiveFilter('Evento culminado');
+                }}
               >
                 Eventos culminados
               </button>
@@ -1338,7 +1521,10 @@ function App() {
                 className={`filter-button ${
                   activeFilter === 'Convocatoria' ? 'active-filter' : ''
                 }`}
-                onClick={() => setActiveFilter('Convocatoria')}
+                onClick={() => {
+                  vibrarHaptico();
+                  setActiveFilter('Convocatoria');
+                }}
               >
                 Convocatorias
               </button>
@@ -1347,7 +1533,10 @@ function App() {
                 className={`filter-button ${
                   activeFilter === 'Actividad' ? 'active-filter' : ''
                 }`}
-                onClick={() => setActiveFilter('Actividad')}
+                onClick={() => {
+                  vibrarHaptico();
+                  setActiveFilter('Actividad');
+                }}
               >
                 Actividades
               </button>
@@ -1356,7 +1545,10 @@ function App() {
                 className={`filter-button ${
                   activeFilter === 'Reporte' ? 'active-filter' : ''
                 }`}
-                onClick={() => setActiveFilter('Reporte')}
+                onClick={() => {
+                  vibrarHaptico();
+                  setActiveFilter('Reporte');
+                }}
               >
                 Reportes
               </button>
@@ -1401,6 +1593,7 @@ function App() {
                     <button
                       className="detail-button"
                       onClick={() => {
+                        vibrarHaptico();
                         if (post.eventId) {
                           setActiveTab('eventos');
                           abrirEvento(post.eventId);
@@ -1484,7 +1677,7 @@ function App() {
 
               <button
                 className="back-button"
-                onClick={() => setActiveTab('inicio')}
+                onClick={() => handleAction('inicio')}
               >
                 Inicio
               </button>
@@ -1518,10 +1711,10 @@ function App() {
             </div>
 
             <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', background: '#e2e8f0', padding: '4px', borderRadius: '12px' }}>
-              <button type="button" style={{ flex: 1, padding: '10px', border: 0, borderRadius: '8px', background: eventosFiltroEstado === 'activos' ? '#ffffff' : 'transparent', fontWeight: eventosFiltroEstado === 'activos' ? '600' : 'normal', color: eventosFiltroEstado === 'activos' ? '#1e293b' : '#64748b', cursor: 'pointer' }} onClick={() => setEventosFiltroEstado('activos')}>
+              <button type="button" style={{ flex: 1, padding: '10px', border: 0, borderRadius: '8px', background: eventosFiltroEstado === 'activos' ? '#ffffff' : 'transparent', fontWeight: eventosFiltroEstado === 'activos' ? '600' : 'normal', color: eventosFiltroEstado === 'activos' ? '#1e293b' : '#64748b', cursor: 'pointer' }} onClick={() => { vibrarHaptico(); setEventosFiltroEstado('activos'); }}>
                 Próximos / En Curso
               </button>
-              <button type="button" style={{ flex: 1, padding: '10px', border: 0, borderRadius: '8px', background: eventosFiltroEstado === 'historico' ? '#ffffff' : 'transparent', fontWeight: eventosFiltroEstado === 'historico' ? '600' : 'normal', color: eventosFiltroEstado === 'historico' ? '#1e293b' : '#64748b', cursor: 'pointer' }} onClick={() => setEventosFiltroEstado('historico')}>
+              <button type="button" style={{ flex: 1, padding: '10px', border: 0, borderRadius: '8px', background: eventosFiltroEstado === 'historico' ? '#ffffff' : 'transparent', fontWeight: eventosFiltroEstado === 'historico' ? '600' : 'normal', color: eventosFiltroEstado === 'historico' ? '#1e293b' : '#64748b', cursor: 'pointer' }} onClick={() => { vibrarHaptico(); setEventosFiltroEstado('historico'); }}>
                 Histórico Culminados ({eventosCulminados.length})
               </button>
             </div>
@@ -1530,11 +1723,12 @@ function App() {
               <button
                 type="button"
                 className="primary-button evento-create-button"
-                onClick={() =>
+                onClick={() => {
+                  vibrarHaptico();
                   setMostrarFormularioEvento(
                     (valorActual) => !valorActual
-                  )
-                }
+                  );
+                }}
               >
                 {mostrarFormularioEvento
                   ? 'Cerrar formulario'
@@ -1952,14 +2146,17 @@ function App() {
                 <h2>Tareas y Compromisos</h2>
                 <p className="page-description">Seguimiento de tareas comunitarias asignadas a las comisiones.</p>
               </div>
-              <button className="back-button" onClick={() => setActiveTab('inicio')}>Inicio</button>
+              <button className="back-button" onClick={() => handleAction('inicio')}>Inicio</button>
             </div>
 
             <button
               type="button"
               className="primary-button"
               style={{ marginBottom: '16px' }}
-              onClick={() => setMostrarFormTarea((prev) => !prev)}
+              onClick={() => {
+                vibrarHaptico();
+                setMostrarFormTarea((prev) => !prev);
+              }}
             >
               {mostrarFormTarea ? 'Cerrar formulario' : '+ Asignar nueva tarea'}
             </button>
@@ -2084,7 +2281,7 @@ function App() {
 
               <button
                 className="back-button"
-                onClick={() => setActiveTab('inicio')}
+                onClick={() => handleAction('inicio')}
               >
                 Inicio
               </button>
@@ -2142,7 +2339,10 @@ function App() {
 
                   <button
                     className="voceria-detail-button"
-                    onClick={() => setSelectedVoceria(voceria)}
+                    onClick={() => {
+                      vibrarHaptico();
+                      setSelectedVoceria(voceria);
+                    }}
                   >
                     Ver detalles
                     <span>→</span>
@@ -2222,7 +2422,7 @@ function App() {
 
               <button
                 className="back-button"
-                onClick={() => setActiveTab('inicio')}
+                onClick={() => handleAction('inicio')}
               >
                 Inicio
               </button>
@@ -2243,7 +2443,10 @@ function App() {
 
                   <button
                     className="mesa-open-button"
-                    onClick={() => setSelectedVoceria(voceria)}
+                    onClick={() => {
+                      vibrarHaptico();
+                      setSelectedVoceria(voceria);
+                    }}
                     aria-label={`Ver ${voceria.mesa}`}
                   >
                     →
@@ -2319,7 +2522,7 @@ function App() {
 
               <button
                 className="back-button"
-                onClick={() => setActiveTab('inicio')}
+                onClick={() => handleAction('inicio')}
               >
                 Inicio
               </button>
@@ -2329,7 +2532,10 @@ function App() {
               type="button"
               className="primary-button"
               style={{ marginBottom: '16px' }}
-              onClick={() => setMostrarFormEmprendimiento((prev) => !prev)}
+              onClick={() => {
+                vibrarHaptico();
+                setMostrarFormEmprendimiento((prev) => !prev);
+              }}
             >
               {mostrarFormEmprendimiento ? 'Cerrar formulario' : '+ Registrar mi emprendimiento'}
             </button>
@@ -2439,7 +2645,7 @@ function App() {
 
             <button
               className="primary-button"
-              onClick={() => setActiveTab('inicio')}
+              onClick={() => handleAction('inicio')}
             >
               Volver al inicio
             </button>
@@ -2452,31 +2658,31 @@ function App() {
           icon="⌂"
           label="Inicio"
           active={activeTab === 'inicio'}
-          onClick={() => setActiveTab('inicio')}
+          onClick={() => handleAction('inicio')}
         />
         <NavButton
           icon="▣"
           label="Feed"
           active={activeTab === 'feed'}
-          onClick={() => setActiveTab('feed')}
+          onClick={() => handleAction('feed')}
         />
         <NavButton
           icon="◎"
           label="Territorio"
           active={activeTab === 'territorio' || activeTab === 'territory'}
-          onClick={() => setActiveTab('territorio')}
+          onClick={() => handleAction('territorio')}
         />
         <NavButton
           icon="✓"
           label="Tareas"
           active={activeTab === 'tareas'}
-          onClick={() => setActiveTab('tareas')}
+          onClick={() => handleAction('tareas')}
         />
         <NavButton
           icon="☰"
           label="Menú"
           active={activeTab === 'menu'}
-          onClick={() => setActiveTab('menu')}
+          onClick={() => handleAction('menu')}
         />
       </nav>
     </div>
@@ -2503,7 +2709,7 @@ function getTabTitle(tab) {
     vocerias: 'Vocerías',
     mesas: 'Mesas de trabajo',
     eventos: 'Eventos',
-    reportes: 'Reportes',
+    reportes: 'Reportes y Diagnósticos',
     emprendimientos: 'Emprendimientos',
     tareas: 'Tareas',
     menu: 'Menú principal',
