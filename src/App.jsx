@@ -13,10 +13,10 @@ const voceriasEstructuraDefinicion = [
 
 // Representaciones / Estructura Política Adicional
 const representacionesAdicionalesDefinicion = [
-  { id: 'jpsuv', nombre: 'Coordinación de la JPSUV', icon: '✦', color: 'red' },
-  { id: 'estado-mayor', nombre: 'Estado Mayor', icon: '✦', color: 'blue' },
-  { id: 'movimientos', nombre: 'Movimientos Sociales', icon: '✦', color: 'green' },
-  { id: 'gpp', nombre: 'Gran Polo Patriótico', icon: '✦', color: 'orange' },
+  { id: 'jpsuv', nombre: 'Coordinación de la JPSUV', icon: '✦', color: 'red', descripcion: 'Juventud del Partido Unido de Venezuela' },
+  { id: 'estado-mayor', nombre: 'Estado Mayor', icon: '✦', color: 'blue', descripcion: 'Coordinación estratégica y política' },
+  { id: 'movimientos', nombre: 'Movimientos Sociales', icon: '✦', color: 'green', descripcion: 'Organizaciones comunitarias y frentes' },
+  { id: 'gpp', nombre: 'Gran Polo Patriótico', icon: '✦', color: 'orange', descripcion: 'Alianza política y social' },
 ];
 
 // 5 Comisiones / Mesas de Trabajo Operativas
@@ -1457,7 +1457,8 @@ function App() {
                 {representacionesAdicionalesDefinicion.map((rep) => (
                   <div key={rep.id} style={{ background: '#f8fafc', padding: '10px', borderRadius: '10px', border: '1px solid #cbd5e1' }}>
                     <small style={{ color: '#2563eb', fontWeight: '600', fontSize: '11px', display: 'block' }}>REPRESENTACIÓN</small>
-                    <strong style={{ fontSize: '12px', color: '#1e293b' }}>{rep.nombre}</strong>
+                    <strong style={{ fontSize: '12px', color: '#1e293b', display: 'block' }}>{rep.nombre}</strong>
+                    <span style={{ fontSize: '10px', color: '#64748b' }}>{rep.descripcion}</span>
                   </div>
                 ))}
               </div>
@@ -2455,10 +2456,10 @@ function App() {
           <section className="vocerias-page">
             <div className="page-heading">
               <div>
-                <p className="section-label">ESTRUCTURA DE VOCERÍAS</p>
-                <h2>5 Vocerías del Consejo Popular</h2>
+                <p className="section-label">ESTRUCTURA COMPLETA DE VOCERÍAS</p>
+                <h2>Vocerías y Coordinaciones</h2>
                 <p className="page-description">
-                  Representación con cargos Principales y Suplentes por territorio.
+                  5 Vocerías Principales/Suplentes y las 4 Representaciones Adicionales.
                 </p>
               </div>
 
@@ -2470,24 +2471,19 @@ function App() {
               </button>
             </div>
 
-            <div className="vocerias-summary">
-              <div className="summary-item">
-                <strong>5</strong>
-                <span>Vocerías principales</span>
-              </div>
-
-              <div className="summary-item">
-                <strong>5</strong>
-                <span>Suplentes asignados</span>
-              </div>
-
-              <div className="summary-item">
-                <strong>Estadal/Parroquial</strong>
-                <span>Ámbito</span>
-              </div>
+            {/* Representaciones Adicionales en Vocerías */}
+            <p className="section-label" style={{ marginTop: '12px' }}>COORDINACIONES Y REPRESENTACIONES ADICIONALES</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', margin: '10px 0 20px 0' }}>
+              {representacionesAdicionalesDefinicion.map((rep) => (
+                <div key={rep.id} style={{ background: '#ffffff', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                  <span style={{ color: '#2563eb', fontWeight: 'bold', fontSize: '14px', display: 'block', marginBottom: '4px' }}>{rep.icon} {rep.nombre}</span>
+                  <small style={{ color: '#64748b', fontSize: '11px', display: 'block' }}>{rep.descripcion}</small>
+                </div>
+              ))}
             </div>
 
-            <div className="vocerias-grid">
+            <p className="section-label">5 VOCERÍAS BASE (PRINCIPAL Y SUPLENTE)</p>
+            <div className="vocerias-grid" style={{ marginTop: '10px' }}>
               {voceriasEstructuraDefinicion.map((voceria) => (
                 <article
                   className={`voceria-card ${voceria.color}`}
