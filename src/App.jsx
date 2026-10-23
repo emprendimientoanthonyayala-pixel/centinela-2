@@ -295,8 +295,10 @@ function App() {
     return eventosEjemplo;
   });
 
-  // Supabase Sync Effect for Events & Comunicados
+  // Supabase Sync Effect for Events, Comunicados & Usuarios
   useEffect(() => {
+    let unmounted = false;
+
     const cargarDatosNube = async () => {
       try {
         const { data: dataEvents, error: errEvents } = await supabase
@@ -304,7 +306,7 @@ function App() {
           .select('*')
           .order('created_at', { ascending: false });
 
-        if (!errEvents && dataEvents && dataEvents.length > 0) {
+        if (!unmounted && !errEvents && dataEvents && dataEvents.length > 0) {
           const eventosRemotos = dataEvents.map((row) => ({
             id: row.id,
             titulo: row.titulo,
@@ -332,8 +334,26 @@ function App() {
           .select('*')
           .order('created_at', { ascending: false });
 
-        if (!errCom && dataCom && dataCom.length > 0) {
+        if (!unmounted && !errCom && dataCom && dataCom.length > 0) {
           setComunicados(dataCom);
+        }
+
+        const { data: dataUsers, error: errUsers } = await supabase
+          .from('usuarios')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!unmounted && !errUsers && dataUsers && dataUsers.length > 0) {
+          const usuariosRemotos = dataUsers.map((u) => ({
+            id: u.id,
+            nombresApellidos: u.nombres_apellidos,
+            cedula: u.cedula,
+            usuarioTelegram: u.usuario_telegram,
+            parroquia: u.parroquia,
+            rol: u.rol,
+            fechaRegistro: u.fecha_registro || (u.created_at ? new Date(u.created_at).toLocaleDateString('es-VE') : 'Hoy'),
+          }));
+          setUsuariosRegistrados(usuariosRemotos);
         }
       } catch (err) {
         console.warn('Supabase offline o tablas no inicializadas:', err);
@@ -341,6 +361,9 @@ function App() {
     };
 
     cargarDatosNube();
+    return () => {
+      unmounted = true;
+    };
   }, []);
 
   const [mostrarFormularioEvento, setMostrarFormularioEvento] = useState(false);
@@ -428,6 +451,8 @@ function App() {
     } catch {}
     return [];
   });
+  const [adminFiltroParroquia, setAdminFiltroParroquia] = useState('todas');
+  const [adminBusquedaTexto, setAdminBusquedaTexto] = useState('');
   const [mostrarFormReporte, setMostrarFormReporte] = useState(false);
   const [formReporte, setFormReporte] = useState({
     servicio: 'Agua',
@@ -634,12 +659,27 @@ function App() {
     setUsuariosRegistrados((prev) =>
       prev.map((u) => (u.id === usuarioId ? { ...u, rol: nuevoRol } : u))
     );
+
+    supabase
+      .from('usuarios')
+      .update({ rol: nuevoRol })
+      .eq('id', usuarioId)
+      .then(({ error }) => {
+        if (error) console.warn('Supabase user role update warning:', error);
+      });
   };
 
   const eliminarUsuarioEnSistema = (usuarioId) => {
     vibrarHaptico();
     if (window.confirm('¿Estás seguro de que deseas eliminar este usuario del sistema?')) {
       setUsuariosRegistrados((prev) => prev.filter((u) => u.id !== usuarioId));
+      supabase
+        .from('usuarios')
+        .delete()
+        .eq('id', usuarioId)
+        .then(({ error }) => {
+          if (error) console.warn('Supabase user delete warning:', error);
+        });
     }
   };
 
@@ -1140,6 +1180,21 @@ function App() {
       }
       return [nuevoUsuarioObj, ...prev];
     });
+
+    supabase
+      .from('usuarios')
+      .upsert({
+        id: nuevoUsuarioObj.id,
+        nombres_apellidos: nuevoUsuarioObj.nombresApellidos,
+        cedula: nuevoUsuarioObj.cedula,
+        usuario_telegram: nuevoUsuarioObj.usuarioTelegram,
+        parroquia: nuevoUsuarioObj.parroquia,
+        rol: nuevoUsuarioObj.rol,
+        fecha_registro: nuevoUsuarioObj.fechaRegistro,
+      })
+      .then(({ error }) => {
+        if (error) console.warn('Supabase user registration warning:', error);
+      });
 
     if (formularioInicial.parroquia) setParroquiaSeleccionada(formularioInicial.parroquia);
     setRegistroCompletado(true);
@@ -2909,15 +2964,72 @@ function App() {
               + Probar nuevo registro (Cerrar sesión)
             </button>
 
-            <div className="eventos-list">
-              {usuariosRegistrados.length === 0 ? (
-                <div className="empty-page evento-empty-state">
-                  <span className="empty-icon">👤</span>
-                  <h3>No hay usuarios registrados</h3>
-                  <p>Prueba realizar un nuevo registro para probar el flujo de ingreso.</p>
+            {/* Filtro y Búsqueda en Panel Admin */}
+            <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '14px', padding: '14px', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <strong style={{ fontSize: '13px', color: '#1e293b' }}>🔍 Filtrar y Buscar Usuarios Registrados</strong>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '2px' }}>Parroquia:</label>
+                  <select
+                    value={adminFiltroParroquia}
+                    onChange={(e) => setAdminFiltroParroquia(e.target.value)}
+                    style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px', background: '#f8fafc' }}
+                  >
+                    <option value="todas">🌐 Todas las parroquias ({usuariosRegistrados.length})</option>
+                    {[
+                      'Altagracia', 'Antímano', 'El Recreo', 'El Valle', 'La Candelaria', 'Caricuao', 'Catedral', 'Coche', 'El Junquito', 'El Paraíso', 'La Vega', 'Macarao', 'San Agustín', 'San Bernardino', 'San José', 'San Juan', 'San Pedro', 'Santa Rosalía', 'Santa Teresa', 'Sucre (Catia)', '23 de Enero'
+                    ].map((p) => {
+                      const count = usuariosRegistrados.filter((u) => u.parroquia === p).length;
+                      return (
+                        <option key={p} value={p}>
+                          {p} ({count})
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
-              ) : (
-                usuariosRegistrados.map((usr) => (
+
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '2px' }}>Buscar por nombre/cédula/telegram:</label>
+                  <input
+                    type="text"
+                    placeholder="Ej. V-12345 o @usuario"
+                    value={adminBusquedaTexto}
+                    onChange={(e) => setAdminBusquedaTexto(e.target.value)}
+                    style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="eventos-list">
+              {(() => {
+                const usuariosFiltrados = usuariosRegistrados.filter((usr) => {
+                  const cumpleParroquia = adminFiltroParroquia === 'todas' || usr.parroquia === adminFiltroParroquia;
+                  const busqueda = adminBusquedaTexto.toLowerCase().trim();
+                  const cumpleBusqueda =
+                    !busqueda ||
+                    (usr.nombresApellidos && usr.nombresApellidos.toLowerCase().includes(busqueda)) ||
+                    (usr.cedula && usr.cedula.toLowerCase().includes(busqueda)) ||
+                    (usr.usuarioTelegram && usr.usuarioTelegram.toLowerCase().includes(busqueda));
+                  return cumpleParroquia && cumpleBusqueda;
+                });
+
+                if (usuariosFiltrados.length === 0) {
+                  return (
+                    <div className="empty-page evento-empty-state">
+                      <span className="empty-icon">👤</span>
+                      <h3>No se encontraron usuarios</h3>
+                      <p>
+                        {adminFiltroParroquia !== 'todas'
+                          ? `No hay registros comunitarios para la parroquia ${adminFiltroParroquia}.`
+                          : 'Prueba realizar un nuevo registro para probar el flujo de ingreso.'}
+                      </p>
+                    </div>
+                  );
+                }
+
+                return usuariosFiltrados.map((usr) => (
                   <article key={usr.id} className="evento-card" style={{ background: '#ffffff' }}>
                     <div className="evento-card-top">
                       <span className={`activity-dot ${usr.rol === 'Administrador Estadal' ? 'blue' : usr.rol === 'Coordinador Parroquial' ? 'purple' : usr.rol === 'Vocero Comunitario' ? 'green' : 'orange'}`}></span>
@@ -2970,8 +3082,8 @@ function App() {
                       </button>
                     </div>
                   </article>
-                ))
-              )}
+                ));
+              })()}
             </div>
           </section>
         ) : activeTab === 'emprendimientos' ? (
