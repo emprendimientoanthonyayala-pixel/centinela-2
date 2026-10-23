@@ -304,6 +304,7 @@ function App() {
   });
 
   const [registroCompletado, setRegistroCompletado] = useState(false);
+  const [telegramUserId, setTelegramUserId] = useState(null);
   const [formularioInicial, setFormularioInicial] = useState({
     cedula: '',
     nombresApellidos: '',
@@ -429,7 +430,11 @@ function App() {
     if (telegramWebApp) telegramWebApp.ready();
 
     const usuarioTelegram = telegramWebApp?.initDataUnsafe?.user;
-    const datosGuardados = localStorage.getItem('perfilUsuario');
+    const tgId = usuarioTelegram?.id ? String(usuarioTelegram.id) : null;
+    if (tgId) setTelegramUserId(tgId);
+
+    const storageKey = tgId ? `perfilUsuario_${tgId}` : 'perfilUsuario';
+    const datosGuardados = localStorage.getItem(storageKey);
 
     if (datosGuardados) {
       try {
@@ -438,7 +443,7 @@ function App() {
         if (datos.parroquia) setParroquiaSeleccionada(datos.parroquia);
         setRegistroCompletado(true);
       } catch {
-        localStorage.removeItem('perfilUsuario');
+        localStorage.removeItem(storageKey);
       }
     }
 
@@ -447,8 +452,8 @@ function App() {
       const usuarioTelegramTexto = usuarioTelegram.username ? `@${usuarioTelegram.username}` : String(usuarioTelegram.id || '');
       setFormularioInicial((prev) => ({
         ...prev,
-        nombresApellidos: prev.nombresApellidos || nombresTelegram,
-        usuarioTelegram: prev.usuarioTelegram || usuarioTelegramTexto,
+        nombresApellidos: prev.nombresApellidos ? prev.nombresApellidos : nombresTelegram,
+        usuarioTelegram: usuarioTelegramTexto,
       }));
     }
   }, []);
@@ -501,7 +506,8 @@ function App() {
     vibrarHaptico();
     setFormularioInicial((prev) => {
       const updated = { ...prev, rol: nuevoRol };
-      localStorage.setItem('perfilUsuario', JSON.stringify(updated));
+      const storageKey = telegramUserId ? `perfilUsuario_${telegramUserId}` : 'perfilUsuario';
+      localStorage.setItem(storageKey, JSON.stringify(updated));
       return updated;
     });
     setMostrarModalRol(false);
@@ -862,7 +868,8 @@ function App() {
       alert('Selecciona una fecha de nacimiento válida.');
       return;
     }
-    localStorage.setItem('perfilUsuario', JSON.stringify(formularioInicial));
+    const storageKey = telegramUserId ? `perfilUsuario_${telegramUserId}` : 'perfilUsuario';
+    localStorage.setItem(storageKey, JSON.stringify(formularioInicial));
     if (formularioInicial.parroquia) setParroquiaSeleccionada(formularioInicial.parroquia);
     setRegistroCompletado(true);
   };
