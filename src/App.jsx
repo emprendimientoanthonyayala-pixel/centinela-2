@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { createClient } from '@supabase/supabase-js';
 import './index.css';
+
+const SUPABASE_URL = 'https://vpbaoampqlzzcrplsfht.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_nNifwa3tsRiY9SHL0F8P-Q_Pg2c7eh5';
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // 5 Vocerías de la Estructura Base (Principal y Suplente)
 const voceriasEstructuraDefinicion = [
@@ -266,6 +271,18 @@ function App() {
     obtenerIndicadores();
   }, []);
 
+  // Comunicados / Mensajes Jerárquicos State
+  const [comunicados, setComunicados] = useState(() => {
+    try {
+      const guardados = localStorage.getItem('comunicadosCentinela');
+      if (guardados) {
+        const parsed = JSON.parse(guardados);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return [];
+  });
+
   // Eventos state
   const [eventos, setEventos] = useState(() => {
     try {
@@ -277,6 +294,54 @@ function App() {
     } catch {}
     return eventosEjemplo;
   });
+
+  // Supabase Sync Effect for Events & Comunicados
+  useEffect(() => {
+    const cargarDatosNube = async () => {
+      try {
+        const { data: dataEvents, error: errEvents } = await supabase
+          .from('eventos')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!errEvents && dataEvents && dataEvents.length > 0) {
+          const eventosRemotos = dataEvents.map((row) => ({
+            id: row.id,
+            titulo: row.titulo,
+            nivel: row.nivel || 'parroquial',
+            estado: row.estado || 'convocado',
+            parroquia: row.parroquia,
+            comision: row.comision || 'accion-socioterritorial',
+            estadoTerritorial: row.estado_territorial || 'Distrito Capital',
+            municipio: row.municipio || 'Libertador',
+            fecha: row.fecha,
+            horaInicio: row.hora_inicio || '',
+            horaFin: row.hora_fin || '',
+            lugar: row.lugar || '',
+            descripcion: row.descripcion || '',
+            flyerImage: row.flyer_image || null,
+            creadoPor: row.creado_por || 'Usuario',
+            creadoEn: row.creado_en || row.created_at,
+            asistentes: row.asistentes || [],
+          }));
+          setEventos(eventosRemotos);
+        }
+
+        const { data: dataCom, error: errCom } = await supabase
+          .from('comunicados')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!errCom && dataCom && dataCom.length > 0) {
+          setComunicados(dataCom);
+        }
+      } catch (err) {
+        console.warn('Supabase offline o tablas no inicializadas:', err);
+      }
+    };
+
+    cargarDatosNube();
+  }, []);
 
   const [mostrarFormularioEvento, setMostrarFormularioEvento] = useState(false);
   const [eventoSeleccionadoId, setEventoSeleccionadoId] = useState(null);
@@ -410,6 +475,10 @@ function App() {
   }, [pinnedQuickActionTabs]);
 
   useEffect(() => {
+    localStorage.setItem('comunicadosCentinela', JSON.stringify(comunicados));
+  }, [comunicados]);
+
+  useEffect(() => {
     localStorage.setItem('eventosCentinela', JSON.stringify(eventos));
   }, [eventos]);
 
@@ -450,9 +519,59 @@ function App() {
 
   // Security Helper
   const esSuperUsuario = formularioInicial.rol === 'Super Usuario';
+  const puedeEnviarComunicado = ['Super Usuario', 'Administrador Estadal', 'Coordinador Parroquial'].includes(formularioInicial.rol);
   const puedeCrearEvento = ['Super Usuario', 'Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario'].includes(formularioInicial.rol);
   const puedeAdministrarEvento = ['Super Usuario', 'Administrador Estadal', 'Coordinador Parroquial'].includes(formularioInicial.rol);
   const puedeAsignarTarea = ['Super Usuario', 'Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario'].includes(formularioInicial.rol);
+
+  const [mostrarModalComunicado, setMostrarModalComunicado] = useState(false);
+  const [formComunicado, setFormComunicado] = useState({
+    mensaje: '',
+    alcance: formularioInicial.rol === 'Super Usuario' ? 'todos' : formularioInicial.rol === 'Administrador Estadal' ? 'estado' : 'parroquia',
+    parroquiaEspecifica: formularioInicial.parroquia || 'Caricuao',
+  });
+
+  const enviarComunicadoMensaje = (e) => {
+    e.preventDefault();
+    vibrarHaptico();
+
+    if (!formComunicado.mensaje.trim()) return;
+
+    const nuevoCom = {
+      id: crearIdUnico('com'),
+      emisorRol: formularioInicial.rol,
+      emisorNombre: formularioInicial.nombresApellidos || 'Autoridad Centinela',
+      mensaje: formComunicado.mensaje.trim(),
+      alcance: formComunicado.alcance,
+      parroquiaTarget: formComunicado.alcance === 'parroquia' ? formComunicado.parroquiaEspecifica : 'Todas',
+      fecha: new Date().toISOString(),
+    };
+
+    setComunicados((prev) => [nuevoCom, ...prev]);
+
+    supabase
+      .from('comunicados')
+      .insert({
+        id: nuevoCom.id,
+        emisor_rol: nuevoCom.emisorRol,
+        emisor_nombre: nuevoCom.emisorNombre,
+        mensaje: nuevoCom.mensaje,
+        alcance: nuevoCom.alcance,
+        parroquia_target: nuevoCom.parroquiaTarget,
+        fecha: nuevoCom.fecha,
+      })
+      .then(({ error }) => {
+        if (error) console.warn('Supabase comunicado sync warning:', error);
+      });
+
+    setFormComunicado({
+      mensaje: '',
+      alcance: formularioInicial.rol === 'Super Usuario' ? 'todos' : formularioInicial.rol === 'Administrador Estadal' ? 'estado' : 'parroquia',
+      parroquiaEspecifica: formularioInicial.parroquia || 'Caricuao',
+    });
+    setMostrarModalComunicado(false);
+    alert('📢 ¡Comunicado enviado exitosamente a tu red!');
+  };
 
   const quickActions = esSuperUsuario
     ? [...quickActionsBase, { icon: '⚙', label: 'Panel Admin', tab: 'admin' }]
@@ -634,6 +753,33 @@ function App() {
     };
 
     setEventos((prev) => [nuevoEvento, ...prev]);
+
+    // Guardar en Supabase en segundo plano si la tabla está configurada
+    supabase
+      .from('eventos')
+      .insert({
+        id: nuevoEvento.id,
+        titulo: nuevoEvento.titulo,
+        nivel: nuevoEvento.nivel,
+        estado: nuevoEvento.estado,
+        parroquia: nuevoEvento.parroquia,
+        comision: nuevoEvento.comision,
+        estado_territorial: nuevoEvento.estadoTerritorial,
+        municipio: nuevoEvento.municipio,
+        fecha: nuevoEvento.fecha,
+        hora_inicio: nuevoEvento.horaInicio,
+        hora_fin: nuevoEvento.horaFin,
+        lugar: nuevoEvento.lugar,
+        descripcion: nuevoEvento.descripcion,
+        flyer_image: nuevoEvento.flyerImage,
+        creado_por: nuevoEvento.creadoPor,
+        creado_en: nuevoEvento.creadoEn,
+        asistentes: [],
+      })
+      .then(({ error }) => {
+        if (error) console.warn('Supabase sync warning:', error);
+      });
+
     setFormularioEvento({
       titulo: '',
       nivel: 'parroquial',
@@ -1056,6 +1202,73 @@ function App() {
 
         {activeTab === 'inicio' && (
           <>
+            {/* Comunicados Jerárquicos Banner */}
+            {comunicados.length > 0 && (
+              <div style={{ margin: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {comunicados
+                  .filter((com) => {
+                    if (com.alcance === 'todos') return true;
+                    if (com.alcance === 'estado') return true;
+                    if (com.alcance === 'parroquia') return com.parroquiaTarget === (formularioInicial.parroquia || 'Caricuao');
+                    return true;
+                  })
+                  .slice(0, 2)
+                  .map((com) => (
+                    <div
+                      key={com.id}
+                      style={{
+                        background: '#eff6ff',
+                        borderLeft: '4px solid #2563eb',
+                        borderRadius: '10px',
+                        padding: '12px',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '700', color: '#1d4ed8', textTransform: 'uppercase' }}>
+                          📢 Comunicado ({com.emisorRol})
+                        </span>
+                        <small style={{ fontSize: '10px', color: '#64748b' }}>
+                          {com.fecha ? new Date(com.fecha).toLocaleDateString('es-VE') : 'Hoy'}
+                        </small>
+                      </div>
+                      <p style={{ margin: 0, fontSize: '13px', color: '#1e293b', lineHeight: '1.4' }}>
+                        {com.mensaje}
+                      </p>
+                      <small style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: '#64748b' }}>
+                        Emitido por: {com.emisorNombre} · Alcance: {com.alcance === 'todos' ? 'Toda Caracas' : com.alcance === 'estado' ? 'Todo el Estado' : `Parroquia ${com.parroquiaTarget}`}
+                      </small>
+                    </div>
+                  ))}
+              </div>
+            )}
+
+            {puedeEnviarComunicado && (
+              <div style={{ margin: '0 16px 12px 16px' }}>
+                <button
+                  type="button"
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '10px',
+                    border: '1px solid #bfdbfe',
+                    background: '#ffffff',
+                    color: '#1d4ed8',
+                    fontWeight: '600',
+                    fontSize: '13px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => setMostrarModalComunicado(true)}
+                >
+                  📢 Emitir comunicado a la red ({formularioInicial.rol === 'Super Usuario' ? 'Toda Caracas' : formularioInicial.rol === 'Administrador Estadal' ? 'Todo el Estado / Parroquias' : 'Su Parroquia'})
+                </button>
+              </div>
+            )}
+
             <section className="welcome-section">
               <div>
                 <p className="muted-text">Bienvenido de nuevo</p>
@@ -2961,6 +3174,84 @@ function App() {
             >
               🚪 Probar nuevo registro (Cerrar sesión)
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Emisión de Comunicados / Mensajes Jerárquicos */}
+      {mostrarModalComunicado && (
+        <div className="detail-overlay" onClick={() => setMostrarModalComunicado(false)}>
+          <div className="detail-bubble" onClick={(e) => e.stopPropagation()}>
+            <div className="bubble-handle"></div>
+            <div className="detail-panel-header">
+              <div>
+                <p className="section-label">DIFUSIÓN ESTRATÉGICA</p>
+                <h3>Emitir Comunicado Oficial</h3>
+              </div>
+              <button className="close-button" onClick={() => setMostrarModalComunicado(false)}>×</button>
+            </div>
+
+            <form onSubmit={enviarComunicadoMensaje} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  Alcance del mensaje:
+                </label>
+                <select
+                  value={formComunicado.alcance}
+                  onChange={(e) => setFormComunicado({ ...formComunicado, alcance: e.target.value })}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                >
+                  {formularioInicial.rol === 'Super Usuario' && (
+                    <option value="todos">🌐 Toda Caracas (Todos los usuarios)</option>
+                  )}
+                  {['Super Usuario', 'Administrador Estadal'].includes(formularioInicial.rol) && (
+                    <option value="estado">🏛 Todo el Estado / Municipio</option>
+                  )}
+                  <option value="parroquia">📍 Parroquia Específica ({formComunicado.parroquiaEspecifica})</option>
+                </select>
+              </div>
+
+              {formComunicado.alcance === 'parroquia' && (
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '4px' }}>
+                    Parroquia destino:
+                  </label>
+                  <select
+                    value={formComunicado.parroquiaEspecifica}
+                    onChange={(e) => setFormComunicado({ ...formComunicado, parroquiaEspecifica: e.target.value })}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                  >
+                    {[
+                      'Altagracia', 'Antímano', 'El Recreo', 'El Valle', 'La Candelaria', 'Caricuao', 'Catedral', 'Coche', 'El Junquito', 'El Paraíso', 'La Vega', 'Macarao', 'San Agustín', 'San Bernardino', 'San José', 'San Juan', 'San Pedro', 'Santa Rosalía', 'Santa Teresa', 'Sucre (Catia)', '23 de Enero'
+                    ].map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  Contenido del comunicado:
+                </label>
+                <textarea
+                  rows="4"
+                  value={formComunicado.mensaje}
+                  onChange={(e) => setFormComunicado({ ...formComunicado, mensaje: e.target.value })}
+                  placeholder="Escribe el mensaje o indicación oficial para las bases..."
+                  required
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="primary-button"
+                style={{ marginTop: '8px' }}
+              >
+                🚀 Publicar comunicado en vivo
+              </button>
+            </form>
           </div>
         </div>
       )}
