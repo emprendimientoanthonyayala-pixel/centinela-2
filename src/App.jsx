@@ -295,74 +295,81 @@ function App() {
     return eventosEjemplo;
   });
 
-  // Supabase Sync Effect for Events, Comunicados & Usuarios
-  useEffect(() => {
-    let unmounted = false;
+  // Carga y sincronización de datos de Supabase
+  const cargarDatosNube = async () => {
+    try {
+      const { data: dataEvents, error: errEvents } = await supabase
+        .from('eventos')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    const cargarDatosNube = async () => {
-      try {
-        const { data: dataEvents, error: errEvents } = await supabase
-          .from('eventos')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (!unmounted && !errEvents && dataEvents && dataEvents.length > 0) {
-          const eventosRemotos = dataEvents.map((row) => ({
-            id: row.id,
-            titulo: row.titulo,
-            nivel: row.nivel || 'parroquial',
-            estado: row.estado || 'convocado',
-            parroquia: row.parroquia,
-            comision: row.comision || 'accion-socioterritorial',
-            estadoTerritorial: row.estado_territorial || 'Distrito Capital',
-            municipio: row.municipio || 'Libertador',
-            fecha: row.fecha,
-            horaInicio: row.hora_inicio || '',
-            horaFin: row.hora_fin || '',
-            lugar: row.lugar || '',
-            descripcion: row.descripcion || '',
-            flyerImage: row.flyer_image || null,
-            creadoPor: row.creado_por || 'Usuario',
-            creadoEn: row.creado_en || row.created_at,
-            asistentes: row.asistentes || [],
-          }));
-          setEventos(eventosRemotos);
-        }
-
-        const { data: dataCom, error: errCom } = await supabase
-          .from('comunicados')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (!unmounted && !errCom && dataCom && dataCom.length > 0) {
-          setComunicados(dataCom);
-        }
-
-        const { data: dataUsers, error: errUsers } = await supabase
-          .from('usuarios')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (!unmounted && !errUsers && dataUsers && dataUsers.length > 0) {
-          const usuariosRemotos = dataUsers.map((u) => ({
-            id: u.id,
-            nombresApellidos: u.nombres_apellidos,
-            cedula: u.cedula,
-            usuarioTelegram: u.usuario_telegram,
-            parroquia: u.parroquia,
-            rol: u.rol,
-            fechaRegistro: u.fecha_registro || (u.created_at ? new Date(u.created_at).toLocaleDateString('es-VE') : 'Hoy'),
-          }));
-          setUsuariosRegistrados(usuariosRemotos);
-        }
-      } catch (err) {
-        console.warn('Supabase offline o tablas no inicializadas:', err);
+      if (!errEvents && dataEvents && dataEvents.length > 0) {
+        const eventosRemotos = dataEvents.map((row) => ({
+          id: row.id,
+          titulo: row.titulo,
+          nivel: row.nivel || 'parroquial',
+          estado: row.estado || 'convocado',
+          parroquia: row.parroquia,
+          comision: row.comision || 'accion-socioterritorial',
+          estadoTerritorial: row.estado_territorial || 'Distrito Capital',
+          municipio: row.municipio || 'Libertador',
+          fecha: row.fecha,
+          horaInicio: row.hora_inicio || '',
+          horaFin: row.hora_fin || '',
+          lugar: row.lugar || '',
+          descripcion: row.descripcion || '',
+          flyerImage: row.flyer_image || null,
+          creadoPor: row.creado_por || 'Usuario',
+          creadoEn: row.creado_en || row.created_at,
+          asistentes: row.asistentes || [],
+        }));
+        setEventos(eventosRemotos);
       }
-    };
 
+      const { data: dataCom, error: errCom } = await supabase
+        .from('comunicados')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!errCom && dataCom && dataCom.length > 0) {
+        setComunicados(dataCom);
+      }
+
+      const { data: dataUsers, error: errUsers } = await supabase
+        .from('usuarios')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!errUsers && dataUsers && dataUsers.length > 0) {
+        const usuariosRemotos = dataUsers.map((u) => ({
+          id: u.id,
+          nombresApellidos: u.nombres_apellidos,
+          cedula: u.cedula,
+          usuarioTelegram: u.usuario_telegram,
+          parroquia: u.parroquia,
+          rol: u.rol,
+          fechaRegistro: u.fecha_registro || (u.created_at ? new Date(u.created_at).toLocaleDateString('es-VE') : 'Hoy'),
+        }));
+        setUsuariosRegistrados(usuariosRemotos);
+      }
+    } catch (err) {
+      console.warn('Supabase offline o tablas no inicializadas:', err);
+    }
+  };
+
+  // Supabase Realtime Subscriptions
+  useEffect(() => {
     cargarDatosNube();
+
+    const canalRealtime = supabase
+      .channel('public:realtime')
+      .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+        cargarDatosNube();
+      })
+      .subscribe();
+
     return () => {
-      unmounted = true;
+      supabase.removeChannel(canalRealtime);
     };
   }, []);
 
@@ -493,6 +500,30 @@ function App() {
         nombresApellidos: prev.nombresApellidos ? prev.nombresApellidos : nombresTelegram,
         usuarioTelegram: usuarioTelegramTexto,
       }));
+
+      // Sincronizar directamente con el registro remoto de Supabase por telegramUserId
+      supabase
+        .from('usuarios')
+        .select('*')
+        .or(`id.eq.usr-tg-${tgId},usuario_telegram.eq.${usuarioTelegramTexto}`)
+        .then(({ data, error }) => {
+          if (!error && data && data.length > 0) {
+            const perfilRemoto = data[0];
+            setFormularioInicial((prev) => {
+              const actualizado = {
+                ...prev,
+                cedula: perfilRemoto.cedula || prev.cedula,
+                nombresApellidos: perfilRemoto.nombres_apellidos || prev.nombresApellidos,
+                parroquia: perfilRemoto.parroquia || prev.parroquia,
+                rol: perfilRemoto.rol || prev.rol,
+              };
+              localStorage.setItem(storageKey, JSON.stringify(actualizado));
+              return actualizado;
+            });
+            if (perfilRemoto.parroquia) setParroquiaSeleccionada(perfilRemoto.parroquia);
+            setRegistroCompletado(true);
+          }
+        });
     }
   }, []);
 
@@ -619,7 +650,13 @@ function App() {
           })
         );
       } catch (err) {
-        console.warn('sendData no disponible fuera de chat directo:', err);
+        console.warn('sendData no disponible en este tipo de botón:', err);
+      }
+
+      if (typeof tgWebApp.switchInlineQuery === 'function') {
+        try {
+          tgWebApp.switchInlineQuery(textoDifusion, ['users', 'groups', 'channels']);
+        } catch {}
       }
     }
 
@@ -2966,7 +3003,28 @@ function App() {
 
             {/* Filtro y Búsqueda en Panel Admin */}
             <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '14px', padding: '14px', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <strong style={{ fontSize: '13px', color: '#1e293b' }}>🔍 Filtrar y Buscar Usuarios Registrados</strong>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <strong style={{ fontSize: '13px', color: '#1e293b' }}>🔍 Filtrar y Buscar Usuarios Registrados</strong>
+                <button
+                  type="button"
+                  style={{
+                    background: '#eff6ff',
+                    border: '1px solid #bfdbfe',
+                    color: '#2563eb',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => {
+                    vibrarHaptico();
+                    cargarDatosNube();
+                  }}
+                >
+                  🔄 Actualizar desde la nube
+                </button>
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
                 <div>
                   <label style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '2px' }}>Parroquia:</label>
