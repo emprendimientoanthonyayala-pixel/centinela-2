@@ -2,31 +2,49 @@ import React, { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import './index.css';
 
+// 5 Vocerías de la Estructura Base (Principal y Suplente)
+const voceriasEstructuraDefinicion = [
+  { id: 'integracion', nombre: 'Vocería de Integración', icon: '◎', color: 'blue' },
+  { id: 'sistematizacion', nombre: 'Vocería de Sistematización', icon: '▤', color: 'purple' },
+  { id: 'comunicacion', nombre: 'Vocería de Comunicación Popular', icon: '▣', color: 'green' },
+  { id: 'movilizacion', nombre: 'Vocería de Movilización Territorial', icon: '⌖', color: 'orange' },
+  { id: 'formacion', nombre: 'Vocería de Formación Integral', icon: '☷', color: 'mint' },
+];
+
+// Representaciones / Estructura Política Adicional
+const representacionesAdicionalesDefinicion = [
+  { id: 'jpsuv', nombre: 'Coordinación de la JPSUV', icon: '✦', color: 'red' },
+  { id: 'estado-mayor', nombre: 'Estado Mayor', icon: '✦', color: 'blue' },
+  { id: 'movimientos', nombre: 'Movimientos Sociales', icon: '✦', color: 'green' },
+  { id: 'gpp', nombre: 'Gran Polo Patriótico', icon: '✦', color: 'orange' },
+];
+
+// 5 Comisiones / Mesas de Trabajo Operativas
 const comisionesDefinicion = [
   {
     id: 'produccion-economia',
-    nombre: 'Red de Producción y Economía',
+    nombre: 'Comisión de Producción y Economía',
     icon: '₿',
     color: 'orange',
     descripcion: 'Emprendimientos, comercios, producción local, ferias y catálogo de productos.',
   },
   {
     id: 'trabajo-formacion',
-    nombre: 'Aulas de Trabajo y Formación',
+    nombre: 'Comisión de Trabajo y Formación',
     icon: '☷',
     color: 'purple',
     descripcion: 'Cursos, talleres, formación integral, vinculación con universidades y liceos.',
   },
   {
     id: 'accion-socioterritorial',
-    nombre: 'Brigadas de Acción Socioterritorial',
+    nombre: 'Brigada de Acción Socioterritorial',
     icon: '⌖',
     color: 'blue',
     descripcion: 'Caracterización del territorio, visitas comunitarias, registro de necesidades.',
   },
   {
     id: 'cultura-comunicacion',
-    nombre: 'Cultura, Memoria y Comunicación',
+    nombre: 'Comisión de Cultura, Memoria y Comunicación',
     icon: '▣',
     color: 'green',
     descripcion: 'Comunicación popular, fotos, videos, historia local y difusión de agenda.',
@@ -40,30 +58,39 @@ const comisionesDefinicion = [
   },
 ];
 
+// Métricas de Cumplimiento por Vocería a nivel Estadal y Parroquial
 const parroquiasCaracasInfo = [
-  { nombre: '23 de Enero', estadoColor: 'verde', registrados: 312, actividades: 18, emprendimientos: 24, eventos: 5, tareas: 4 },
-  { nombre: 'Altagracia', estadoColor: 'azul', registrados: 195, actividades: 12, emprendimientos: 14, eventos: 3, tareas: 6 },
-  { nombre: 'Antímano', estadoColor: 'naranja', registrados: 410, actividades: 22, emprendimientos: 38, eventos: 6, tareas: 8 },
-  { nombre: 'Candelaria', estadoColor: 'verde', registrados: 180, actividades: 10, emprendimientos: 16, eventos: 2, tareas: 3 },
-  { nombre: 'Caricuao', estadoColor: 'verde', registrados: 520, actividades: 31, emprendimientos: 45, eventos: 8, tareas: 5 },
-  { nombre: 'Catedral', estadoColor: 'amarillo', registrados: 140, actividades: 8, emprendimientos: 11, eventos: 2, tareas: 9 },
-  { nombre: 'Coche', estadoColor: 'naranja', registrados: 280, actividades: 16, emprendimientos: 29, eventos: 4, tareas: 7 },
-  { nombre: 'El Junquito', estadoColor: 'azul', registrados: 210, actividades: 14, emprendimientos: 19, eventos: 3, tareas: 4 },
-  { nombre: 'El Paraíso', estadoColor: 'verde', registrados: 340, actividades: 19, emprendimientos: 27, eventos: 5, tareas: 2 },
-  { nombre: 'El Recreo', estadoColor: 'amarillo', registrados: 220, actividades: 11, emprendimientos: 18, eventos: 3, tareas: 6 },
-  { nombre: 'El Valle', estadoColor: 'verde', registrados: 460, actividades: 28, emprendimientos: 42, eventos: 7, tareas: 5 },
-  { nombre: 'La Pastora', estadoColor: 'naranja', registrados: 290, actividades: 15, emprendimientos: 22, eventos: 4, tareas: 6 },
-  { nombre: 'La Vega', estadoColor: 'rojo', registrados: 380, actividades: 20, emprendimientos: 31, eventos: 5, tareas: 12 },
-  { nombre: 'Macarao', estadoColor: 'verde', registrados: 260, actividades: 13, emprendimientos: 20, eventos: 3, tareas: 3 },
-  { nombre: 'San Agustín', estadoColor: 'azul', registrados: 310, actividades: 21, emprendimientos: 26, eventos: 6, tareas: 4 },
-  { nombre: 'San Bernardino', estadoColor: 'verde', registrados: 165, actividades: 9, emprendimientos: 12, eventos: 2, tareas: 2 },
-  { nombre: 'San José', estadoColor: 'amarillo', registrados: 205, actividades: 11, emprendimientos: 15, eventos: 3, tareas: 7 },
-  { nombre: 'San Juan', estadoColor: 'naranja', registrados: 330, actividades: 17, emprendimientos: 28, eventos: 4, tareas: 5 },
-  { nombre: 'San Pedro', estadoColor: 'verde', registrados: 190, actividades: 12, emprendimientos: 17, eventos: 3, tareas: 3 },
-  { nombre: 'Santa Rosalía', estadoColor: 'verde', registrados: 350, actividades: 23, emprendimientos: 33, eventos: 6, tareas: 4 },
-  { nombre: 'Santa Teresa', estadoColor: 'amarillo', registrados: 155, actividades: 8, emprendimientos: 13, eventos: 2, tareas: 6 },
-  { nombre: 'Sucre', estadoColor: 'naranja', registrados: 680, actividades: 42, emprendimientos: 65, eventos: 12, tareas: 10 },
+  { nombre: '23 de Enero', estadoColor: 'verde', registrados: 312, actividades: 18, emprendimientos: 24, eventos: 5, tareas: 4, cumplimiento: { integracion: 85, sistematizacion: 78, comunicacion: 82, movilizacion: 70, formacion: 80 } },
+  { nombre: 'Altagracia', estadoColor: 'azul', registrados: 195, actividades: 12, emprendimientos: 14, eventos: 3, tareas: 6, cumplimiento: { integracion: 75, sistematizacion: 68, comunicacion: 72, movilizacion: 60, formacion: 70 } },
+  { nombre: 'Antímano', estadoColor: 'naranja', registrados: 410, actividades: 22, emprendimientos: 38, eventos: 6, tareas: 8, cumplimiento: { integracion: 88, sistematizacion: 75, comunicacion: 80, movilizacion: 72, formacion: 78 } },
+  { nombre: 'Candelaria', estadoColor: 'verde', registrados: 180, actividades: 10, emprendimientos: 16, eventos: 2, tareas: 3, cumplimiento: { integracion: 70, sistematizacion: 65, comunicacion: 75, movilizacion: 58, formacion: 68 } },
+  { nombre: 'Caricuao', estadoColor: 'verde', registrados: 520, actividades: 31, emprendimientos: 45, eventos: 8, tareas: 5, cumplimiento: { integracion: 92, sistematizacion: 84, comunicacion: 88, movilizacion: 80, formacion: 86 } },
+  { nombre: 'Catedral', estadoColor: 'amarillo', registrados: 140, actividades: 8, emprendimientos: 11, eventos: 2, tareas: 9, cumplimiento: { integracion: 68, sistematizacion: 60, comunicacion: 70, movilizacion: 55, formacion: 62 } },
+  { nombre: 'Coche', estadoColor: 'naranja', registrados: 280, actividades: 16, emprendimientos: 29, eventos: 4, tareas: 7, cumplimiento: { integracion: 80, sistematizacion: 72, comunicacion: 76, movilizacion: 68, formacion: 74 } },
+  { nombre: 'El Junquito', estadoColor: 'azul', registrados: 210, actividades: 14, emprendimientos: 19, eventos: 3, tareas: 4, cumplimiento: { integracion: 74, sistematizacion: 66, comunicacion: 71, movilizacion: 62, formacion: 69 } },
+  { nombre: 'El Paraíso', estadoColor: 'verde', registrados: 340, actividades: 19, emprendimientos: 27, eventos: 5, tareas: 2, cumplimiento: { integracion: 83, sistematizacion: 76, comunicacion: 80, movilizacion: 71, formacion: 77 } },
+  { nombre: 'El Recreo', estadoColor: 'amarillo', registrados: 220, actividades: 11, emprendimientos: 18, eventos: 3, tareas: 6, cumplimiento: { integracion: 76, sistematizacion: 69, comunicacion: 74, movilizacion: 63, formacion: 71 } },
+  { nombre: 'El Valle', estadoColor: 'verde', registrados: 460, actividades: 28, emprendimientos: 42, eventos: 7, tareas: 5, cumplimiento: { integracion: 90, sistematizacion: 82, comunicacion: 85, movilizacion: 78, formacion: 84 } },
+  { nombre: 'La Pastora', estadoColor: 'naranja', registrados: 290, actividades: 15, emprendimientos: 22, eventos: 4, tareas: 6, cumplimiento: { integracion: 81, sistematizacion: 73, comunicacion: 77, movilizacion: 67, formacion: 75 } },
+  { nombre: 'La Vega', estadoColor: 'rojo', registrados: 380, actividades: 20, emprendimientos: 31, eventos: 5, tareas: 12, cumplimiento: { integracion: 86, sistematizacion: 77, comunicacion: 81, movilizacion: 73, formacion: 79 } },
+  { nombre: 'Macarao', estadoColor: 'verde', registrados: 260, actividades: 13, emprendimientos: 20, eventos: 3, tareas: 3, cumplimiento: { integracion: 78, sistematizacion: 70, comunicacion: 74, movilizacion: 65, formacion: 72 } },
+  { nombre: 'San Agustín', estadoColor: 'azul', registrados: 310, actividades: 21, emprendimientos: 26, eventos: 6, tareas: 4, cumplimiento: { integracion: 84, sistematizacion: 76, comunicacion: 80, movilizacion: 71, formacion: 78 } },
+  { nombre: 'San Bernardino', estadoColor: 'verde', registrados: 165, actividades: 9, emprendimientos: 12, eventos: 2, tareas: 2, cumplimiento: { integracion: 72, sistematizacion: 64, comunicacion: 69, movilizacion: 59, formacion: 66 } },
+  { nombre: 'San José', estadoColor: 'amarillo', registrados: 205, actividades: 11, emprendimientos: 15, eventos: 3, tareas: 7, cumplimiento: { integracion: 75, sistematizacion: 67, comunicacion: 72, movilizacion: 61, formacion: 68 } },
+  { nombre: 'San Juan', estadoColor: 'naranja', registrados: 330, actividades: 17, emprendimientos: 28, eventos: 4, tareas: 5, cumplimiento: { integracion: 82, sistematizacion: 74, comunicacion: 78, movilizacion: 69, formacion: 76 } },
+  { nombre: 'San Pedro', estadoColor: 'verde', registrados: 190, actividades: 12, emprendimientos: 17, eventos: 3, tareas: 3, cumplimiento: { integracion: 74, sistematizacion: 66, comunicacion: 71, movilizacion: 61, formacion: 68 } },
+  { nombre: 'Santa Rosalía', estadoColor: 'verde', registrados: 350, actividades: 23, emprendimientos: 33, eventos: 6, tareas: 4, cumplimiento: { integracion: 85, sistematizacion: 77, comunicacion: 81, movilizacion: 72, formacion: 79 } },
+  { nombre: 'Santa Teresa', estadoColor: 'amarillo', registrados: 155, actividades: 8, emprendimientos: 13, eventos: 2, tareas: 6, cumplimiento: { integracion: 71, sistematizacion: 63, comunicacion: 68, movilizacion: 57, formacion: 65 } },
+  { nombre: 'Sucre', estadoColor: 'naranja', registrados: 680, actividades: 42, emprendimientos: 65, eventos: 12, tareas: 10, cumplimiento: { integracion: 94, sistematizacion: 88, comunicacion: 90, movilizacion: 82, formacion: 89 } },
 ];
+
+const cumplimientoEstadalGlobal = {
+  integracion: 82,
+  sistematizacion: 71,
+  comunicacion: 78,
+  movilizacion: 63,
+  formacion: 76,
+};
 
 const quickActions = [
   { icon: '▣', label: 'Feed nacional', tab: 'feed' },
@@ -120,19 +147,6 @@ const feedPosts = [
     author: 'Vocerías comunitarias',
     time: 'Hace 1 h',
     color: 'green',
-  },
-];
-
-const voceriasData = [
-  {
-    id: 'voceria-1',
-    estado: 'Caracas',
-    nombre: 'Vocería Estadal de Organización',
-    mesa: 'Mesa de Articulación Comunitaria',
-    area: 'Organización territorial',
-    descripcion: 'Espacio de representación y seguimiento de las necesidades del Distrito Capital.',
-    responsable: 'Coordinación Estadal',
-    color: 'mint',
   },
 ];
 
@@ -303,7 +317,7 @@ function App() {
     telefono: '',
     correo: '',
     usuarioTelegram: '',
-    rol: 'Coordinador Parroquial', // Roles: 'Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario', 'Integrante Comunitario'
+    rol: 'Coordinador Parroquial',
   });
 
   const [activeTab, setActiveTab] = useState('inicio');
@@ -314,7 +328,6 @@ function App() {
   const [selectedPost, setSelectedPost] = useState(null);
   const [activeFilter, setActiveFilter] = useState('Todo');
 
-  // Role Switcher Modal
   const [mostrarModalRol, setMostrarModalRol] = useState(false);
 
   // Eventos state
@@ -479,7 +492,7 @@ function App() {
     return () => window.removeEventListener('hashchange', revisarHashYAsistencia);
   }, [eventos]);
 
-  // Security Helper: Check permissions
+  // Security Helper
   const puedeCrearEvento = ['Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario'].includes(formularioInicial.rol);
   const puedeAdministrarEvento = ['Administrador Estadal', 'Coordinador Parroquial'].includes(formularioInicial.rol);
   const puedeAsignarTarea = ['Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario'].includes(formularioInicial.rol);
@@ -569,7 +582,6 @@ function App() {
     setActiveTab(tab);
   };
 
-  // Flyer Image Selection
   const seleccionarFlyerEvento = (e) => {
     const archivo = e.target.files?.[0];
     if (!archivo) return;
@@ -583,7 +595,6 @@ function App() {
     reader.readAsDataURL(archivo);
   };
 
-  // Eventos Handlers
   const actualizarFormularioEvento = (event) => {
     const { name, value } = event.target;
     setFormularioEvento((prev) => ({
@@ -732,7 +743,6 @@ function App() {
     alert('Asistencia registrada correctamente con 3 fotos de evidencia.');
   };
 
-  // Emprendimientos Handlers
   const crearEmprendimiento = (e) => {
     e.preventDefault();
     vibrarHaptico();
@@ -761,7 +771,6 @@ function App() {
     alert('Emprendimiento registrado exitosamente.');
   };
 
-  // Tareas Handlers
   const crearTarea = (e) => {
     e.preventDefault();
     vibrarHaptico();
@@ -802,7 +811,6 @@ function App() {
     );
   };
 
-  // Reportes Handlers
   const crearReporte = (e) => {
     e.preventDefault();
     vibrarHaptico();
@@ -987,6 +995,8 @@ function App() {
     const coincideComision = comisionSeleccionada === 'todas' || r.comision === comisionSeleccionada;
     return coincideParroquia && coincideComision;
   });
+
+  const cumplimientoActual = infoParroquiaActual.cumplimiento || cumplimientoEstadalGlobal;
 
   return (
     <div className="app-shell">
@@ -1371,7 +1381,7 @@ function App() {
                 <p className="section-label">ESTRUCTURA SOCIOTERRITORIAL</p>
                 <h2>Mi Territorio: Caracas</h2>
                 <p className="page-description">
-                  Explora las 22 Parroquias de Caracas y los Consejos Populares Parroquiales.
+                  Estructura del Consejo Popular Estadal replicada en las 22 Parroquias.
                 </p>
               </div>
 
@@ -1399,11 +1409,11 @@ function App() {
                 <span className="location-icon">⌖</span>
                 <div>
                   <strong>Parroquia activa: {parroquiaSeleccionada}</strong>
-                  <small style={{ display: 'block', color: '#64748b' }}>Selecciona una parroquia para ver su panel</small>
+                  <small style={{ display: 'block', color: '#64748b' }}>Selecciona una parroquia para ver su estructura y métricas</small>
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px', maxHeight: '220px', overflowY: 'auto', paddingRight: '4px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px', maxHeight: '200px', overflowY: 'auto', paddingRight: '4px' }}>
                 {parroquiasCaracasInfo.map((p) => {
                   const isSelected = p.nombre === parroquiaSeleccionada;
                   return (
@@ -1431,33 +1441,65 @@ function App() {
               </div>
             </section>
 
-            {/* Dashboard del Consejo Popular Parroquial Seleccionado */}
+            {/* Arbol de Estructura Organizativa Completa */}
             <section className="organization-card" style={{ background: '#ffffff', borderRadius: '16px', padding: '16px', margin: '16px 0', border: '1px solid #e2e8f0' }}>
               <div className="section-title-row">
                 <div>
-                  <p className="section-label">CONSEJO POPULAR PARROQUIAL</p>
-                  <h3 style={{ margin: '4px 0 0 0', fontSize: '20px' }}>Parroquia {infoParroquiaActual.nombre}</h3>
+                  <p className="section-label">ESTRUCTURA ORGANIZATIVA</p>
+                  <h3 style={{ margin: '4px 0 0 0', fontSize: '20px' }}>Consejo Popular Parroquial ({infoParroquiaActual.nombre})</h3>
                 </div>
                 <span className="organization-number">22</span>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', margin: '16px 0' }}>
-                <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '10px', textAlign: 'center' }}>
-                  <strong style={{ fontSize: '18px', color: '#2563eb', display: 'block' }}>{infoParroquiaActual.registrados}</strong>
-                  <small style={{ color: '#64748b', fontSize: '11px' }}>Registrados</small>
-                </div>
-                <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '10px', textAlign: 'center' }}>
-                  <strong style={{ fontSize: '18px', color: '#16a34a', display: 'block' }}>{infoParroquiaActual.actividades}</strong>
-                  <small style={{ color: '#64748b', fontSize: '11px' }}>Actividades</small>
-                </div>
-                <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '10px', textAlign: 'center' }}>
-                  <strong style={{ fontSize: '18px', color: '#d97706', display: 'block' }}>{infoParroquiaActual.emprendimientos}</strong>
-                  <small style={{ color: '#64748b', fontSize: '11px' }}>Emprendimientos</small>
-                </div>
+              {/* Representaciones Adicionales / Estado Mayor */}
+              <p className="section-label" style={{ marginTop: '16px' }}>COORDINACIÓN Y REPRESENTACIONES ADICIONALES</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginTop: '8px' }}>
+                {representacionesAdicionalesDefinicion.map((rep) => (
+                  <div key={rep.id} style={{ background: '#f8fafc', padding: '10px', borderRadius: '10px', border: '1px solid #cbd5e1' }}>
+                    <small style={{ color: '#2563eb', fontWeight: '600', fontSize: '11px', display: 'block' }}>REPRESENTACIÓN</small>
+                    <strong style={{ fontSize: '12px', color: '#1e293b' }}>{rep.nombre}</strong>
+                  </div>
+                ))}
               </div>
 
-              {/* Lista de las 5 Comisiones Operativas */}
-              <p className="section-label" style={{ marginTop: '16px' }}>5 COMISIONES DE ACCIÓN SOCIOTERRITORIAL</p>
+              {/* 5 Vocerías Principales y Suplentes */}
+              <p className="section-label" style={{ marginTop: '20px' }}>5 VOCERÍAS (PRINCIPAL Y SUPLENTE)</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                {voceriasEstructuraDefinicion.map((v) => (
+                  <div key={v.id} style={{ background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <strong style={{ fontSize: '13px', color: '#1e293b' }}>{v.nombre}</strong>
+                      <span style={{ fontSize: '11px', color: '#16a34a', background: '#dcfce7', padding: '2px 8px', borderRadius: '6px', fontWeight: '600' }}>Activa</span>
+                    </div>
+                    <small style={{ color: '#64748b', fontSize: '11px', display: 'block', marginTop: '4px' }}>└── Principal & Suplente asignados</small>
+                  </div>
+                ))}
+              </div>
+
+              {/* Gráfica de Cumplimiento por Vocería */}
+              <p className="section-label" style={{ marginTop: '20px' }}>GRÁFICA DE CUMPLIMIENTO EN VIVO ({infoParroquiaActual.nombre})</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+                {[
+                  { label: 'Integración', val: cumplimientoActual.integracion, color: '#2563eb' },
+                  { label: 'Sistematización', val: cumplimientoActual.sistematizacion, color: '#9333ea' },
+                  { label: 'Comunicación Popular', val: cumplimientoActual.comunicacion, color: '#16a34a' },
+                  { label: 'Movilización Territorial', val: cumplimientoActual.movilizacion, color: '#ea580c' },
+                  { label: 'Formación Integral', val: cumplimientoActual.formacion, color: '#0d9488' },
+                ].map((item) => (
+                  <div key={item.label}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '600', marginBottom: '4px', color: '#1e293b' }}>
+                      <span>{item.label}</span>
+                      <span>{item.val}%</span>
+                    </div>
+                    <div style={{ width: '100%', height: '10px', background: '#e2e8f0', borderRadius: '6px', overflow: 'hidden' }}>
+                      <div style={{ width: `${item.val}%`, height: '100%', background: item.color, borderRadius: '6px', transition: 'width 0.5s ease' }}></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* 5 Comisiones / Mesas de Trabajo Operativas */}
+              <p className="section-label" style={{ marginTop: '20px' }}>5 COMISIONES / MESAS DE TRABAJO</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
                 {comisionesDefinicion.map((com) => (
                   <div key={com.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
@@ -2413,10 +2455,10 @@ function App() {
           <section className="vocerias-page">
             <div className="page-heading">
               <div>
-                <p className="section-label">REPRESENTACIÓN TERRITORIAL</p>
-                <h2>Vocerías estadales</h2>
+                <p className="section-label">ESTRUCTURA DE VOCERÍAS</p>
+                <h2>5 Vocerías del Consejo Popular</h2>
                 <p className="page-description">
-                  Conoce las vocerías y las mesas de trabajo vinculadas a cada estado.
+                  Representación con cargos Principales y Suplentes por territorio.
                 </p>
               </div>
 
@@ -2430,134 +2472,57 @@ function App() {
 
             <div className="vocerias-summary">
               <div className="summary-item">
-                <strong>{voceriasData.length}</strong>
-                <span>Vocerías activas</span>
+                <strong>5</strong>
+                <span>Vocerías principales</span>
               </div>
 
               <div className="summary-item">
-                <strong>{voceriasData.length}</strong>
-                <span>Mesas vinculadas</span>
+                <strong>5</strong>
+                <span>Suplentes asignados</span>
               </div>
 
               <div className="summary-item">
-                <strong>Estadal</strong>
-                <span>Ámbito de representación</span>
+                <strong>Estadal/Parroquial</strong>
+                <span>Ámbito</span>
               </div>
             </div>
 
             <div className="vocerias-grid">
-              {voceriasData.map((voceria) => (
+              {voceriasEstructuraDefinicion.map((voceria) => (
                 <article
                   className={`voceria-card ${voceria.color}`}
                   key={voceria.id}
                 >
                   <div className="voceria-card-top">
-                    <span className="voceria-icon">✦</span>
-
-                    <span className="voceria-status">
-                      Activa
-                    </span>
+                    <span className="voceria-icon">{voceria.icon}</span>
+                    <span className="voceria-status">Activa</span>
                   </div>
 
-                  <p className="voceria-state">
-                    {voceria.estado}
-                  </p>
-
+                  <p className="voceria-state">{parroquiaSeleccionada}</p>
                   <h3>{voceria.nombre}</h3>
-
                   <p className="voceria-description">
-                    {voceria.descripcion}
+                    └── Principal y Suplente coordinando tareas en la parroquia.
                   </p>
 
                   <div className="voceria-mesa">
                     <span className="mesa-icon">◎</span>
-
                     <div>
-                      <small>Mesa vinculada</small>
-                      <strong>{voceria.mesa}</strong>
+                      <small>Cumplimiento estimado</small>
+                      <strong>{cumplimientoActual[voceria.id] || 75}%</strong>
                     </div>
                   </div>
-
-                  <button
-                    className="voceria-detail-button"
-                    onClick={() => {
-                      vibrarHaptico();
-                      setSelectedVoceria(voceria);
-                    }}
-                  >
-                    Ver detalles
-                    <span>→</span>
-                  </button>
                 </article>
               ))}
             </div>
-
-            {selectedVoceria && (
-              <div
-                className="detail-overlay"
-                onClick={() => setSelectedVoceria(null)}
-              >
-                <div
-                  className="detail-bubble"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <div className="bubble-handle"></div>
-
-                  <div className="detail-panel-header">
-                    <div>
-                      <p className="section-label">
-                        VOCERÍA ESTADAL
-                      </p>
-
-                      <h3>{selectedVoceria.nombre}</h3>
-                    </div>
-
-                    <button
-                      className="close-button"
-                      onClick={() => setSelectedVoceria(null)}
-                      aria-label="Cerrar detalle"
-                    >
-                      ×
-                    </button>
-                  </div>
-
-                  <p className="bubble-description">
-                    {selectedVoceria.descripcion}
-                  </p>
-
-                  <div className="detail-information">
-                    <span>
-                      <strong>Estado:</strong>{' '}
-                      {selectedVoceria.estado}
-                    </span>
-
-                    <span>
-                      <strong>Área:</strong>{' '}
-                      {selectedVoceria.area}
-                    </span>
-
-                    <span>
-                      <strong>Mesa de trabajo:</strong>{' '}
-                      {selectedVoceria.mesa}
-                    </span>
-
-                    <span>
-                      <strong>Responsable:</strong>{' '}
-                      {selectedVoceria.responsable}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
           </section>
         ) : activeTab === 'mesas' ? (
           <section className="mesas-page">
             <div className="page-heading">
               <div>
                 <p className="section-label">ARTICULACIÓN TERRITORIAL</p>
-                <h2>Mesas de trabajo</h2>
+                <h2>5 Comisiones / Mesas de Trabajo</h2>
                 <p className="page-description">
-                  Consulta las mesas asociadas a cada vocería estadal.
+                  Planificación y ejecución operativa del Consejo Popular.
                 </p>
               </div>
 
@@ -2570,85 +2535,20 @@ function App() {
             </div>
 
             <div className="mesas-list">
-              {voceriasData.map((voceria, index) => (
-                <article className="mesa-row" key={voceria.id}>
-                  <div className={`mesa-number ${voceria.color}`}>
+              {comisionesDefinicion.map((com, index) => (
+                <article className="mesa-row" key={com.id}>
+                  <div className={`mesa-number ${com.color}`}>
                     {String(index + 1).padStart(2, '0')}
                   </div>
 
                   <div className="mesa-row-content">
-                    <p>{voceria.estado}</p>
-                    <h3>{voceria.mesa}</h3>
-                    <span>{voceria.area}</span>
+                    <p>{parroquiaSeleccionada}</p>
+                    <h3>{com.nombre}</h3>
+                    <span>{com.descripcion}</span>
                   </div>
-
-                  <button
-                    className="mesa-open-button"
-                    onClick={() => {
-                      vibrarHaptico();
-                      setSelectedVoceria(voceria);
-                    }}
-                    aria-label={`Ver ${voceria.mesa}`}
-                  >
-                    →
-                  </button>
                 </article>
               ))}
             </div>
-
-            {selectedVoceria && (
-              <div
-                className="detail-overlay"
-                onClick={() => setSelectedVoceria(null)}
-              >
-                <div
-                  className="detail-bubble"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <div className="bubble-handle"></div>
-
-                  <div className="detail-panel-header">
-                    <div>
-                      <p className="section-label">
-                        MESA DE TRABAJO
-                      </p>
-
-                      <h3>{selectedVoceria.mesa}</h3>
-                    </div>
-
-                    <button
-                      className="close-button"
-                      onClick={() => setSelectedVoceria(null)}
-                      aria-label="Cerrar detalle"
-                    >
-                      ×
-                    </button>
-                  </div>
-
-                  <p className="bubble-description">
-                    Mesa vinculada a la {selectedVoceria.nombre}
-                    de {selectedVoceria.estado}.
-                  </p>
-
-                  <div className="detail-information">
-                    <span>
-                      <strong>Estado:</strong>{' '}
-                      {selectedVoceria.estado}
-                    </span>
-
-                    <span>
-                      <strong>Vocería:</strong>{' '}
-                      {selectedVoceria.nombre}
-                    </span>
-
-                    <span>
-                      <strong>Área:</strong>{' '}
-                      {selectedVoceria.area}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
           </section>
         ) : activeTab === 'emprendimientos' ? (
           <section className="emprendimientos-page">
