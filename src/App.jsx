@@ -441,6 +441,38 @@ function App() {
     );
   };
 
+  const eliminarUsuarioEnSistema = (usuarioId) => {
+    vibrarHaptico();
+    if (window.confirm('¿Estás seguro de que deseas eliminar este usuario del sistema?')) {
+      setUsuariosRegistrados((prev) => prev.filter((u) => u.id !== usuarioId));
+    }
+  };
+
+  const cerrarSesionOReiniciarRegistro = () => {
+    if (window.confirm('¿Deseas salir del perfil actual y realizar un nuevo registro de prueba?')) {
+      vibrarHaptico();
+      const storageKey = telegramUserId ? `perfilUsuario_${telegramUserId}` : 'perfilUsuario';
+      localStorage.removeItem(storageKey);
+      setFormularioInicial({
+        cedula: '',
+        nombresApellidos: '',
+        genero: '',
+        fechaNacimiento: '',
+        estado: '',
+        municipio: '',
+        parroquia: '',
+        comuna: '',
+        concejoComunal: '',
+        telefono: '',
+        correo: '',
+        usuarioTelegram: '',
+        rol: 'Integrante Comunitario',
+      });
+      setRegistroCompletado(false);
+      setMostrarModalRol(false);
+    }
+  };
+
   const pinnedQuickActions = pinnedQuickActionTabs
     .map((tab) => quickActions.find((action) => action.tab === tab))
     .filter(Boolean);
@@ -2495,44 +2527,78 @@ function App() {
               </div>
             </div>
 
+            <button
+              type="button"
+              className="primary-button"
+              style={{ marginBottom: '16px', background: '#475569' }}
+              onClick={cerrarSesionOReiniciarRegistro}
+            >
+              + Probar nuevo registro (Cerrar sesión)
+            </button>
+
             <div className="eventos-list">
-              {usuariosRegistrados.map((usr) => (
-                <article key={usr.id} className="evento-card" style={{ background: '#ffffff' }}>
-                  <div className="evento-card-top">
-                    <span className={`activity-dot ${usr.rol === 'Administrador Estadal' ? 'blue' : usr.rol === 'Coordinador Parroquial' ? 'purple' : usr.rol === 'Vocero Comunitario' ? 'green' : 'orange'}`}></span>
-                    <span className="evento-level">{usr.parroquia}</span>
-                    <span className="evento-status">{usr.rol}</span>
-                  </div>
+              {usuariosRegistrados.length === 0 ? (
+                <div className="empty-page evento-empty-state">
+                  <span className="empty-icon">👤</span>
+                  <h3>No hay usuarios registrados</h3>
+                  <p>Prueba realizar un nuevo registro para probar el flujo de ingreso.</p>
+                </div>
+              ) : (
+                usuariosRegistrados.map((usr) => (
+                  <article key={usr.id} className="evento-card" style={{ background: '#ffffff' }}>
+                    <div className="evento-card-top">
+                      <span className={`activity-dot ${usr.rol === 'Administrador Estadal' ? 'blue' : usr.rol === 'Coordinador Parroquial' ? 'purple' : usr.rol === 'Vocero Comunitario' ? 'green' : 'orange'}`}></span>
+                      <span className="evento-level">{usr.parroquia}</span>
+                      <span className="evento-status">{usr.rol}</span>
+                    </div>
 
-                  <h3>👤 {usr.nombresApellidos}</h3>
-                  <p className="evento-location">🪪 Cédula: {usr.cedula} · Telegram: <strong>{usr.usuarioTelegram}</strong></p>
-                  <p className="evento-date">◷ Registrado el: {usr.fechaRegistro}</p>
+                    <h3>👤 {usr.nombresApellidos}</h3>
+                    <p className="evento-location">🪪 Cédula: {usr.cedula} · Telegram: <strong>{usr.usuarioTelegram}</strong></p>
+                    <p className="evento-date">◷ Registrado el: {usr.fechaRegistro}</p>
 
-                  <div style={{ marginTop: '12px', borderTop: '1px solid #e2e8f0', paddingTop: '10px' }}>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>
-                      ASIGNAR / PROMOVER ROL:
-                    </label>
-                    <select
-                      value={usr.rol}
-                      onChange={(e) => cambiarRolDeUsuarioEnSistema(usr.id, e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        borderRadius: '8px',
-                        border: '1px solid #2563eb',
-                        background: '#f8fafc',
-                        fontWeight: '600',
-                        color: '#1e293b',
-                      }}
-                    >
-                      <option value="Integrante Comunitario">Integrante Comunitario (Básico)</option>
-                      <option value="Vocero Comunitario">Vocero Comunitario (Crear eventos y tareas)</option>
-                      <option value="Coordinador Parroquial">Coordinador Parroquial (Gestión parroquial)</option>
-                      <option value="Administrador Estadal">Administrador Estadal (Control total)</option>
-                    </select>
-                  </div>
-                </article>
-              ))}
+                    <div style={{ marginTop: '12px', borderTop: '1px solid #e2e8f0', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569' }}>
+                        ASIGNAR / PROMOVER ROL:
+                      </label>
+                      <select
+                        value={usr.rol}
+                        onChange={(e) => cambiarRolDeUsuarioEnSistema(usr.id, e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '10px',
+                          borderRadius: '8px',
+                          border: '1px solid #2563eb',
+                          background: '#f8fafc',
+                          fontWeight: '600',
+                          color: '#1e293b',
+                        }}
+                      >
+                        <option value="Integrante Comunitario">Integrante Comunitario (Básico)</option>
+                        <option value="Vocero Comunitario">Vocero Comunitario (Crear eventos y tareas)</option>
+                        <option value="Coordinador Parroquial">Coordinador Parroquial (Gestión parroquial)</option>
+                        <option value="Administrador Estadal">Administrador Estadal (Control total)</option>
+                      </select>
+
+                      <button
+                        type="button"
+                        onClick={() => eliminarUsuarioEnSistema(usr.id)}
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          border: '1px solid #fca5a5',
+                          background: '#fef2f2',
+                          color: '#dc2626',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        🗑 Eliminar usuario del sistema
+                      </button>
+                    </div>
+                  </article>
+                ))
+              )}
             </div>
           </section>
         ) : activeTab === 'emprendimientos' ? (
@@ -2774,6 +2840,24 @@ function App() {
                   <small style={{ fontSize: '11px', color: '#64748b' }}>{item.desc}</small>
                 </button>
               ))}
+
+              <button
+                type="button"
+                style={{
+                  marginTop: '8px',
+                  padding: '12px',
+                  borderRadius: '10px',
+                  border: '1px solid #cbd5e1',
+                  background: '#f8fafc',
+                  color: '#dc2626',
+                  fontWeight: '600',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                }}
+                onClick={cerrarSesionOReiniciarRegistro}
+              >
+                🚪 Probar nuevo registro (Cerrar sesión)
+              </button>
             </div>
           </div>
         </div>
