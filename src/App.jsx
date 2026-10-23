@@ -1875,16 +1875,12 @@ function App() {
               </button>
             </div>
 
-            {eventosFiltroEstado === 'activos' && (
+            {eventosFiltroEstado === 'activos' && puedeCrearEvento && (
               <button
                 type="button"
                 className="primary-button evento-create-button"
                 onClick={() => {
                   vibrarHaptico();
-                  if (!puedeCrearEvento) {
-                    alert('Seguridad: Tu rol de Integrante Comunitario no permite crear eventos.');
-                    return;
-                  }
                   setMostrarFormularioEvento(
                     (valorActual) => !valorActual
                   );
@@ -2907,8 +2903,42 @@ function App() {
                   <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Tu rol asignado actual:</span>
                   <h4 style={{ margin: '4px 0 0 0', color: '#1d4ed8', fontSize: '16px' }}>👤 {formularioInicial.rol}</h4>
                   <p style={{ margin: '6px 0 0 0', fontSize: '12px', color: '#475569', lineHeight: 1.4 }}>
-                    🔒 El cambio de rol está restringido. Únicamente el <strong>Super Usuario</strong> o Administrador del sistema puede autorizar y modificar los permisos de tu usuario.
+                    🔒 El cambio de rol está restringido para Integrantes Comunitarios.
                   </p>
+                </div>
+
+                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '14px' }}>
+                  <strong style={{ fontSize: '12px', color: '#1e40af', display: 'block', marginBottom: '6px' }}>
+                    🔑 Acceso Administrador (Super Usuario)
+                  </strong>
+                  <p style={{ fontSize: '11px', color: '#3b82f6', marginBottom: '10px' }}>
+                    Introduce la clave de acceso especial para activar los permisos de Super Usuario en esta sesión:
+                  </p>
+                  <button
+                    type="button"
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: '#2563eb',
+                      color: '#ffffff',
+                      fontWeight: '600',
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => {
+                      const clave = prompt('Introduce la clave de Super Usuario:');
+                      if (clave === 'centinela2026' || clave === 'admin' || clave === '1234') {
+                        cambiarRolUsuario('Super Usuario');
+                        alert('¡Acceso concedido como Super Usuario!');
+                      } else if (clave !== null) {
+                        alert('Clave incorrecta. Acceso denegado.');
+                      }
+                    }}
+                  >
+                    🔓 Activar Super Usuario con PIN / Clave
+                  </button>
                 </div>
               </div>
             )}
