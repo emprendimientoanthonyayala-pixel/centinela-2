@@ -164,6 +164,7 @@ const eventosEjemplo = [
     descripcion: 'Encuentro estadal para la revisión de metas y mesas de trabajo.',
     creadoPor: 'Coordinación Estadal',
     creadoEn: new Date().toISOString(),
+    flyerImage: null,
     asistentes: [],
   },
 ];
@@ -203,16 +204,6 @@ const reportesEjemplo = [
     estadoServicio: 'Regular',
     observacion: 'Ciclo de bombeo con variaciones. Se requiere mantenimiento preventivo en la estación.',
     reportadoPor: 'Mesa Técnica de Agua',
-    fecha: obtenerFechaActualLocal(),
-  },
-  {
-    id: 'rep-2',
-    servicio: 'Electricidad',
-    parroquia: 'Caricuao',
-    comision: 'accion-socioterritorial',
-    estadoServicio: 'Óptimo',
-    observacion: 'Alumbrado público sustituido en avenidas principales.',
-    reportadoPor: 'Brigada de Servicios',
     fecha: obtenerFechaActualLocal(),
   },
 ];
@@ -312,6 +303,7 @@ function App() {
     telefono: '',
     correo: '',
     usuarioTelegram: '',
+    rol: 'Coordinador Parroquial', // Roles: 'Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario', 'Integrante Comunitario'
   });
 
   const [activeTab, setActiveTab] = useState('inicio');
@@ -321,6 +313,9 @@ function App() {
   const [comisionSeleccionada, setComisionSeleccionada] = useState('todas');
   const [selectedPost, setSelectedPost] = useState(null);
   const [activeFilter, setActiveFilter] = useState('Todo');
+
+  // Role Switcher Modal
+  const [mostrarModalRol, setMostrarModalRol] = useState(false);
 
   // Eventos state
   const [eventos, setEventos] = useState(() => {
@@ -349,6 +344,7 @@ function App() {
     horaFin: '',
     lugar: '',
     descripcion: '',
+    flyerImage: null,
   });
 
   // Emprendimientos State
@@ -483,6 +479,21 @@ function App() {
     return () => window.removeEventListener('hashchange', revisarHashYAsistencia);
   }, [eventos]);
 
+  // Security Helper: Check permissions
+  const puedeCrearEvento = ['Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario'].includes(formularioInicial.rol);
+  const puedeAdministrarEvento = ['Administrador Estadal', 'Coordinador Parroquial'].includes(formularioInicial.rol);
+  const puedeAsignarTarea = ['Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario'].includes(formularioInicial.rol);
+
+  const cambiarRolUsuario = (nuevoRol) => {
+    vibrarHaptico();
+    setFormularioInicial((prev) => {
+      const updated = { ...prev, rol: nuevoRol };
+      localStorage.setItem('perfilUsuario', JSON.stringify(updated));
+      return updated;
+    });
+    setMostrarModalRol(false);
+  };
+
   const pinnedQuickActions = pinnedQuickActionTabs
     .map((tab) => quickActions.find((action) => action.tab === tab))
     .filter(Boolean);
@@ -515,6 +526,7 @@ function App() {
 
   const publicacionesDeEventos = eventosCulminados.map((evento) => {
     const fotosGaleria = [];
+    if (evento.flyerImage) fotosGaleria.push(evento.flyerImage);
     evento.asistentes.forEach((asistente) => {
       if (Array.isArray(asistente.evidencias)) {
         asistente.evidencias.forEach((ev) => {
@@ -535,6 +547,7 @@ function App() {
       color: 'green',
       asistentes: evento.asistentes.length,
       evidencias: fotosGaleria,
+      flyerImage: evento.flyerImage,
     };
   });
 
@@ -556,6 +569,20 @@ function App() {
     setActiveTab(tab);
   };
 
+  // Flyer Image Selection
+  const seleccionarFlyerEvento = (e) => {
+    const archivo = e.target.files?.[0];
+    if (!archivo) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setFormularioEvento((prev) => ({
+        ...prev,
+        flyerImage: event.target.result,
+      }));
+    };
+    reader.readAsDataURL(archivo);
+  };
+
   // Eventos Handlers
   const actualizarFormularioEvento = (event) => {
     const { name, value } = event.target;
@@ -568,6 +595,11 @@ function App() {
   const crearEvento = (event) => {
     event.preventDefault();
     vibrarHaptico();
+
+    if (!puedeCrearEvento) {
+      alert('Seguridad: Tu rol actual no tiene permisos para crear eventos.');
+      return;
+    }
 
     const nuevoEvento = {
       id: crearIdUnico('evento'),
@@ -583,10 +615,8 @@ function App() {
       horaFin: formularioEvento.horaFin,
       lugar: formularioEvento.lugar.trim(),
       descripcion: formularioEvento.descripcion.trim(),
-      creadoPor:
-        formularioInicial.nombresApellidos ||
-        formularioInicial.usuarioTelegram ||
-        'Consejo Popular Parroquial',
+      flyerImage: formularioEvento.flyerImage,
+      creadoPor: `${formularioInicial.nombresApellidos || 'Usuario'} (${formularioInicial.rol})`,
       creadoEn: new Date().toISOString(),
       asistentes: [],
     };
@@ -602,6 +632,7 @@ function App() {
       horaFin: '',
       lugar: '',
       descripcion: '',
+      flyerImage: null,
     });
     setMostrarFormularioEvento(false);
     setEventoSeleccionadoId(nuevoEvento.id);
@@ -609,6 +640,10 @@ function App() {
 
   const actualizarEstadoEvento = (eventoId, nuevoEstado) => {
     vibrarHaptico();
+    if (!puedeAdministrarEvento) {
+      alert('Seguridad: Se requiere rol de Coordinador Parroquial o Administrador Estadal.');
+      return;
+    }
     setEventos((prev) =>
       prev.map((e) => (e.id === eventoId ? { ...e, estado: nuevoEstado } : e))
     );
@@ -730,6 +765,12 @@ function App() {
   const crearTarea = (e) => {
     e.preventDefault();
     vibrarHaptico();
+
+    if (!puedeAsignarTarea) {
+      alert('Seguridad: Solo los Voceros, Coordinadores o Administradores pueden asignar tareas.');
+      return;
+    }
+
     const nuevaTarea = {
       id: crearIdUnico('tarea'),
       titulo: formTarea.titulo.trim(),
@@ -824,7 +865,7 @@ function App() {
         <div style={{ maxWidth: '620px', margin: '0 auto', padding: '24px', background: '#ffffff', borderRadius: '18px', boxShadow: '0 4px 18px rgba(0, 0, 0, 0.08)' }}>
           <h1 style={{ marginTop: 0 }}>Completa tu registro</h1>
           <p style={{ color: '#5f6b7a', lineHeight: 1.5 }}>
-            Antes de entrar a Centinela 2.0 necesitamos tus datos territoriales.
+            Antes de entrar a Centinela 2.0 necesitamos tus datos y asignación de rol.
           </p>
           <form onSubmit={guardarRegistroInicial}>
             <label style={{ display: 'block', marginBottom: '14px' }}>
@@ -835,6 +876,16 @@ function App() {
             <label style={{ display: 'block', marginBottom: '14px' }}>
               <span>Nombres y apellidos</span>
               <input name="nombresApellidos" value={formularioInicial.nombresApellidos} onChange={actualizarFormulario} required placeholder="Escribe tus nombres y apellidos" style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px' }} />
+            </label>
+
+            <label style={{ display: 'block', marginBottom: '14px' }}>
+              <span>Rol / Responsabilidad</span>
+              <select name="rol" value={formularioInicial.rol} onChange={actualizarFormulario} required style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #2563eb', borderRadius: '10px', background: '#eff6ff', fontWeight: '600' }}>
+                <option value="Coordinador Parroquial">Coordinador Parroquial</option>
+                <option value="Administrador Estadal">Administrador Estadal</option>
+                <option value="Vocero Comunitario">Vocero Comunitario</option>
+                <option value="Integrante Comunitario">Integrante Comunitario</option>
+              </select>
             </label>
 
             <label style={{ display: 'block', marginBottom: '14px' }}>
@@ -946,11 +997,68 @@ function App() {
             <h1>Centinela <span>2.0</span></h1>
           </div>
 
-          <button className="notification-button" aria-label="Notificaciones" onClick={() => vibrarHaptico()}>
-            <span>♢</span>
-            <i></i>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              type="button"
+              onClick={() => { vibrarHaptico(); setMostrarModalRol((prev) => !prev); }}
+              style={{
+                padding: '6px 10px',
+                borderRadius: '8px',
+                background: '#eff6ff',
+                border: '1px solid #2563eb',
+                color: '#2563eb',
+                fontSize: '11px',
+                fontWeight: '600',
+                cursor: 'pointer',
+              }}
+            >
+              🔒 {formularioInicial.rol} ▾
+            </button>
+
+            <button className="notification-button" aria-label="Notificaciones" onClick={() => vibrarHaptico()}>
+              <span>♢</span>
+              <i></i>
+            </button>
+          </div>
         </header>
+
+        {/* Modal Cambio de Rol para Pruebas / Seguridad */}
+        {mostrarModalRol && (
+          <div className="detail-overlay" onClick={() => setMostrarModalRol(false)}>
+            <div className="detail-bubble" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+              <div className="bubble-handle"></div>
+              <div className="detail-panel-header">
+                <div>
+                  <p className="section-label">CONFIGURACIÓN DE SEGURIDAD</p>
+                  <h3>Asignación de Rol</h3>
+                </div>
+                <button type="button" className="close-button" onClick={() => setMostrarModalRol(false)}>×</button>
+              </div>
+              <p className="page-description">Selecciona el rol activo para validar permisos y seguridad:</p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: '16px 0' }}>
+                {['Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario', 'Integrante Comunitario'].map((rolOpt) => (
+                  <button
+                    key={rolOpt}
+                    type="button"
+                    onClick={() => cambiarRolUsuario(rolOpt)}
+                    style={{
+                      padding: '12px',
+                      borderRadius: '10px',
+                      border: formularioInicial.rol === rolOpt ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                      background: formularioInicial.rol === rolOpt ? '#eff6ff' : '#ffffff',
+                      fontWeight: formularioInicial.rol === rolOpt ? '600' : 'normal',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <strong>{rolOpt}</strong>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {activeTab === 'inicio' && (
           <>
@@ -959,7 +1067,7 @@ function App() {
                 <p className="muted-text">Bienvenido de nuevo</p>
                 <h2>Hola, {formularioInicial.nombresApellidos || 'usuario'}</h2>
                 <p className="welcome-copy">
-                  Aquí tienes la actividad de tu organización.
+                  Rol activo: <strong>{formularioInicial.rol}</strong>
                 </p>
               </div>
 
@@ -1575,7 +1683,7 @@ function App() {
                   {Array.isArray(post.evidencias) && post.evidencias.length > 0 && (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '8px', margin: '12px 0' }}>
                       {post.evidencias.map((foto, idx) => (
-                        <img key={idx} src={foto} alt={`Evidencia ${idx + 1}`} style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                        <img key={idx} src={foto} alt={`Evidencia ${idx + 1}`} style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
                       ))}
                     </div>
                   )}
@@ -1671,7 +1779,7 @@ function App() {
                 <h2>Eventos y Actividades</h2>
 
                 <p className="page-description">
-                  Administra eventos por parroquia y comisión, registra asistencias con QR y fotos.
+                  Administra eventos por parroquia y comisión, sube el flyer, registra asistencias con QR y fotos.
                 </p>
               </div>
 
@@ -1725,6 +1833,10 @@ function App() {
                 className="primary-button evento-create-button"
                 onClick={() => {
                   vibrarHaptico();
+                  if (!puedeCrearEvento) {
+                    alert('Seguridad: Tu rol de Integrante Comunitario no permite crear eventos.');
+                    return;
+                  }
                   setMostrarFormularioEvento(
                     (valorActual) => !valorActual
                   );
@@ -1744,7 +1856,7 @@ function App() {
                 <div className="section-title-row">
                   <div>
                     <p className="section-label">
-                      NUEVA ACTIVIDAD
+                      NUEVA ACTIVIDAD ({formularioInicial.rol})
                     </p>
 
                     <h3>Crear evento en {parroquiaSeleccionada}</h3>
@@ -1761,6 +1873,18 @@ function App() {
                     placeholder="Ejemplo: Jornada comunitaria"
                     required
                   />
+                </label>
+
+                <label className="evento-form-field">
+                  <span>Imagen / Flyer del evento (Opcional)</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={seleccionarFlyerEvento}
+                  />
+                  {formularioEvento.flyerImage && (
+                    <img src={formularioEvento.flyerImage} alt="Flyer preview" style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '8px', marginTop: '8px' }} />
+                  )}
                 </label>
 
                 <label className="evento-form-field">
@@ -1861,6 +1985,10 @@ function App() {
                     className="evento-card"
                     key={evento.id}
                   >
+                    {evento.flyerImage && (
+                      <img src={evento.flyerImage} alt={evento.titulo} style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '10px', marginBottom: '10px' }} />
+                    )}
+
                     <div className="evento-card-top">
                       <span
                         className={`activity-dot ${
@@ -1943,6 +2071,10 @@ function App() {
                     </button>
                   </div>
 
+                  {eventoSeleccionado.flyerImage && (
+                    <img src={eventoSeleccionado.flyerImage} alt="Flyer Evento" style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '12px', marginBottom: '12px' }} />
+                  )}
+
                   <div className="evento-detail-layout">
                     <div className="evento-detail-information">
                       <p>
@@ -1976,6 +2108,11 @@ function App() {
                       <p>
                         <strong>Descripción:</strong>{' '}
                         {eventoSeleccionado.descripcion}
+                      </p>
+
+                      <p>
+                        <strong>Organizado por:</strong>{' '}
+                        {eventoSeleccionado.creadoPor}
                       </p>
                     </div>
 
@@ -2155,6 +2292,10 @@ function App() {
               style={{ marginBottom: '16px' }}
               onClick={() => {
                 vibrarHaptico();
+                if (!puedeAsignarTarea) {
+                  alert('Seguridad: Tu rol actual no permite asignar tareas.');
+                  return;
+                }
                 setMostrarFormTarea((prev) => !prev);
               }}
             >
@@ -2165,7 +2306,7 @@ function App() {
               <form className="evento-form-card" onSubmit={crearTarea}>
                 <div className="section-title-row">
                   <div>
-                    <p className="section-label">NUEVA TAREA</p>
+                    <p className="section-label">NUEVA TAREA ({formularioInicial.rol})</p>
                     <h3>Registrar tarea para {parroquiaSeleccionada}</h3>
                   </div>
                 </div>
