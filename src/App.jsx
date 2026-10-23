@@ -92,7 +92,7 @@ const cumplimientoEstadalGlobal = {
   formacion: 76,
 };
 
-const quickActions = [
+const quickActionsBase = [
   { icon: '▣', label: 'Feed nacional', tab: 'feed' },
   { icon: '⌂', label: 'Mi territorio', tab: 'territorio' },
   { icon: '◎', label: 'Vocerías', tab: 'vocerias' },
@@ -101,55 +101,11 @@ const quickActions = [
   { icon: '✓', label: 'Tareas', tab: 'tareas' },
   { icon: '▤', label: 'Reportes', tab: 'reportes' },
   { icon: '₿', label: 'Emprendimientos', tab: 'emprendimientos' },
-  { icon: '⚙', label: 'Panel Admin', tab: 'admin' },
 ];
 
-const recentActivity = [
-  {
-    type: 'Convocatoria',
-    title: 'Reunión de coordinación territorial',
-    location: 'Caracas · Consejo Popular Estadal',
-    time: 'Hace 25 min',
-    color: 'blue',
-  },
-  {
-    type: 'Actividad',
-    title: 'Jornada de organización comunitaria',
-    location: 'Miranda · Consejo Popular Municipal',
-    time: 'Hace 1 h',
-    color: 'green',
-  },
-  {
-    type: 'Reporte',
-    title: 'Actualización de mesa de trabajo',
-    location: 'Zulia · Consejo Popular Parroquial',
-    time: 'Ayer',
-    color: 'orange',
-  },
-];
+const recentActivity = [];
 
-const feedPosts = [
-  {
-    id: 1,
-    type: 'Convocatoria',
-    title: 'Reunión de coordinación territorial',
-    description: 'Espacio de encuentro para revisar las actividades de organización y los próximos compromisos del territorio.',
-    territory: 'Caracas · Consejo Popular Estadal',
-    author: 'Coordinación territorial',
-    time: 'Hace 25 min',
-    color: 'blue',
-  },
-  {
-    id: 2,
-    type: 'Actividad',
-    title: 'Jornada de organización comunitaria',
-    description: 'Actividad de articulación con vocerías comunitarias para identificar necesidades y construir una agenda de trabajo.',
-    territory: 'Miranda · Consejo Popular Municipal',
-    author: 'Vocerías comunitarias',
-    time: 'Hace 1 h',
-    color: 'green',
-  },
-];
+const feedPosts = [];
 
 const parroquiasCaracas = parroquiasCaracasInfo.map((p) => p.nombre);
 
@@ -158,70 +114,14 @@ const municipiosPorEstado = {
   Miranda: ['Acevedo', 'Baruta', 'Chacao', 'Guaicaipuro', 'Sucre'],
 };
 
-const parroquiasPorMunicipio = {
-  'Distrito Capital|Libertador': parroquiasCaracas,
-};
 
-const eventosEjemplo = [
-  {
-    id: 'evento-ejemplo-1',
-    titulo: 'Asamblea Popular Estadal',
-    nivel: 'estadal',
-    estado: 'en-curso',
-    parroquia: 'Caricuao',
-    comision: 'accion-socioterritorial',
-    estadoTerritorial: 'Distrito Capital',
-    municipio: 'Libertador',
-    fecha: obtenerFechaActualLocal(),
-    horaInicio: '09:00',
-    horaFin: '12:00',
-    lugar: 'Plaza Bolívar, Caracas',
-    descripcion: 'Encuentro estadal para la revisión de metas y mesas de trabajo.',
-    creadoPor: 'Coordinación Estadal',
-    creadoEn: new Date().toISOString(),
-    flyerImage: null,
-    asistentes: [],
-  },
-];
+const eventosEjemplo = [];
 
-const emprendimientosEjemplo = [
-  {
-    id: 'emp-1',
-    nombre: 'Textiles Comunitarios Caricuao',
-    categoria: 'Textil y Calzado',
-    parroquia: 'Caricuao',
-    comision: 'produccion-economia',
-    responsable: 'María Rodríguez',
-    contacto: '0412-1112233',
-    descripcion: 'Unidad de producción familiar dedicada a la confección de prendas y uniformes escolares.',
-  },
-];
+const emprendimientosEjemplo = [];
 
-const tareasEjemplo = [
-  {
-    id: 'tarea-1',
-    titulo: 'Censo de productores locales en Caricuao',
-    parroquia: 'Caricuao',
-    comision: 'produccion-economia',
-    estado: 'En Proceso',
-    prioridad: 'Alta',
-    responsable: 'Brigada Productiva',
-    fechaLimite: obtenerFechaActualLocal(),
-  },
-];
+const tareasEjemplo = [];
 
-const reportesEjemplo = [
-  {
-    id: 'rep-1',
-    servicio: 'Agua',
-    parroquia: 'Caricuao',
-    comision: 'accion-socioterritorial',
-    estadoServicio: 'Regular',
-    observacion: 'Ciclo de bombeo con variaciones. Se requiere mantenimiento preventivo en la estación.',
-    reportadoPor: 'Mesa Técnica de Agua',
-    fecha: obtenerFechaActualLocal(),
-  },
-];
+const reportesEjemplo = [];
 
 function obtenerFechaActualLocal() {
   const hoy = new Date();
@@ -296,12 +196,12 @@ function App() {
       if (savedPinnedActions) {
         const parsedActions = JSON.parse(savedPinnedActions);
         const validActions = parsedActions.filter((tab) =>
-          quickActions.some((action) => action.tab === tab)
+          quickActionsBase.some((action) => action.tab === tab)
         );
         if (validActions.length === 3) return validActions;
       }
     } catch {}
-    return quickActions.slice(0, 3).map((action) => action.tab);
+    return quickActionsBase.slice(0, 3).map((action) => action.tab);
   });
 
   const [registroCompletado, setRegistroCompletado] = useState(false);
@@ -323,7 +223,6 @@ function App() {
   });
 
   const [activeTab, setActiveTab] = useState('inicio');
-  const [selectedVoceria, setSelectedVoceria] = useState(null);
   const [territoryType, setTerritoryType] = useState('estadal');
   const [parroquiaSeleccionada, setParroquiaSeleccionada] = useState('Caricuao');
   const [comisionSeleccionada, setComisionSeleccionada] = useState('todas');
@@ -423,38 +322,10 @@ function App() {
       const guardados = localStorage.getItem('usuariosCentinelaSystem');
       if (guardados) {
         const parsed = JSON.parse(guardados);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch {}
-    return [
-      {
-        id: 'usr-admin-1',
-        nombresApellidos: 'Coordinación Estadal Caracas',
-        cedula: 'V-10000000',
-        usuarioTelegram: '@admin_caracas',
-        parroquia: 'Caricuao',
-        rol: 'Administrador Estadal',
-        fechaRegistro: obtenerFechaActualLocal(),
-      },
-      {
-        id: 'usr-demo-2',
-        nombresApellidos: 'María Rodríguez',
-        cedula: 'V-18234567',
-        usuarioTelegram: '@mrodriguez_parroquia',
-        parroquia: 'Caricuao',
-        rol: 'Coordinador Parroquial',
-        fechaRegistro: obtenerFechaActualLocal(),
-      },
-      {
-        id: 'usr-demo-3',
-        nombresApellidos: 'Carlos Pérez',
-        cedula: 'V-20123456',
-        usuarioTelegram: '@cperez_vocero',
-        parroquia: 'Sucre',
-        rol: 'Vocero Comunitario',
-        fechaRegistro: obtenerFechaActualLocal(),
-      },
-    ];
+    return [];
   });
   const [mostrarFormReporte, setMostrarFormReporte] = useState(false);
   const [formReporte, setFormReporte] = useState({
@@ -543,9 +414,14 @@ function App() {
   }, [eventos]);
 
   // Security Helper
-  const puedeCrearEvento = ['Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario'].includes(formularioInicial.rol);
-  const puedeAdministrarEvento = ['Administrador Estadal', 'Coordinador Parroquial'].includes(formularioInicial.rol);
-  const puedeAsignarTarea = ['Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario'].includes(formularioInicial.rol);
+  const esSuperUsuario = formularioInicial.rol === 'Super Usuario';
+  const puedeCrearEvento = ['Super Usuario', 'Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario'].includes(formularioInicial.rol);
+  const puedeAdministrarEvento = ['Super Usuario', 'Administrador Estadal', 'Coordinador Parroquial'].includes(formularioInicial.rol);
+  const puedeAsignarTarea = ['Super Usuario', 'Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario'].includes(formularioInicial.rol);
+
+  const quickActions = esSuperUsuario
+    ? [...quickActionsBase, { icon: '⚙', label: 'Panel Admin', tab: 'admin' }]
+    : quickActionsBase;
 
   const cambiarRolUsuario = (nuevoRol) => {
     vibrarHaptico();
@@ -1084,22 +960,25 @@ function App() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button
-              type="button"
-              onClick={() => { vibrarHaptico(); setMostrarModalRol((prev) => !prev); }}
+            <span
+              onClick={() => {
+                vibrarHaptico();
+                setMostrarModalRol(true);
+              }}
               style={{
                 padding: '6px 10px',
                 borderRadius: '8px',
                 background: '#eff6ff',
-                border: '1px solid #2563eb',
-                color: '#2563eb',
+                border: '1px solid #bfdbfe',
+                color: '#1d4ed8',
                 fontSize: '11px',
                 fontWeight: '600',
                 cursor: 'pointer',
               }}
+              title="Haz clic para cambiar de rol"
             >
-              🔒 {formularioInicial.rol} ▾
-            </button>
+              👤 {formularioInicial.rol} ▾
+            </span>
 
             <button className="notification-button" aria-label="Notificaciones" onClick={() => vibrarHaptico()}>
               <span>♢</span>
@@ -1107,44 +986,6 @@ function App() {
             </button>
           </div>
         </header>
-
-        {/* Modal Cambio de Rol para Pruebas / Seguridad */}
-        {mostrarModalRol && (
-          <div className="detail-overlay" onClick={() => setMostrarModalRol(false)}>
-            <div className="detail-bubble" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
-              <div className="bubble-handle"></div>
-              <div className="detail-panel-header">
-                <div>
-                  <p className="section-label">CONFIGURACIÓN DE SEGURIDAD</p>
-                  <h3>Asignación de Rol</h3>
-                </div>
-                <button type="button" className="close-button" onClick={() => setMostrarModalRol(false)}>×</button>
-              </div>
-              <p className="page-description">Selecciona el rol activo para validar permisos y seguridad:</p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: '16px 0' }}>
-                {['Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario', 'Integrante Comunitario'].map((rolOpt) => (
-                  <button
-                    key={rolOpt}
-                    type="button"
-                    onClick={() => cambiarRolUsuario(rolOpt)}
-                    style={{
-                      padding: '12px',
-                      borderRadius: '10px',
-                      border: formularioInicial.rol === rolOpt ? '2px solid #2563eb' : '1px solid #cbd5e1',
-                      background: formularioInicial.rol === rolOpt ? '#eff6ff' : '#ffffff',
-                      fontWeight: formularioInicial.rol === rolOpt ? '600' : 'normal',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <strong>{rolOpt}</strong>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
 
         {activeTab === 'inicio' && (
           <>
@@ -2813,30 +2654,130 @@ function App() {
               )}
             </div>
           </section>
-        ) : activeTab !== 'inicio' ? (
-          <section className="empty-page">
-            <span className="empty-icon">✦</span>
+        ) : activeTab === 'menu' ? (
+          <section className="menu-page">
+            <div className="page-heading">
+              <div>
+                <p className="section-label">CENTINELA 2.0</p>
+                <h2>Menú Principal</h2>
+                <p className="page-description">Accede a todos los módulos y opciones del sistema.</p>
+              </div>
 
-            <p className="section-label">
-              MÓDULO DE DEMOSTRACIÓN
-            </p>
+              <button className="back-button" onClick={() => handleAction('inicio')}>Inicio</button>
+            </div>
 
-            <h2>{getTabTitle(activeTab)}</h2>
+            {/* Ficha de Perfil del Usuario */}
+            <div className="organization-card" style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '16px', padding: '16px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div className="avatar" style={{ width: '48px', height: '48px', fontSize: '20px' }}>
+                  {(formularioInicial.nombresApellidos || 'U').charAt(0).toUpperCase()}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <strong style={{ display: 'block', fontSize: '16px', color: '#1e293b' }}>{formularioInicial.nombresApellidos || 'Usuario'}</strong>
+                  <span style={{ display: 'block', fontSize: '12px', color: '#64748b' }}>🪪 {formularioInicial.cedula || 'Sin cédula'} · {formularioInicial.usuarioTelegram || '@usuario'}</span>
+                  <span style={{ display: 'block', fontSize: '12px', color: '#2563eb', fontWeight: '600', marginTop: '2px' }}>
+                    📍 {formularioInicial.parroquia || 'Caricuao'}, {formularioInicial.estado || 'Caracas'}
+                  </span>
+                </div>
+              </div>
+              <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12px', color: '#475569', fontWeight: '600' }}>Rol en el sistema:</span>
+                <span style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: '700' }}>
+                  {formularioInicial.rol}
+                </span>
+              </div>
+            </div>
 
-            <p>
-              Esta pantalla se construirá en la siguiente etapa. Ya dejamos
-              preparado el sistema de navegación para conectar este módulo.
-            </p>
+            {/* Módulos Principales */}
+            <p className="section-label" style={{ marginBottom: '10px' }}>MÓDULOS DE TRABAJO</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '20px' }}>
+              {[
+                { tab: 'feed', icon: '▣', title: 'Feed Stadal', desc: 'Novedades y eventos culminados' },
+                { tab: 'territorio', icon: '⌂', title: 'Mi Territorio', desc: 'Mapa y las 22 parroquias' },
+                { tab: 'vocerias', icon: '◎', title: 'Vocerías', desc: '5 Vocerías y Representaciones' },
+                { tab: 'mesas', icon: '☷', title: 'Comisiones', desc: '5 Mesas de trabajo operativas' },
+                { tab: 'eventos', icon: '◷', title: 'Eventos', desc: 'Convocatorias, QR y fotos' },
+                { tab: 'tareas', icon: '✓', title: 'Tareas', desc: 'Compromisos comunitarios' },
+                { tab: 'reportes', icon: '▤', title: 'Reportes', desc: 'Diagnóstico de servicios' },
+                { tab: 'emprendimientos', icon: '₿', title: 'Emprendimientos', desc: 'Red de producción local' },
+                ...(esSuperUsuario ? [{ tab: 'admin', icon: '⚙', title: 'Panel Admin', desc: 'Gestión de roles y usuarios' }] : []),
+              ].map((item) => (
+                <button
+                  key={item.tab}
+                  type="button"
+                  onClick={() => handleAction(item.tab)}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    padding: '14px',
+                    borderRadius: '14px',
+                    border: '1px solid #e2e8f0',
+                    background: '#ffffff',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span style={{ fontSize: '24px', marginBottom: '6px' }}>{item.icon}</span>
+                  <strong style={{ fontSize: '13px', color: '#1e293b' }}>{item.title}</strong>
+                  <small style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>{item.desc}</small>
+                </button>
+              ))}
+            </div>
 
-            <button
-              className="primary-button"
-              onClick={() => handleAction('inicio')}
-            >
-              Volver al inicio
-            </button>
+            {/* Info del Sistema */}
+            <div style={{ padding: '14px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+              <strong style={{ fontSize: '12px', color: '#475569', display: 'block' }}>Centinela 2.0 · Telegram Mini App</strong>
+              <small style={{ fontSize: '11px', color: '#94a3b8' }}>Plataforma de Organización Popular de Caracas</small>
+            </div>
           </section>
         ) : null}
       </main>
+
+      {mostrarModalRol && (
+        <div className="detail-overlay" onClick={() => setMostrarModalRol(false)}>
+          <div className="detail-bubble" onClick={(e) => e.stopPropagation()}>
+            <div className="bubble-handle"></div>
+            <div className="detail-panel-header">
+              <div>
+                <p className="section-label">CAMBIAR ROL PARA PRUEBAS</p>
+                <h3>Selecciona tu Rol</h3>
+              </div>
+              <button className="close-button" onClick={() => setMostrarModalRol(false)}>×</button>
+            </div>
+            <p className="bubble-description">
+              Selecciona tu rol para probar las funciones y accesos de la aplicación.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+              {[
+                { rol: 'Super Usuario', desc: 'Acceso total y Panel Admin de control' },
+                { rol: 'Administrador Estadal', desc: 'Gestión completa del estado' },
+                { rol: 'Coordinador Parroquial', desc: 'Gestión y eventos parroquiales' },
+                { rol: 'Vocero Comunitario', desc: 'Creación de eventos y tareas' },
+                { rol: 'Integrante Comunitario', desc: 'Rol básico para usuarios registrados' },
+              ].map((item) => (
+                <button
+                  key={item.rol}
+                  type="button"
+                  style={{
+                    padding: '12px',
+                    borderRadius: '10px',
+                    border: formularioInicial.rol === item.rol ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                    background: formularioInicial.rol === item.rol ? '#eff6ff' : '#ffffff',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => cambiarRolUsuario(item.rol)}
+                >
+                  <strong style={{ display: 'block', fontSize: '13px', color: '#1e293b' }}>{item.rol}</strong>
+                  <small style={{ fontSize: '11px', color: '#64748b' }}>{item.desc}</small>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <nav className="bottom-navigation">
         <NavButton
@@ -2886,21 +2827,5 @@ function NavButton({ icon, label, active, onClick }) {
   );
 }
 
-function getTabTitle(tab) {
-  const titles = {
-    feed: 'Feed nacional',
-    territorio: 'Mi territorio',
-    territory: 'Mi territorio',
-    vocerias: 'Vocerías',
-    mesas: 'Mesas de trabajo',
-    eventos: 'Eventos',
-    reportes: 'Reportes y Diagnósticos',
-    emprendimientos: 'Emprendimientos',
-    tareas: 'Tareas',
-    menu: 'Menú principal',
-  };
-
-  return titles[tab] || 'Módulo';
-}
 
 export default App;
