@@ -101,6 +101,7 @@ const quickActions = [
   { icon: '✓', label: 'Tareas', tab: 'tareas' },
   { icon: '▤', label: 'Reportes', tab: 'reportes' },
   { icon: '₿', label: 'Emprendimientos', tab: 'emprendimientos' },
+  { icon: '⚙', label: 'Panel Admin', tab: 'admin' },
 ];
 
 const recentActivity = [
@@ -318,7 +319,7 @@ function App() {
     telefono: '',
     correo: '',
     usuarioTelegram: '',
-    rol: 'Coordinador Parroquial',
+    rol: 'Integrante Comunitario',
   });
 
   const [activeTab, setActiveTab] = useState('inicio');
@@ -415,6 +416,46 @@ function App() {
     } catch {}
     return reportesEjemplo;
   });
+
+  // Usuarios para Panel Admin
+  const [usuariosRegistrados, setUsuariosRegistrados] = useState(() => {
+    try {
+      const guardados = localStorage.getItem('usuariosCentinelaSystem');
+      if (guardados) {
+        const parsed = JSON.parse(guardados);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [
+      {
+        id: 'usr-admin-1',
+        nombresApellidos: 'Coordinación Estadal Caracas',
+        cedula: 'V-10000000',
+        usuarioTelegram: '@admin_caracas',
+        parroquia: 'Caricuao',
+        rol: 'Administrador Estadal',
+        fechaRegistro: obtenerFechaActualLocal(),
+      },
+      {
+        id: 'usr-demo-2',
+        nombresApellidos: 'María Rodríguez',
+        cedula: 'V-18234567',
+        usuarioTelegram: '@mrodriguez_parroquia',
+        parroquia: 'Caricuao',
+        rol: 'Coordinador Parroquial',
+        fechaRegistro: obtenerFechaActualLocal(),
+      },
+      {
+        id: 'usr-demo-3',
+        nombresApellidos: 'Carlos Pérez',
+        cedula: 'V-20123456',
+        usuarioTelegram: '@cperez_vocero',
+        parroquia: 'Sucre',
+        rol: 'Vocero Comunitario',
+        fechaRegistro: obtenerFechaActualLocal(),
+      },
+    ];
+  });
   const [mostrarFormReporte, setMostrarFormReporte] = useState(false);
   const [formReporte, setFormReporte] = useState({
     servicio: 'Agua',
@@ -479,6 +520,10 @@ function App() {
   }, [reportes]);
 
   useEffect(() => {
+    localStorage.setItem('usuariosCentinelaSystem', JSON.stringify(usuariosRegistrados));
+  }, [usuariosRegistrados]);
+
+  useEffect(() => {
     const revisarHashYAsistencia = () => {
       const hash = window.location.hash;
       if (hash.includes('asistencia=')) {
@@ -511,6 +556,13 @@ function App() {
       return updated;
     });
     setMostrarModalRol(false);
+  };
+
+  const cambiarRolDeUsuarioEnSistema = (usuarioId, nuevoRol) => {
+    vibrarHaptico();
+    setUsuariosRegistrados((prev) =>
+      prev.map((u) => (u.id === usuarioId ? { ...u, rol: nuevoRol } : u))
+    );
   };
 
   const pinnedQuickActions = pinnedQuickActionTabs
@@ -870,6 +922,28 @@ function App() {
     }
     const storageKey = telegramUserId ? `perfilUsuario_${telegramUserId}` : 'perfilUsuario';
     localStorage.setItem(storageKey, JSON.stringify(formularioInicial));
+
+    // Agregar nuevo usuario a la lista del sistema
+    const nuevoUsuarioObj = {
+      id: telegramUserId ? `usr-tg-${telegramUserId}` : crearIdUnico('usr'),
+      nombresApellidos: formularioInicial.nombresApellidos,
+      cedula: formularioInicial.cedula,
+      usuarioTelegram: formularioInicial.usuarioTelegram || (telegramUserId ? `@id_${telegramUserId}` : '—'),
+      parroquia: formularioInicial.parroquia || 'Caricuao',
+      rol: formularioInicial.rol || 'Integrante Comunitario',
+      fechaRegistro: obtenerFechaActualLocal(),
+    };
+
+    setUsuariosRegistrados((prev) => {
+      const index = prev.findIndex((u) => u.id === nuevoUsuarioObj.id || u.cedula === nuevoUsuarioObj.cedula);
+      if (index >= 0) {
+        const copy = [...prev];
+        copy[index] = { ...copy[index], ...nuevoUsuarioObj };
+        return copy;
+      }
+      return [nuevoUsuarioObj, ...prev];
+    });
+
     if (formularioInicial.parroquia) setParroquiaSeleccionada(formularioInicial.parroquia);
     setRegistroCompletado(true);
   };
@@ -894,13 +968,8 @@ function App() {
             </label>
 
             <label style={{ display: 'block', marginBottom: '14px' }}>
-              <span>Rol / Responsabilidad</span>
-              <select name="rol" value={formularioInicial.rol} onChange={actualizarFormulario} required style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #2563eb', borderRadius: '10px', background: '#eff6ff', fontWeight: '600' }}>
-                <option value="Coordinador Parroquial">Coordinador Parroquial</option>
-                <option value="Administrador Estadal">Administrador Estadal</option>
-                <option value="Vocero Comunitario">Vocero Comunitario</option>
-                <option value="Integrante Comunitario">Integrante Comunitario</option>
-              </select>
+              <span>Usuario de Telegram</span>
+              <input name="usuarioTelegram" value={formularioInicial.usuarioTelegram} onChange={actualizarFormulario} placeholder="@usuario_telegram" style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px', background: '#f8fafc' }} />
             </label>
 
             <label style={{ display: 'block', marginBottom: '14px' }}>
@@ -2548,6 +2617,78 @@ function App() {
                     <p>{parroquiaSeleccionada}</p>
                     <h3>{com.nombre}</h3>
                     <span>{com.descripcion}</span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : activeTab === 'admin' ? (
+          <section className="admin-page">
+            <div className="page-heading">
+              <div>
+                <p className="section-label">ADMINISTRACIÓN Y CONTROL DE ACCESO</p>
+                <h2>Panel de Administración Super Usuario</h2>
+                <p className="page-description">
+                  Gestión centralizada de usuarios registrados y asignación de roles jerárquicos.
+                </p>
+              </div>
+
+              <button className="back-button" onClick={() => handleAction('inicio')}>Inicio</button>
+            </div>
+
+            <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '14px', marginBottom: '16px' }}>
+              <strong style={{ color: '#1e3a8a', display: 'block', fontSize: '14px', marginBottom: '4px' }}>ℹ️ Nota de seguridad</strong>
+              <p style={{ color: '#1e40af', fontSize: '13px', margin: 0, lineHeight: 1.4 }}>
+                Los usuarios que se registran de forma independiente entran con el rol predeterminado de <strong>Integrante Comunitario</strong>. Desde este panel, como Super Usuario / Administrador, puedes autorizar o cambiar su rol a <strong>Vocero Comunitario</strong>, <strong>Coordinador Parroquial</strong> o <strong>Administrador Estadal</strong>.
+              </p>
+            </div>
+
+            <div className="eventos-summary" style={{ marginBottom: '16px' }}>
+              <div className="summary-item">
+                <strong>{usuariosRegistrados.length}</strong>
+                <span>Usuarios registrados</span>
+              </div>
+              <div className="summary-item">
+                <strong>{usuariosRegistrados.filter((u) => u.rol !== 'Integrante Comunitario').length}</strong>
+                <span>Roles asignados</span>
+              </div>
+            </div>
+
+            <div className="eventos-list">
+              {usuariosRegistrados.map((usr) => (
+                <article key={usr.id} className="evento-card" style={{ background: '#ffffff' }}>
+                  <div className="evento-card-top">
+                    <span className={`activity-dot ${usr.rol === 'Administrador Estadal' ? 'blue' : usr.rol === 'Coordinador Parroquial' ? 'purple' : usr.rol === 'Vocero Comunitario' ? 'green' : 'orange'}`}></span>
+                    <span className="evento-level">{usr.parroquia}</span>
+                    <span className="evento-status">{usr.rol}</span>
+                  </div>
+
+                  <h3>👤 {usr.nombresApellidos}</h3>
+                  <p className="evento-location">🪪 Cédula: {usr.cedula} · Telegram: <strong>{usr.usuarioTelegram}</strong></p>
+                  <p className="evento-date">◷ Registrado el: {usr.fechaRegistro}</p>
+
+                  <div style={{ marginTop: '12px', borderTop: '1px solid #e2e8f0', paddingTop: '10px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>
+                      ASIGNAR / PROMOVER ROL:
+                    </label>
+                    <select
+                      value={usr.rol}
+                      onChange={(e) => cambiarRolDeUsuarioEnSistema(usr.id, e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        borderRadius: '8px',
+                        border: '1px solid #2563eb',
+                        background: '#f8fafc',
+                        fontWeight: '600',
+                        color: '#1e293b',
+                      }}
+                    >
+                      <option value="Integrante Comunitario">Integrante Comunitario (Básico)</option>
+                      <option value="Vocero Comunitario">Vocero Comunitario (Crear eventos y tareas)</option>
+                      <option value="Coordinador Parroquial">Coordinador Parroquial (Gestión parroquial)</option>
+                      <option value="Administrador Estadal">Administrador Estadal (Control total)</option>
+                    </select>
                   </div>
                 </article>
               ))}
