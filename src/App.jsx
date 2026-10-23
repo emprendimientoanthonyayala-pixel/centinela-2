@@ -528,8 +528,17 @@ function App() {
   const [formComunicado, setFormComunicado] = useState({
     mensaje: '',
     alcance: formularioInicial.rol === 'Super Usuario' ? 'todos' : formularioInicial.rol === 'Administrador Estadal' ? 'estado' : 'parroquia',
-    parroquiaEspecifica: formularioInicial.parroquia || 'Caricuao',
+    parroquiaEspecifica: formularioInicial.parroquia || parroquiaSeleccionada || 'Caricuao',
   });
+
+  useEffect(() => {
+    if (formularioInicial.parroquia || parroquiaSeleccionada) {
+      setFormComunicado((prev) => ({
+        ...prev,
+        parroquiaEspecifica: formularioInicial.parroquia || parroquiaSeleccionada || 'Caricuao',
+      }));
+    }
+  }, [formularioInicial.parroquia, parroquiaSeleccionada]);
 
   const enviarComunicadoMensaje = (e) => {
     e.preventDefault();
@@ -537,13 +546,15 @@ function App() {
 
     if (!formComunicado.mensaje.trim()) return;
 
+    const parroquiaDestino = formComunicado.alcance === 'parroquia' ? formComunicado.parroquiaEspecifica : 'Todas';
+
     const nuevoCom = {
       id: crearIdUnico('com'),
       emisorRol: formularioInicial.rol,
       emisorNombre: formularioInicial.nombresApellidos || 'Autoridad Centinela',
       mensaje: formComunicado.mensaje.trim(),
       alcance: formComunicado.alcance,
-      parroquiaTarget: formComunicado.alcance === 'parroquia' ? formComunicado.parroquiaEspecifica : 'Todas',
+      parroquiaTarget: parroquiaDestino,
       fecha: new Date().toISOString(),
     };
 
@@ -564,13 +575,25 @@ function App() {
         if (error) console.warn('Supabase comunicado sync warning:', error);
       });
 
+    // Telegram Bot Chat / Share Intent
+    const textoDifusion = `📢 *COMUNICADO OFICIAL CENTINELA 2.0*\n\n${nuevoCom.mensaje}\n\n📍 *Alcance:* ${
+      nuevoCom.alcance === 'todos' ? 'Toda Caracas' : nuevoCom.alcance === 'estado' ? 'Todo el Estado' : `Parroquia ${nuevoCom.parroquiaTarget}`
+    }\n👤 *Emitido por:* ${nuevoCom.emisorNombre} (${nuevoCom.emisorRol})`;
+
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent('https://t.me/iCentinela_bot')}&text=${encodeURIComponent(textoDifusion)}`;
+
+    if (window.Telegram?.WebApp?.openTelegramLink) {
+      window.Telegram.WebApp.openTelegramLink(shareUrl);
+    } else {
+      window.open(shareUrl, '_blank');
+    }
+
     setFormComunicado({
       mensaje: '',
       alcance: formularioInicial.rol === 'Super Usuario' ? 'todos' : formularioInicial.rol === 'Administrador Estadal' ? 'estado' : 'parroquia',
-      parroquiaEspecifica: formularioInicial.parroquia || 'Caricuao',
+      parroquiaEspecifica: formularioInicial.parroquia || parroquiaSeleccionada || 'Caricuao',
     });
     setMostrarModalComunicado(false);
-    alert('📢 ¡Comunicado enviado exitosamente a tu red!');
   };
 
   const quickActions = esSuperUsuario
@@ -1202,73 +1225,6 @@ function App() {
 
         {activeTab === 'inicio' && (
           <>
-            {/* Comunicados Jerárquicos Banner */}
-            {comunicados.length > 0 && (
-              <div style={{ margin: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {comunicados
-                  .filter((com) => {
-                    if (com.alcance === 'todos') return true;
-                    if (com.alcance === 'estado') return true;
-                    if (com.alcance === 'parroquia') return com.parroquiaTarget === (formularioInicial.parroquia || 'Caricuao');
-                    return true;
-                  })
-                  .slice(0, 2)
-                  .map((com) => (
-                    <div
-                      key={com.id}
-                      style={{
-                        background: '#eff6ff',
-                        borderLeft: '4px solid #2563eb',
-                        borderRadius: '10px',
-                        padding: '12px',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '11px', fontWeight: '700', color: '#1d4ed8', textTransform: 'uppercase' }}>
-                          📢 Comunicado ({com.emisorRol})
-                        </span>
-                        <small style={{ fontSize: '10px', color: '#64748b' }}>
-                          {com.fecha ? new Date(com.fecha).toLocaleDateString('es-VE') : 'Hoy'}
-                        </small>
-                      </div>
-                      <p style={{ margin: 0, fontSize: '13px', color: '#1e293b', lineHeight: '1.4' }}>
-                        {com.mensaje}
-                      </p>
-                      <small style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: '#64748b' }}>
-                        Emitido por: {com.emisorNombre} · Alcance: {com.alcance === 'todos' ? 'Toda Caracas' : com.alcance === 'estado' ? 'Todo el Estado' : `Parroquia ${com.parroquiaTarget}`}
-                      </small>
-                    </div>
-                  ))}
-              </div>
-            )}
-
-            {puedeEnviarComunicado && (
-              <div style={{ margin: '0 16px 12px 16px' }}>
-                <button
-                  type="button"
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    borderRadius: '10px',
-                    border: '1px solid #bfdbfe',
-                    background: '#ffffff',
-                    color: '#1d4ed8',
-                    fontWeight: '600',
-                    fontSize: '13px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => setMostrarModalComunicado(true)}
-                >
-                  📢 Emitir comunicado a la red ({formularioInicial.rol === 'Super Usuario' ? 'Toda Caracas' : formularioInicial.rol === 'Administrador Estadal' ? 'Todo el Estado / Parroquias' : 'Su Parroquia'})
-                </button>
-              </div>
-            )}
-
             <section className="welcome-section">
               <div>
                 <p className="muted-text">Bienvenido de nuevo</p>
@@ -3019,6 +2975,45 @@ function App() {
               </div>
             </div>
 
+            {/* Comunicados Jerárquicos en Sección Menú */}
+            {puedeEnviarComunicado && (
+              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '16px', padding: '16px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <strong style={{ fontSize: '14px', color: '#1e40af' }}>📢 Difusión y Comunicados Oficiales</strong>
+                  <span style={{ fontSize: '11px', background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: '6px', fontWeight: '700' }}>
+                    {formularioInicial.rol}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: '#3b82f6', margin: '0 0 12px 0', lineHeight: 1.4 }}>
+                  {formularioInicial.rol === 'Super Usuario'
+                    ? 'Como Super Usuario puedes emitir comunicados a toda Caracas o seleccionar parroquias específicas.'
+                    : formularioInicial.rol === 'Administrador Estadal'
+                    ? 'Puedes enviar convocatorias a todo el estado o a parroquias coordinadas.'
+                    : 'Puedes emitir avisos a los integrantes registrados en tu parroquia.'}
+                </p>
+                <button
+                  type="button"
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    background: '#2563eb',
+                    color: '#ffffff',
+                    fontWeight: '600',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => {
+                    vibrarHaptico();
+                    setMostrarModalComunicado(true);
+                  }}
+                >
+                  🚀 Redactar y emitir comunicado
+                </button>
+              </div>
+            )}
+
             {/* Módulos Principales */}
             <p className="section-label" style={{ marginBottom: '10px' }}>MÓDULOS DE TRABAJO</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '20px' }}>
@@ -3207,7 +3202,7 @@ function App() {
                   {['Super Usuario', 'Administrador Estadal'].includes(formularioInicial.rol) && (
                     <option value="estado">🏛 Todo el Estado / Municipio</option>
                   )}
-                  <option value="parroquia">📍 Parroquia Específica ({formComunicado.parroquiaEspecifica})</option>
+                  <option value="parroquia">📍 Parroquia Específica</option>
                 </select>
               </div>
 
