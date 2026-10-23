@@ -344,6 +344,7 @@ function App() {
   }, []);
 
   const [mostrarFormularioEvento, setMostrarFormularioEvento] = useState(false);
+  const [eventoEnEdicion, setEventoEnEdicion] = useState(null);
   const [eventoSeleccionadoId, setEventoSeleccionadoId] = useState(null);
   const [fotosEvidencia, setFotosEvidencia] = useState([]);
   const [eventosFiltroEstado, setEventosFiltroEstado] = useState('activos');
@@ -575,15 +576,32 @@ function App() {
         if (error) console.warn('Supabase comunicado sync warning:', error);
       });
 
-    // Telegram Bot Chat / Share Intent
+    // Telegram Bot Chat / Share Intent & WebApp sendData
     const textoDifusion = `📢 *COMUNICADO OFICIAL CENTINELA 2.0*\n\n${nuevoCom.mensaje}\n\n📍 *Alcance:* ${
       nuevoCom.alcance === 'todos' ? 'Toda Caracas' : nuevoCom.alcance === 'estado' ? 'Todo el Estado' : `Parroquia ${nuevoCom.parroquiaTarget}`
     }\n👤 *Emitido por:* ${nuevoCom.emisorNombre} (${nuevoCom.emisorRol})`;
 
+    const tgWebApp = window.Telegram?.WebApp;
+    if (tgWebApp) {
+      try {
+        tgWebApp.sendData(
+          JSON.stringify({
+            tipo: 'comunicado',
+            mensaje: nuevoCom.mensaje,
+            alcance: nuevoCom.alcance,
+            parroquia: nuevoCom.parroquiaTarget,
+            emisor: nuevoCom.emisorNombre,
+          })
+        );
+      } catch (err) {
+        console.warn('sendData no disponible fuera de chat directo:', err);
+      }
+    }
+
     const shareUrl = `https://t.me/share/url?url=${encodeURIComponent('https://t.me/iCentinela_bot')}&text=${encodeURIComponent(textoDifusion)}`;
 
-    if (window.Telegram?.WebApp?.openTelegramLink) {
-      window.Telegram.WebApp.openTelegramLink(shareUrl);
+    if (tgWebApp?.openTelegramLink) {
+      tgWebApp.openTelegramLink(shareUrl);
     } else {
       window.open(shareUrl, '_blank');
     }
@@ -831,6 +849,73 @@ function App() {
   };
 
   const iniciarEvento = (eventoId) => actualizarEstadoEvento(eventoId, 'en-curso');
+
+  const abrirEdicionEvento = (evento) => {
+    vibrarHaptico();
+    if (!puedeAdministrarEvento) {
+      alert('Seguridad: Tu rol no permite editar eventos.');
+      return;
+    }
+    setEventoEnEdicion(evento);
+  };
+
+  const eliminarEvento = (eventoId) => {
+    vibrarHaptico();
+    if (!puedeAdministrarEvento) {
+      alert('Seguridad: Solo coordinadores y administradores pueden eliminar eventos.');
+      return;
+    }
+
+    if (!confirm('¿Estás seguro de que deseas eliminar este evento? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    setEventos((prev) => prev.filter((e) => e.id !== eventoId));
+
+    supabase
+      .from('eventos')
+      .delete()
+      .eq('id', eventoId)
+      .then(({ error }) => {
+        if (error) console.warn('Supabase delete error:', error);
+      });
+
+    if (eventoSeleccionadoId === eventoId) {
+      setEventoSeleccionadoId(null);
+    }
+
+    alert('🗑 Evento eliminado correctamente.');
+  };
+
+  const guardarEdicionEvento = (e) => {
+    e.preventDefault();
+    vibrarHaptico();
+    if (!eventoEnEdicion) return;
+
+    setEventos((prev) =>
+      prev.map((e) => (e.id === eventoEnEdicion.id ? { ...e, ...eventoEnEdicion } : e))
+    );
+
+    supabase
+      .from('eventos')
+      .update({
+        titulo: eventoEnEdicion.titulo,
+        parroquia: eventoEnEdicion.parroquia,
+        fecha: eventoEnEdicion.fecha,
+        hora_inicio: eventoEnEdicion.horaInicio,
+        hora_fin: eventoEnEdicion.horaFin,
+        lugar: eventoEnEdicion.lugar,
+        descripcion: eventoEnEdicion.descripcion,
+        flyer_image: eventoEnEdicion.flyerImage,
+      })
+      .eq('id', eventoEnEdicion.id)
+      .then(({ error }) => {
+        if (error) console.warn('Supabase update error:', error);
+      });
+
+    setEventoEnEdicion(null);
+    alert('✏️ Evento actualizado correctamente.');
+  };
 
   const culminarEvento = (eventoId) => {
     const evento = eventos.find((e) => e.id === eventoId);
@@ -2008,14 +2093,44 @@ function App() {
               </button>
             </div>
 
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ fontSize: '12px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '4px' }}>FILTRAR POR COMISIÓN:</label>
-              <select value={comisionSeleccionada} onChange={(e) => setComisionSeleccionada(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff' }}>
-                <option value="todas">Todas las comisiones</option>
-                {comisionesDefinicion.map((c) => (
-                  <option key={c.id} value={c.id}>{c.nombre}</option>
-                ))}
-              </select>
+            {/* Panel de Supervisión Parroquial para Administradores */}
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '14px', marginBottom: '14px' }}>
+              <strong style={{ fontSize: '13px', color: '#1e293b', display: 'block', marginBottom: '6px' }}>
+                👀 Supervisión y Monitoreo Parroquial
+              </strong>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '2px' }}>Parroquia activa:</label>
+                  <select
+                    value={parroquiaSeleccionada}
+                    onChange={(e) => {
+                      vibrarHaptico();
+                      setParroquiaSeleccionada(e.target.value);
+                    }}
+                    style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '12px' }}
+                  >
+                    {[
+                      'Altagracia', 'Antímano', 'El Recreo', 'El Valle', 'La Candelaria', 'Caricuao', 'Catedral', 'Coche', 'El Junquito', 'El Paraíso', 'La Vega', 'Macarao', 'San Agustín', 'San Bernardino', 'San José', 'San Juan', 'San Pedro', 'Santa Rosalía', 'Santa Teresa', 'Sucre (Catia)', '23 de Enero'
+                    ].map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '2px' }}>Comisión:</label>
+                  <select
+                    value={comisionSeleccionada}
+                    onChange={(e) => setComisionSeleccionada(e.target.value)}
+                    style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '12px' }}
+                  >
+                    <option value="todas">Todas las comisiones</option>
+                    {comisionesDefinicion.map((c) => (
+                      <option key={c.id} value={c.id}>{c.nombre}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
 
             <div className="eventos-summary">
@@ -2350,6 +2465,43 @@ function App() {
                   </div>
 
                   <div className="evento-actions">
+                    {puedeAdministrarEvento && (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '8px' }}>
+                        <button
+                          type="button"
+                          style={{
+                            background: '#f8fafc',
+                            border: '1px solid #cbd5e1',
+                            color: '#1e293b',
+                            padding: '8px 14px',
+                            borderRadius: '8px',
+                            fontWeight: '600',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                          }}
+                          onClick={() => abrirEdicionEvento(eventoSeleccionado)}
+                        >
+                          ✏️ Editar evento
+                        </button>
+                        <button
+                          type="button"
+                          style={{
+                            background: '#fef2f2',
+                            border: '1px solid #fecaca',
+                            color: '#dc2626',
+                            padding: '8px 14px',
+                            borderRadius: '8px',
+                            fontWeight: '600',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                          }}
+                          onClick={() => eliminarEvento(eventoSeleccionado.id)}
+                        >
+                          🗑 Eliminar
+                        </button>
+                      </div>
+                    )}
+
                     {eventoSeleccionado.estado ===
                       'convocado' && (
                       <button
@@ -3169,6 +3321,84 @@ function App() {
             >
               🚪 Probar nuevo registro (Cerrar sesión)
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Edición de Evento */}
+      {eventoEnEdicion && (
+        <div className="detail-overlay" onClick={() => setEventoEnEdicion(null)}>
+          <div className="detail-bubble" onClick={(e) => e.stopPropagation()}>
+            <div className="bubble-handle"></div>
+            <div className="detail-panel-header">
+              <div>
+                <p className="section-label">MODIFICACIÓN DE EVENTO</p>
+                <h3>Editar Evento</h3>
+              </div>
+              <button className="close-button" onClick={() => setEventoEnEdicion(null)}>×</button>
+            </div>
+
+            <form onSubmit={guardarEdicionEvento} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '2px' }}>Nombre del evento:</label>
+                <input
+                  type="text"
+                  value={eventoEnEdicion.titulo}
+                  onChange={(e) => setEventoEnEdicion({ ...eventoEnEdicion, titulo: e.target.value })}
+                  required
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '2px' }}>Fecha:</label>
+                  <input
+                    type="date"
+                    value={eventoEnEdicion.fecha}
+                    onChange={(e) => setEventoEnEdicion({ ...eventoEnEdicion, fecha: e.target.value })}
+                    required
+                    style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '2px' }}>Hora inicio:</label>
+                  <input
+                    type="time"
+                    value={eventoEnEdicion.horaInicio}
+                    onChange={(e) => setEventoEnEdicion({ ...eventoEnEdicion, horaInicio: e.target.value })}
+                    required
+                    style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '2px' }}>Lugar exacto:</label>
+                <input
+                  type="text"
+                  value={eventoEnEdicion.lugar}
+                  onChange={(e) => setEventoEnEdicion({ ...eventoEnEdicion, lugar: e.target.value })}
+                  required
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '2px' }}>Descripción:</label>
+                <textarea
+                  rows="3"
+                  value={eventoEnEdicion.descripcion}
+                  onChange={(e) => setEventoEnEdicion({ ...eventoEnEdicion, descripcion: e.target.value })}
+                  required
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                />
+              </div>
+
+              <button type="submit" className="primary-button" style={{ marginTop: '6px' }}>
+                💾 Guardar cambios
+              </button>
+            </form>
           </div>
         </div>
       )}
