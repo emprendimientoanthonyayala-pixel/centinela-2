@@ -182,10 +182,7 @@ function obtenerColorEstadoEvento(estado) {
 }
 
 function obtenerValorQR(evento) {
-  if (typeof window === 'undefined') {
-    return `centinela://asistencia/${evento.id}`;
-  }
-  return `${window.location.origin}${window.location.pathname}#asistencia=${evento.id}`;
+  return `https://t.me/iCentinela_bot?start=asistencia_${evento.id}`;
 }
 
 function App() {
@@ -230,6 +227,44 @@ function App() {
   const [activeFilter, setActiveFilter] = useState('Todo');
 
   const [mostrarModalRol, setMostrarModalRol] = useState(false);
+
+  // Indicadores Económicos State
+  const [indicadoresEconomicos, setIndicadoresEconomicos] = useState({
+    dolarBcv: null,
+    euroBcv: null,
+    usdt: null,
+    cargando: true,
+    error: false,
+    fecha: null,
+  });
+
+  useEffect(() => {
+    const obtenerIndicadores = async () => {
+      try {
+        const [resDolarOficial, resEuroOficial, resDolarParalelo] = await Promise.all([
+          fetch('https://ve.dolarapi.com/v1/dolares/oficial').then((r) => (r.ok ? r.json() : null)),
+          fetch('https://ve.dolarapi.com/v1/euros/oficial').then((r) => (r.ok ? r.json() : null)),
+          fetch('https://ve.dolarapi.com/v1/dolares/paralelo').then((r) => (r.ok ? r.json() : null)),
+        ]);
+
+        setIndicadoresEconomicos({
+          dolarBcv: resDolarOficial?.promedio ? Number(resDolarOficial.promedio).toFixed(2) : null,
+          euroBcv: resEuroOficial?.promedio ? Number(resEuroOficial.promedio).toFixed(2) : null,
+          usdt: resDolarParalelo?.promedio ? Number(resDolarParalelo.promedio).toFixed(2) : null,
+          cargando: false,
+          error: false,
+          fecha: resDolarOficial?.fechaActualizacion
+            ? new Date(resDolarOficial.fechaActualizacion).toLocaleDateString('es-VE')
+            : obtenerFechaActualLocal(),
+        });
+      } catch (err) {
+        console.error('Error al cargar indicadores económicos:', err);
+        setIndicadoresEconomicos((prev) => ({ ...prev, cargando: false, error: true }));
+      }
+    };
+
+    obtenerIndicadores();
+  }, []);
 
   // Eventos state
   const [eventos, setEventos] = useState(() => {
@@ -1226,30 +1261,51 @@ function App() {
             </section>
 
             <section className="section-block">
-              <div className="section-title-row">
+              <div className="section-title-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3>Indicadores económicos</h3>
+                {indicadoresEconomicos.fecha && (
+                  <span style={{ fontSize: '11px', color: '#64748b' }}>Actualizado: {indicadoresEconomicos.fecha}</span>
+                )}
               </div>
 
               <div className="economic-grid">
                 <div className="economic-card">
                   <span className="economic-icon dollar">$</span>
                   <small>Dólar BCV</small>
-                  <strong>—</strong>
-                  <em>Pendiente de conexión</em>
+                  <strong>
+                    {indicadoresEconomicos.cargando
+                      ? 'Cargando...'
+                      : indicadoresEconomicos.dolarBcv
+                        ? `Bs. ${indicadoresEconomicos.dolarBcv}`
+                        : 'Bs. —'}
+                  </strong>
+                  <em>Tasa Oficial BCV</em>
                 </div>
 
                 <div className="economic-card">
                   <span className="economic-icon euro">€</span>
-                  <small>Euro</small>
-                  <strong>—</strong>
-                  <em>Pendiente de conexión</em>
+                  <small>Euro BCV</small>
+                  <strong>
+                    {indicadoresEconomicos.cargando
+                      ? 'Cargando...'
+                      : indicadoresEconomicos.euroBcv
+                        ? `Bs. ${indicadoresEconomicos.euroBcv}`
+                        : 'Bs. —'}
+                  </strong>
+                  <em>Tasa Oficial BCV</em>
                 </div>
 
                 <div className="economic-card">
                   <span className="economic-icon usdt">₮</span>
-                  <small>USDT</small>
-                  <strong>—</strong>
-                  <em>Valor referencial</em>
+                  <small>USDT / Paralelo</small>
+                  <strong>
+                    {indicadoresEconomicos.cargando
+                      ? 'Cargando...'
+                      : indicadoresEconomicos.usdt
+                        ? `Bs. ${indicadoresEconomicos.usdt}`
+                        : 'Bs. —'}
+                  </strong>
+                  <em>Valor de referencia</em>
                 </div>
               </div>
             </section>
@@ -2807,58 +2863,74 @@ function App() {
             <div className="bubble-handle"></div>
             <div className="detail-panel-header">
               <div>
-                <p className="section-label">CAMBIAR ROL PARA PRUEBAS</p>
-                <h3>Selecciona tu Rol</h3>
+                <p className="section-label">INFORMACIÓN DE ROL Y ACCESO</p>
+                <h3>{esSuperUsuario ? 'Gestión de Rol (Super Usuario)' : 'Rol del Usuario'}</h3>
               </div>
               <button className="close-button" onClick={() => setMostrarModalRol(false)}>×</button>
             </div>
-            <p className="bubble-description">
-              Selecciona tu rol para probar las funciones y accesos de la aplicación.
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
-              {[
-                { rol: 'Super Usuario', desc: 'Acceso total y Panel Admin de control' },
-                { rol: 'Administrador Estadal', desc: 'Gestión completa del estado' },
-                { rol: 'Coordinador Parroquial', desc: 'Gestión y eventos parroquiales' },
-                { rol: 'Vocero Comunitario', desc: 'Creación de eventos y tareas' },
-                { rol: 'Integrante Comunitario', desc: 'Rol básico para usuarios registrados' },
-              ].map((item) => (
-                <button
-                  key={item.rol}
-                  type="button"
-                  style={{
-                    padding: '12px',
-                    borderRadius: '10px',
-                    border: formularioInicial.rol === item.rol ? '2px solid #2563eb' : '1px solid #cbd5e1',
-                    background: formularioInicial.rol === item.rol ? '#eff6ff' : '#ffffff',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => cambiarRolUsuario(item.rol)}
-                >
-                  <strong style={{ display: 'block', fontSize: '13px', color: '#1e293b' }}>{item.rol}</strong>
-                  <small style={{ fontSize: '11px', color: '#64748b' }}>{item.desc}</small>
-                </button>
-              ))}
 
-              <button
-                type="button"
-                style={{
-                  marginTop: '8px',
-                  padding: '12px',
-                  borderRadius: '10px',
-                  border: '1px solid #cbd5e1',
-                  background: '#f8fafc',
-                  color: '#dc2626',
-                  fontWeight: '600',
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                }}
-                onClick={cerrarSesionOReiniciarRegistro}
-              >
-                🚪 Probar nuevo registro (Cerrar sesión)
-              </button>
-            </div>
+            {esSuperUsuario ? (
+              <>
+                <p className="bubble-description">
+                  Como <strong>Super Usuario</strong>, puedes cambiar libremente de rol para probar las funciones y accesos de la aplicación.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                  {[
+                    { rol: 'Super Usuario', desc: 'Acceso total y Panel Admin de control' },
+                    { rol: 'Administrador Estadal', desc: 'Gestión completa del estado' },
+                    { rol: 'Coordinador Parroquial', desc: 'Gestión y eventos parroquiales' },
+                    { rol: 'Vocero Comunitario', desc: 'Creación de eventos y tareas' },
+                    { rol: 'Integrante Comunitario', desc: 'Rol básico para usuarios registrados' },
+                  ].map((item) => (
+                    <button
+                      key={item.rol}
+                      type="button"
+                      style={{
+                        padding: '12px',
+                        borderRadius: '10px',
+                        border: formularioInicial.rol === item.rol ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                        background: formularioInicial.rol === item.rol ? '#eff6ff' : '#ffffff',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                      }}
+                      onClick={() => cambiarRolUsuario(item.rol)}
+                    >
+                      <strong style={{ display: 'block', fontSize: '13px', color: '#1e293b' }}>{item.rol}</strong>
+                      <small style={{ fontSize: '11px', color: '#64748b' }}>{item.desc}</small>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div style={{ padding: '12px 0' }}>
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '14px', marginBottom: '14px' }}>
+                  <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Tu rol asignado actual:</span>
+                  <h4 style={{ margin: '4px 0 0 0', color: '#1d4ed8', fontSize: '16px' }}>👤 {formularioInicial.rol}</h4>
+                  <p style={{ margin: '6px 0 0 0', fontSize: '12px', color: '#475569', lineHeight: 1.4 }}>
+                    🔒 El cambio de rol está restringido. Únicamente el <strong>Super Usuario</strong> o Administrador del sistema puede autorizar y modificar los permisos de tu usuario.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <button
+              type="button"
+              style={{
+                marginTop: '12px',
+                width: '100%',
+                padding: '12px',
+                borderRadius: '10px',
+                border: '1px solid #cbd5e1',
+                background: '#f8fafc',
+                color: '#dc2626',
+                fontWeight: '600',
+                fontSize: '13px',
+                cursor: 'pointer',
+              }}
+              onClick={cerrarSesionOReiniciarRegistro}
+            >
+              🚪 Probar nuevo registro (Cerrar sesión)
+            </button>
           </div>
         </div>
       )}
