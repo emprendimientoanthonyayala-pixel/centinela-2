@@ -158,6 +158,38 @@ function crearIdUnico(prefijo) {
   return `${prefijo}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+function comprimirImagenDataUrl(file, maxWidth = 600, quality = 0.6) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrlCompressed = canvas.toDataURL('image/jpeg', quality);
+        resolve(dataUrlCompressed);
+      };
+      img.onerror = () => resolve(e.target.result);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(file);
+  });
+}
+
 function vibrarHaptico() {
   if (window.Telegram?.WebApp?.HapticFeedback) {
     window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
@@ -447,7 +479,7 @@ function App() {
   const [formEmprendimiento, setFormEmprendimiento] = useState({
     nombre: '',
     categoria: 'Textil y Calzado',
-    parroquia: 'Caricuao',
+    parroquia: '',
     comision: 'produccion-economia',
     responsable: '',
     contacto: '',
@@ -460,13 +492,9 @@ function App() {
       setFotosEmprendimiento([]);
       return;
     }
-    const promesas = archivos.map((archivo) => {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve({ dataUrl: e.target.result });
-        reader.readAsDataURL(archivo);
-      });
-    });
+    const promesas = archivos.map((archivo) =>
+      comprimirImagenDataUrl(archivo, 500, 0.5).then((dataUrl) => ({ dataUrl }))
+    );
 
     Promise.all(promesas).then((data) => setFotosEmprendimiento(data));
   };
@@ -585,31 +613,45 @@ function App() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('pinnedQuickActionTabs', JSON.stringify(pinnedQuickActionTabs));
+    try {
+      localStorage.setItem('pinnedQuickActionTabs', JSON.stringify(pinnedQuickActionTabs));
+    } catch {}
   }, [pinnedQuickActionTabs]);
 
   useEffect(() => {
-    localStorage.setItem('comunicadosCentinela', JSON.stringify(comunicados));
+    try {
+      localStorage.setItem('comunicadosCentinela', JSON.stringify(comunicados));
+    } catch {}
   }, [comunicados]);
 
   useEffect(() => {
-    localStorage.setItem('eventosCentinela', JSON.stringify(eventos));
+    try {
+      localStorage.setItem('eventosCentinela', JSON.stringify(eventos));
+    } catch {}
   }, [eventos]);
 
   useEffect(() => {
-    localStorage.setItem('emprendimientosCentinela', JSON.stringify(emprendimientos));
+    try {
+      localStorage.setItem('emprendimientosCentinela', JSON.stringify(emprendimientos));
+    } catch {}
   }, [emprendimientos]);
 
   useEffect(() => {
-    localStorage.setItem('tareasCentinela', JSON.stringify(tareas));
+    try {
+      localStorage.setItem('tareasCentinela', JSON.stringify(tareas));
+    } catch {}
   }, [tareas]);
 
   useEffect(() => {
-    localStorage.setItem('reportesCentinela', JSON.stringify(reportes));
+    try {
+      localStorage.setItem('reportesCentinela', JSON.stringify(reportes));
+    } catch {}
   }, [reportes]);
 
   useEffect(() => {
-    localStorage.setItem('usuariosCentinelaSystem', JSON.stringify(usuariosRegistrados));
+    try {
+      localStorage.setItem('usuariosCentinelaSystem', JSON.stringify(usuariosRegistrados));
+    } catch {}
   }, [usuariosRegistrados]);
 
   useEffect(() => {
@@ -891,14 +933,12 @@ function App() {
   const seleccionarFlyerEvento = (e) => {
     const archivo = e.target.files?.[0];
     if (!archivo) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
+    comprimirImagenDataUrl(archivo).then((dataUrl) => {
       setFormularioEvento((prev) => ({
         ...prev,
-        flyerImage: event.target.result,
+        flyerImage: dataUrl,
       }));
-    };
-    reader.readAsDataURL(archivo);
+    });
   };
 
   const actualizarFormularioEvento = (event) => {
@@ -1094,20 +1134,14 @@ function App() {
       setFotosEvidencia([]);
       return;
     }
-    const promesasLectura = archivos.map((archivo) => {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          resolve({
-            nombre: archivo.name,
-            tipo: archivo.type,
-            tamaño: archivo.size,
-            dataUrl: e.target.result,
-          });
-        };
-        reader.readAsDataURL(archivo);
-      });
-    });
+    const promesasLectura = archivos.map((archivo) =>
+      comprimirImagenDataUrl(archivo).then((dataUrl) => ({
+        nombre: archivo.name,
+        tipo: 'image/jpeg',
+        tamaño: archivo.size,
+        dataUrl,
+      }))
+    );
 
     Promise.all(promesasLectura).then((data) => setFotosEvidencia(data));
   };
