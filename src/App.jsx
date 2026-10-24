@@ -576,10 +576,18 @@ function App() {
 
   // Security Helper
   const esSuperUsuario = formularioInicial.rol === 'Super Usuario';
+  const esNivelEstadal = ['Super Usuario', 'Administrador Estadal'].includes(formularioInicial.rol);
   const puedeEnviarComunicado = ['Super Usuario', 'Administrador Estadal', 'Coordinador Parroquial'].includes(formularioInicial.rol);
   const puedeCrearEvento = ['Super Usuario', 'Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario'].includes(formularioInicial.rol);
   const puedeAdministrarEvento = ['Super Usuario', 'Administrador Estadal', 'Coordinador Parroquial'].includes(formularioInicial.rol);
   const puedeAsignarTarea = ['Super Usuario', 'Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario'].includes(formularioInicial.rol);
+
+  // Restricción de territorio por rol
+  useEffect(() => {
+    if (!esNivelEstadal && formularioInicial.parroquia) {
+      setParroquiaSeleccionada(formularioInicial.parroquia);
+    }
+  }, [esNivelEstadal, formularioInicial.parroquia]);
 
   const [mostrarModalComunicado, setMostrarModalComunicado] = useState(false);
   const [formComunicado, setFormComunicado] = useState({
@@ -926,6 +934,14 @@ function App() {
     setEventos((prev) =>
       prev.map((e) => (e.id === eventoId ? { ...e, estado: nuevoEstado } : e))
     );
+
+    supabase
+      .from('eventos')
+      .update({ estado: nuevoEstado })
+      .eq('id', eventoId)
+      .then(({ error }) => {
+        if (error) console.warn('Supabase status update error:', error);
+      });
   };
 
   const iniciarEvento = (eventoId) => actualizarEstadoEvento(eventoId, 'en-curso');
@@ -1067,13 +1083,24 @@ function App() {
     };
 
     vibrarHaptico();
+    const nuevosAsistentes = [...eventoSeleccionado.asistentes, nuevaAsistencia];
+
     setEventos((prev) =>
       prev.map((e) =>
         e.id === eventoSeleccionado.id
-          ? { ...e, asistentes: [...e.asistentes, nuevaAsistencia] }
+          ? { ...e, asistentes: nuevosAsistentes }
           : e
       )
     );
+
+    supabase
+      .from('eventos')
+      .update({ asistentes: nuevosAsistentes })
+      .eq('id', eventoSeleccionado.id)
+      .then(({ error }) => {
+        if (error) console.warn('Supabase attendance sync error:', error);
+      });
+
     setFotosEvidencia([]);
     alert('Asistencia registrada correctamente con 3 fotos de evidencia.');
   };
@@ -2206,24 +2233,26 @@ function App() {
             {/* Panel de Supervisión Parroquial para Administradores */}
             <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '14px', marginBottom: '14px' }}>
               <strong style={{ fontSize: '13px', color: '#1e293b', display: 'block', marginBottom: '6px' }}>
-                👀 Supervisión y Monitoreo Parroquial
+                {esNivelEstadal ? '👀 Supervisión y Monitoreo Parroquial' : `📍 Territorio Asignado: Parroquia ${parroquiaSeleccionada}`}
               </strong>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
-                <div>
-                  <label style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '2px' }}>Parroquia activa:</label>
-                  <select
-                    value={parroquiaSeleccionada}
-                    onChange={(e) => {
-                      vibrarHaptico();
-                      setParroquiaSeleccionada(e.target.value);
-                    }}
-                    style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '12px' }}
-                  >
-                    {parroquiasCaracas.map((p) => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
-                </div>
+              <div style={{ display: 'grid', gridTemplateColumns: esNivelEstadal ? 'repeat(2, 1fr)' : '1fr', gap: '8px' }}>
+                {esNivelEstadal && (
+                  <div>
+                    <label style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '2px' }}>Parroquia activa:</label>
+                    <select
+                      value={parroquiaSeleccionada}
+                      onChange={(e) => {
+                        vibrarHaptico();
+                        setParroquiaSeleccionada(e.target.value);
+                      }}
+                      style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '12px' }}
+                    >
+                      {parroquiasCaracas.map((p) => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <div>
                   <label style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '2px' }}>Comisión:</label>
