@@ -584,14 +584,16 @@ function App() {
 
     if (usuarioTelegram) {
       const nombresTelegram = [usuarioTelegram.first_name, usuarioTelegram.last_name].filter(Boolean).join(' ');
-      const usuarioTelegramTexto = usuarioTelegram.username ? `@${usuarioTelegram.username}` : String(usuarioTelegram.id || '');
+      const rawHandle = usuarioTelegram.username || usuarioTelegram.first_name || String(usuarioTelegram.id || '');
+      const usuarioTelegramTexto = rawHandle.startsWith('@') ? rawHandle : `@${rawHandle}`;
+
       setFormularioInicial((prev) => ({
         ...prev,
         nombresApellidos: prev.nombresApellidos ? prev.nombresApellidos : nombresTelegram,
         usuarioTelegram: usuarioTelegramTexto,
       }));
 
-      // Sincronizar directamente con el registro remoto de Supabase por telegramUserId
+      // Sincronizar con el registro remoto en Supabase por ID o usuario Telegram
       supabase
         .from('usuarios')
         .select('*')
@@ -604,6 +606,7 @@ function App() {
                 ...prev,
                 cedula: perfilRemoto.cedula || prev.cedula,
                 nombresApellidos: perfilRemoto.nombres_apellidos || prev.nombresApellidos,
+                usuarioTelegram: perfilRemoto.usuario_telegram || usuarioTelegramTexto,
                 parroquia: perfilRemoto.parroquia || prev.parroquia,
                 rol: perfilRemoto.rol || prev.rol,
               };
@@ -612,6 +615,9 @@ function App() {
             });
             if (perfilRemoto.parroquia) setParroquiaSeleccionada(perfilRemoto.parroquia);
             setRegistroCompletado(true);
+          } else {
+            // Si no existe en Supabase, forzar la pantalla de registro inicial
+            setRegistroCompletado(false);
           }
         });
     }
