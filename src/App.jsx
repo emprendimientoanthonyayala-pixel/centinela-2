@@ -404,6 +404,7 @@ function App() {
     return emprendimientosEjemplo;
   });
   const [mostrarFormEmprendimiento, setMostrarFormEmprendimiento] = useState(false);
+  const [fotosEmprendimiento, setFotosEmprendimiento] = useState([]);
   const [formEmprendimiento, setFormEmprendimiento] = useState({
     nombre: '',
     categoria: 'Textil y Calzado',
@@ -413,6 +414,23 @@ function App() {
     contacto: '',
     descripcion: '',
   });
+
+  const seleccionarFotosEmprendimiento = (event) => {
+    const archivos = Array.from(event.target.files || []);
+    if (archivos.length === 0) {
+      setFotosEmprendimiento([]);
+      return;
+    }
+    const promesas = archivos.map((archivo) => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve({ dataUrl: e.target.result });
+        reader.readAsDataURL(archivo);
+      });
+    });
+
+    Promise.all(promesas).then((data) => setFotosEmprendimiento(data));
+  };
 
   // Tareas State
   const [tareas, setTareas] = useState(() => {
@@ -1111,6 +1129,12 @@ function App() {
   const crearEmprendimiento = (e) => {
     e.preventDefault();
     vibrarHaptico();
+
+    if (fotosEmprendimiento.length < 3 || fotosEmprendimiento.length > 5) {
+      alert('Debes adjuntar entre 3 y 5 imágenes demostrativas de tu emprendimiento.');
+      return;
+    }
+
     const nuevoEmp = {
       id: crearIdUnico('emp'),
       nombre: formEmprendimiento.nombre.trim(),
@@ -1120,6 +1144,7 @@ function App() {
       responsable: formEmprendimiento.responsable.trim() || formularioInicial.nombresApellidos || 'Emprendedor Local',
       contacto: formEmprendimiento.contacto.trim(),
       descripcion: formEmprendimiento.descripcion.trim(),
+      imagenes: fotosEmprendimiento.map((f) => f.dataUrl),
     };
 
     setEmprendimientos((prev) => [nuevoEmp, ...prev]);
@@ -1132,8 +1157,9 @@ function App() {
       contacto: '',
       descripcion: '',
     });
+    setFotosEmprendimiento([]);
     setMostrarFormEmprendimiento(false);
-    alert('Emprendimiento registrado exitosamente.');
+    alert('Emprendimiento e imágenes de encadenamiento productivo cargados exitosamente.');
   };
 
   const crearTarea = (e) => {
@@ -2693,49 +2719,70 @@ function App() {
                       </button>
                     )}
 
-                    {eventoSeleccionado.estado ===
-                      'en-curso' && (
-                      <div className="evento-attendance-card">
-                        <p className="section-label">
-                          REGISTRAR MI ASISTENCIA
-                        </p>
+                    {eventoSeleccionado.estado === 'en-curso' && (() => {
+                      const identificadorUsuario =
+                        formularioInicial.cedula ||
+                        formularioInicial.usuarioTelegram ||
+                        formularioInicial.nombresApellidos ||
+                        'usuario-invitado';
+                      const yaAsistio = eventoSeleccionado.asistentes.some((a) => a.usuarioId === identificadorUsuario);
 
-                        <p>
-                          Debes cargar mínimo 3 fotografías
-                          propias de evidencia.
-                        </p>
-
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={
-                            seleccionarFotosEvidencia
-                          }
-                        />
-
-                        <span className="photo-counter">
-                          {fotosEvidencia.length} de 3 fotos
-                          seleccionadas
-                        </span>
-
-                        {fotosEvidencia.length > 0 && (
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', margin: '8px 0' }}>
-                            {fotosEvidencia.map((ev, index) => (
-                              <img key={index} src={ev.dataUrl} alt={ev.nombre} style={{ width: '100%', height: '60px', objectFit: 'cover', borderRadius: '6px' }} />
-                            ))}
+                      if (yaAsistio) {
+                        return (
+                          <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: '12px', padding: '14px', textAlign: 'center', margin: '10px 0' }}>
+                            <strong style={{ color: '#166534', fontSize: '14px', display: 'block' }}>
+                              ✓ Asistencia Confirmada
+                            </strong>
+                            <p style={{ color: '#15803d', fontSize: '12px', margin: '4px 0 0 0' }}>
+                              Ya has registrado y verificado tu asistencia a este evento con tus 3 fotografías de evidencia.
+                            </p>
                           </div>
-                        )}
+                        );
+                      }
 
-                        <button
-                          type="button"
-                          className="primary-button"
-                          onClick={registrarAsistencia}
-                        >
-                          Confirmar asistencia
-                        </button>
-                      </div>
-                    )}
+                      return (
+                        <div className="evento-attendance-card">
+                          <p className="section-label">
+                            REGISTRAR MI ASISTENCIA
+                          </p>
+
+                          <p>
+                            Debes cargar mínimo 3 fotografías
+                            propias de evidencia.
+                          </p>
+
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={
+                              seleccionarFotosEvidencia
+                            }
+                          />
+
+                          <span className="photo-counter">
+                            {fotosEvidencia.length} de 3 fotos
+                            seleccionadas
+                          </span>
+
+                          {fotosEvidencia.length > 0 && (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', margin: '8px 0' }}>
+                              {fotosEvidencia.map((ev, index) => (
+                                <img key={index} src={ev.dataUrl} alt={ev.nombre} style={{ width: '100%', height: '60px', objectFit: 'cover', borderRadius: '6px' }} />
+                              ))}
+                            </div>
+                          )}
+
+                          <button
+                            type="button"
+                            className="primary-button"
+                            onClick={registrarAsistencia}
+                          >
+                            Confirmar asistencia
+                          </button>
+                        </div>
+                      );
+                    })()}
 
                     {eventoSeleccionado.estado ===
                       'en-curso' && (
@@ -3321,6 +3368,28 @@ function App() {
                   />
                 </label>
 
+                <label className="evento-form-field">
+                  <span>Fotos de encadenamiento productivo (Entre 3 y 5 imágenes)</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={seleccionarFotosEmprendimiento}
+                    required
+                  />
+                  <span className="photo-counter" style={{ fontSize: '11px', color: '#64748b', display: 'block', marginTop: '4px' }}>
+                    {fotosEmprendimiento.length} de 3 a 5 fotos seleccionadas
+                  </span>
+
+                  {fotosEmprendimiento.length > 0 && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px', marginTop: '6px' }}>
+                      {fotosEmprendimiento.map((f, i) => (
+                        <img key={i} src={f.dataUrl} alt={`Preview ${i}`} style={{ width: '100%', height: '50px', objectFit: 'cover', borderRadius: '6px' }} />
+                      ))}
+                    </div>
+                  )}
+                </label>
+
                 <button type="submit" className="primary-button">Guardar e integrar a la Red</button>
               </form>
             )}
@@ -3339,6 +3408,15 @@ function App() {
                     <h3>{emp.nombre}</h3>
                     <p style={{ color: '#2563eb', fontWeight: '600', fontSize: '13px' }}>🏷 {emp.categoria} · {emp.parroquia}</p>
                     <p>{emp.descripcion}</p>
+
+                    {Array.isArray(emp.imagenes) && emp.imagenes.length > 0 && (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(60px, 1fr))', gap: '6px', margin: '10px 0' }}>
+                        {emp.imagenes.map((foto, idx) => (
+                          <img key={idx} src={foto} alt={`Foto ${idx + 1}`} style={{ width: '100%', height: '70px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #e2e8f0' }} />
+                        ))}
+                      </div>
+                    )}
+
                     <p style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>👤 Responsable: {emp.responsable} · 📞 {emp.contacto}</p>
                   </article>
                 ))
