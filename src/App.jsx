@@ -584,20 +584,26 @@ function App() {
 
     if (usuarioTelegram) {
       const nombresTelegram = [usuarioTelegram.first_name, usuarioTelegram.last_name].filter(Boolean).join(' ');
-      const rawHandle = usuarioTelegram.username || usuarioTelegram.first_name || String(usuarioTelegram.id || '');
-      const usuarioTelegramTexto = rawHandle.startsWith('@') ? rawHandle : `@${rawHandle}`;
+      let handleDetectado = '';
+      if (usuarioTelegram.username) {
+        handleDetectado = `@${usuarioTelegram.username}`;
+      } else if (usuarioTelegram.first_name) {
+        handleDetectado = `@${usuarioTelegram.first_name.toLowerCase().replace(/\s+/g, '_')}`;
+      } else {
+        handleDetectado = `@user_${tgId || 'telegram'}`;
+      }
 
       setFormularioInicial((prev) => ({
         ...prev,
         nombresApellidos: prev.nombresApellidos ? prev.nombresApellidos : nombresTelegram,
-        usuarioTelegram: usuarioTelegramTexto,
+        usuarioTelegram: prev.usuarioTelegram || handleDetectado,
       }));
 
       // Sincronizar con el registro remoto en Supabase por ID o usuario Telegram
       supabase
         .from('usuarios')
         .select('*')
-        .or(`id.eq.usr-tg-${tgId},usuario_telegram.eq.${usuarioTelegramTexto}`)
+        .or(`id.eq.usr-tg-${tgId},usuario_telegram.eq.${handleDetectado}`)
         .then(({ data, error }) => {
           if (!error && data && data.length > 0) {
             const perfilRemoto = data[0];
@@ -606,7 +612,7 @@ function App() {
                 ...prev,
                 cedula: perfilRemoto.cedula || prev.cedula,
                 nombresApellidos: perfilRemoto.nombres_apellidos || prev.nombresApellidos,
-                usuarioTelegram: perfilRemoto.usuario_telegram || usuarioTelegramTexto,
+                usuarioTelegram: perfilRemoto.usuario_telegram || handleDetectado,
                 parroquia: perfilRemoto.parroquia || prev.parroquia,
                 rol: perfilRemoto.rol || prev.rol,
               };
@@ -1452,7 +1458,11 @@ function App() {
   const actualizarFormulario = (event) => {
     const { name, value } = event.target;
     setFormularioInicial((prev) => {
-      const updated = { ...prev, [name]: value };
+      let val = value;
+      if (name === 'usuarioTelegram' && val && !val.startsWith('@')) {
+        val = `@${val}`;
+      }
+      const updated = { ...prev, [name]: val };
       if (name === 'estado') {
         updated.municipio = '';
         updated.parroquia = '';
@@ -1537,10 +1547,10 @@ function App() {
 
             <label style={{ display: 'block', marginBottom: '14px' }}>
               <span>Usuario de Telegram</span>
-              <input name="usuarioTelegram" value={formularioInicial.usuarioTelegram} onChange={actualizarFormulario} readOnly={Boolean(formularioInicial.usuarioTelegram)} placeholder="@usuario_telegram" style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px', background: formularioInicial.usuarioTelegram ? '#e2e8f0' : '#f8fafc', color: formularioInicial.usuarioTelegram ? '#334155' : 'inherit' }} />
+              <input name="usuarioTelegram" value={formularioInicial.usuarioTelegram} onChange={actualizarFormulario} required placeholder="@usuario_telegram" style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px', background: '#ffffff' }} />
               {formularioInicial.usuarioTelegram && (
                 <small style={{ color: '#2563eb', fontSize: '11px', marginTop: '2px', display: 'block' }}>
-                  ✓ Identificado automáticamente por Telegram
+                  ✓ Usuario de Telegram autodetectado. Puedes editarlo si lo deseas.
                 </small>
               )}
             </label>
