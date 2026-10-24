@@ -1778,32 +1778,49 @@ function App() {
             <section className="territory-card" style={{ marginBottom: '20px' }}>
               <div className="card-heading">
                 <div>
-                  <p className="section-label">MAPA SOCIOTERRITORIAL DE CARACAS</p>
-                  <h3>22 Consejos Populares Parroquiales</h3>
+                  <p className="section-label">ESTRUCTURA SOCIOTERRITORIAL</p>
+                  <h3>
+                    {esNivelEstadal
+                      ? '22 Consejos Populares Parroquiales'
+                      : `Consejo Popular Parroquial: ${parroquiaSeleccionada}`}
+                  </h3>
                 </div>
                 <span className="status-badge">
-                  <b></b> Activos
+                  <b></b> Activo
                 </span>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '12px 0 16px 0' }}>
                 <span className="location-icon">⌖</span>
                 <div>
-                  <strong>Parroquia activa: {parroquiaSeleccionada}</strong>
-                  <small style={{ display: 'block', color: '#64748b' }}>Selecciona una parroquia para ver su estructura y métricas</small>
+                  <strong>Parroquia asignada: {parroquiaSeleccionada}</strong>
+                  <small style={{ display: 'block', color: '#64748b' }}>
+                    {esNivelEstadal
+                      ? 'Selecciona una parroquia para ver su estructura y métricas'
+                      : 'Vista de estructura correspondiente a tu territorio de registro'}
+                  </small>
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px', maxHeight: '200px', overflowY: 'auto', paddingRight: '4px' }}>
-                {parroquiasCaracasInfo.map((p) => {
+                {(esNivelEstadal
+                  ? parroquiasCaracasInfo
+                  : parroquiasCaracasInfo.filter(
+                      (p) =>
+                        p.nombre ===
+                        (formularioInicial.parroquia || parroquiaSeleccionada)
+                    )
+                ).map((p) => {
                   const isSelected = p.nombre === parroquiaSeleccionada;
                   return (
                     <button
                       key={p.nombre}
                       type="button"
                       onClick={() => {
-                        vibrarHaptico();
-                        setParroquiaSeleccionada(p.nombre);
+                        if (esNivelEstadal) {
+                          vibrarHaptico();
+                          setParroquiaSeleccionada(p.nombre);
+                        }
                       }}
                       style={{
                         padding: '10px 12px',
@@ -1811,7 +1828,7 @@ function App() {
                         border: isSelected ? '2px solid #2563eb' : '1px solid #cbd5e1',
                         background: isSelected ? '#eff6ff' : '#ffffff',
                         textAlign: 'left',
-                        cursor: 'pointer',
+                        cursor: esNivelEstadal ? 'pointer' : 'default',
                       }}
                     >
                       <strong style={{ display: 'block', fontSize: '13px', color: '#1e293b' }}>{p.nombre}</strong>
