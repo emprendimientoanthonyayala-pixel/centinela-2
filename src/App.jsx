@@ -1399,7 +1399,12 @@ function App() {
 
             <label style={{ display: 'block', marginBottom: '14px' }}>
               <span>Usuario de Telegram</span>
-              <input name="usuarioTelegram" value={formularioInicial.usuarioTelegram} onChange={actualizarFormulario} placeholder="@usuario_telegram" style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px', background: '#f8fafc' }} />
+              <input name="usuarioTelegram" value={formularioInicial.usuarioTelegram} onChange={actualizarFormulario} readOnly={Boolean(formularioInicial.usuarioTelegram)} placeholder="@usuario_telegram" style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px', background: formularioInicial.usuarioTelegram ? '#e2e8f0' : '#f8fafc', color: formularioInicial.usuarioTelegram ? '#334155' : 'inherit' }} />
+              {formularioInicial.usuarioTelegram && (
+                <small style={{ color: '#2563eb', fontSize: '11px', marginTop: '2px', display: 'block' }}>
+                  ✓ Identificado automáticamente por Telegram
+                </small>
+              )}
             </label>
 
             <label style={{ display: 'block', marginBottom: '14px' }}>
@@ -3731,24 +3736,26 @@ function App() {
               </div>
             )}
 
-            <button
-              type="button"
-              style={{
-                marginTop: '12px',
-                width: '100%',
-                padding: '12px',
-                borderRadius: '10px',
-                border: '1px solid #cbd5e1',
-                background: '#f8fafc',
-                color: '#dc2626',
-                fontWeight: '600',
-                fontSize: '13px',
-                cursor: 'pointer',
-              }}
-              onClick={cerrarSesionOReiniciarRegistro}
-            >
-              🚪 Probar nuevo registro (Cerrar sesión)
-            </button>
+            {esSuperUsuario && (
+              <button
+                type="button"
+                style={{
+                  marginTop: '12px',
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '10px',
+                  border: '1px solid #cbd5e1',
+                  background: '#f8fafc',
+                  color: '#dc2626',
+                  fontWeight: '600',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                }}
+                onClick={cerrarSesionOReiniciarRegistro}
+              >
+                🚪 Probar nuevo registro (Cerrar sesión)
+              </button>
+            )}
           </div>
         </div>
       )}
