@@ -475,6 +475,7 @@ function App() {
     return emprendimientosEjemplo;
   });
   const [mostrarFormEmprendimiento, setMostrarFormEmprendimiento] = useState(false);
+  const [empEnEdicion, setEmpEnEdicion] = useState(null);
   const [filtroParroquiaEmp, setFiltroParroquiaEmp] = useState('todas');
   const [filtroCategoriaEmp, setFiltroCategoriaEmp] = useState('todas');
   const [fotosEmprendimiento, setFotosEmprendimiento] = useState([]);
@@ -1207,41 +1208,85 @@ function App() {
     e.preventDefault();
     vibrarHaptico();
 
-    if (fotosEmprendimiento.length < 3 || fotosEmprendimiento.length > 5) {
-      alert('Debes adjuntar entre 3 y 5 imágenes demostrativas de tu emprendimiento.');
-      return;
+    if (empEnEdicion) {
+      // Editar Emprendimiento existente
+      const imagenesFinales = fotosEmprendimiento.length > 0
+        ? fotosEmprendimiento.map((f) => f.dataUrl)
+        : (empEnEdicion.imagenes || []);
+
+      const empActualizado = {
+        ...empEnEdicion,
+        nombre: formEmprendimiento.nombre.trim(),
+        categoria: formEmprendimiento.categoria,
+        parroquia: formEmprendimiento.parroquia || empEnEdicion.parroquia,
+        comision: formEmprendimiento.comision,
+        responsable: formEmprendimiento.responsable.trim() || empEnEdicion.responsable,
+        contacto: formEmprendimiento.contacto.trim(),
+        descripcion: formEmprendimiento.descripcion.trim(),
+        imagenes: imagenesFinales,
+      };
+
+      setEmprendimientos((prev) => prev.map((e) => (e.id === empEnEdicion.id ? empActualizado : e)));
+
+      supabase
+        .from('emprendimientos')
+        .update({
+          nombre: empActualizado.nombre,
+          categoria: empActualizado.categoria,
+          parroquia: empActualizado.parroquia,
+          comision: empActualizado.comision,
+          responsable: empActualizado.responsable,
+          contacto: empActualizado.contacto,
+          descripcion: empActualizado.descripcion,
+          imagenes: empActualizado.imagenes,
+        })
+        .eq('id', empEnEdicion.id)
+        .then(({ error }) => {
+          if (error) console.warn('Supabase emprendimiento update error:', error);
+        });
+
+      setEmpEnEdicion(null);
+      alert('Emprendimiento actualizado correctamente.');
+    } else {
+      // Crear nuevo
+      if (fotosEmprendimiento.length < 3 || fotosEmprendimiento.length > 5) {
+        alert('Debes adjuntar entre 3 y 5 imágenes demostrativas de tu emprendimiento.');
+        return;
+      }
+
+      const nuevoEmp = {
+        id: crearIdUnico('emp'),
+        nombre: formEmprendimiento.nombre.trim(),
+        categoria: formEmprendimiento.categoria,
+        parroquia: formEmprendimiento.parroquia || parroquiaSeleccionada,
+        comision: formEmprendimiento.comision,
+        responsable: formEmprendimiento.responsable.trim() || formularioInicial.nombresApellidos || 'Emprendedor Local',
+        contacto: formEmprendimiento.contacto.trim(),
+        descripcion: formEmprendimiento.descripcion.trim(),
+        imagenes: fotosEmprendimiento.map((f) => f.dataUrl),
+      };
+
+      setEmprendimientos((prev) => [nuevoEmp, ...prev]);
+
+      supabase
+        .from('emprendimientos')
+        .insert({
+          id: nuevoEmp.id,
+          nombre: nuevoEmp.nombre,
+          categoria: nuevoEmp.categoria,
+          parroquia: nuevoEmp.parroquia,
+          comision: nuevoEmp.comision,
+          responsable: nuevoEmp.responsable,
+          contacto: nuevoEmp.contacto,
+          descripcion: nuevoEmp.descripcion,
+          imagenes: nuevoEmp.imagenes,
+        })
+        .then(({ error }) => {
+          if (error) console.warn('Supabase emprendimiento insert error:', error);
+        });
+
+      alert('Emprendimiento e imágenes de encadenamiento productivo cargados exitosamente.');
     }
-
-    const nuevoEmp = {
-      id: crearIdUnico('emp'),
-      nombre: formEmprendimiento.nombre.trim(),
-      categoria: formEmprendimiento.categoria,
-      parroquia: formEmprendimiento.parroquia || parroquiaSeleccionada,
-      comision: formEmprendimiento.comision,
-      responsable: formEmprendimiento.responsable.trim() || formularioInicial.nombresApellidos || 'Emprendedor Local',
-      contacto: formEmprendimiento.contacto.trim(),
-      descripcion: formEmprendimiento.descripcion.trim(),
-      imagenes: fotosEmprendimiento.map((f) => f.dataUrl),
-    };
-
-    setEmprendimientos((prev) => [nuevoEmp, ...prev]);
-
-    supabase
-      .from('emprendimientos')
-      .insert({
-        id: nuevoEmp.id,
-        nombre: nuevoEmp.nombre,
-        categoria: nuevoEmp.categoria,
-        parroquia: nuevoEmp.parroquia,
-        comision: nuevoEmp.comision,
-        responsable: nuevoEmp.responsable,
-        contacto: nuevoEmp.contacto,
-        descripcion: nuevoEmp.descripcion,
-        imagenes: nuevoEmp.imagenes,
-      })
-      .then(({ error }) => {
-        if (error) console.warn('Supabase emprendimiento insert error:', error);
-      });
 
     setFormEmprendimiento({
       nombre: '',
@@ -1254,7 +1299,39 @@ function App() {
     });
     setFotosEmprendimiento([]);
     setMostrarFormEmprendimiento(false);
-    alert('Emprendimiento e imágenes de encadenamiento productivo cargados exitosamente.');
+  };
+
+  const iniciarEdicionEmprendimiento = (emp) => {
+    vibrarHaptico();
+    setEmpEnEdicion(emp);
+    setFormEmprendimiento({
+      nombre: emp.nombre,
+      categoria: emp.categoria,
+      parroquia: emp.parroquia,
+      comision: emp.comision || 'produccion-economia',
+      responsable: emp.responsable,
+      contacto: emp.contacto,
+      descripcion: emp.descripcion,
+    });
+    setFotosEmprendimiento([]);
+    setMostrarFormEmprendimiento(true);
+  };
+
+  const eliminarEmprendimiento = (id) => {
+    vibrarHaptico();
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este emprendimiento?')) return;
+
+    setEmprendimientos((prev) => prev.filter((e) => e.id !== id));
+
+    supabase
+      .from('emprendimientos')
+      .delete()
+      .eq('id', id)
+      .then(({ error }) => {
+        if (error) console.warn('Supabase emprendimiento delete error:', error);
+      });
+
+    alert('Emprendimiento eliminado correctamente.');
   };
 
   const crearTarea = (e) => {
@@ -3561,8 +3638,8 @@ function App() {
               <form className="evento-form-card" onSubmit={crearEmprendimiento}>
                 <div className="section-title-row">
                   <div>
-                    <p className="section-label">NUEVA INICIATIVA</p>
-                    <h3>Registrar emprendimiento en {parroquiaSeleccionada}</h3>
+                    <p className="section-label">{empEnEdicion ? 'EDITAR EMPRENDIMIENTO' : 'NUEVA INICIATIVA'}</p>
+                    <h3>{empEnEdicion ? `Editando: ${empEnEdicion.nombre}` : `Registrar emprendimiento en ${parroquiaSeleccionada}`}</h3>
                   </div>
                 </div>
 
@@ -3628,10 +3705,10 @@ function App() {
                     accept="image/*"
                     multiple
                     onChange={seleccionarFotosEmprendimiento}
-                    required
+                    required={!empEnEdicion}
                   />
                   <span className="photo-counter" style={{ fontSize: '11px', color: '#64748b', display: 'block', marginTop: '4px' }}>
-                    {fotosEmprendimiento.length} de 3 a 5 fotos seleccionadas
+                    {empEnEdicion ? 'Opcional: Selecciona nuevas fotos para reemplazar las actuales' : `${fotosEmprendimiento.length} de 3 a 5 fotos seleccionadas`}
                   </span>
 
                   {fotosEmprendimiento.length > 0 && (
@@ -3643,7 +3720,9 @@ function App() {
                   )}
                 </label>
 
-                <button type="submit" className="primary-button">Guardar e integrar a la Red</button>
+                <button type="submit" className="primary-button">
+                  {empEnEdicion ? 'Guardar Cambios' : 'Guardar e integrar a la Red'}
+                </button>
               </form>
             )}
 
@@ -3671,6 +3750,38 @@ function App() {
                     )}
 
                     <p style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>👤 Responsable: {emp.responsable} · 📞 {emp.contacto}</p>
+
+                    {/* Botones de Edición y Eliminación */}
+                    {(esSuperUsuario ||
+                      ['Administrador Estadal', 'Coordinador Parroquial'].includes(formularioInicial.rol) ||
+                      emp.responsable === formularioInicial.nombresApellidos) && (
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '12px', borderTop: '1px solid #f1f5f9', paddingTop: '10px' }}>
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          style={{ fontSize: '12px', padding: '6px 12px', flex: 1 }}
+                          onClick={() => iniciarEdicionEmprendimiento(emp)}
+                        >
+                          ✏️ Editar
+                        </button>
+                        <button
+                          type="button"
+                          style={{
+                            fontSize: '12px',
+                            padding: '6px 12px',
+                            background: '#fef2f2',
+                            color: '#dc2626',
+                            border: '1px solid #fca5a5',
+                            borderRadius: '8px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                          }}
+                          onClick={() => eliminarEmprendimiento(emp.id)}
+                        >
+                          🗑️ Eliminar
+                        </button>
+                      </div>
+                    )}
                   </article>
                 ))
               )}
