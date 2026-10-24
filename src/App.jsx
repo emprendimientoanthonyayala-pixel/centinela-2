@@ -1552,6 +1552,7 @@ function App() {
 
     if (formularioInicial.parroquia) setParroquiaSeleccionada(formularioInicial.parroquia);
     setRegistroCompletado(true);
+    cargarDatosNube();
   };
 
   if (!registroCompletado) {
@@ -1659,7 +1660,12 @@ function App() {
   }
 
   const eventosMostrados = eventos.filter((e) => {
-    const coincideParroquia = e.parroquia === parroquiaSeleccionada || e.nivel === 'estadal';
+    const coincideParroquia =
+      parroquiaSeleccionada === 'todas' ||
+      e.parroquia === 'Todas' ||
+      e.parroquia === 'Caracas General' ||
+      e.nivel === 'estadal' ||
+      e.parroquia === parroquiaSeleccionada;
     const coincideComision = comisionSeleccionada === 'todas' || e.comision === comisionSeleccionada;
     if (!coincideParroquia || !coincideComision) return false;
     return eventosFiltroEstado === 'historico' ? e.estado === 'culminado' : e.estado !== 'culminado';
@@ -2557,29 +2563,28 @@ function App() {
               </button>
             </div>
 
-            {/* Panel de Supervisión Parroquial para Administradores */}
+            {/* Panel de Filtros Parroquiales y Comisiones de Eventos */}
             <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '14px', marginBottom: '14px' }}>
               <strong style={{ fontSize: '13px', color: '#1e293b', display: 'block', marginBottom: '6px' }}>
-                {esNivelEstadal ? '👀 Supervisión y Monitoreo Parroquial' : `📍 Territorio Asignado: Parroquia ${parroquiaSeleccionada}`}
+                🔍 Filtro de Parroquia y Comisión
               </strong>
-              <div style={{ display: 'grid', gridTemplateColumns: esNivelEstadal ? 'repeat(2, 1fr)' : '1fr', gap: '8px' }}>
-                {esNivelEstadal && (
-                  <div>
-                    <label style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '2px' }}>Parroquia activa:</label>
-                    <select
-                      value={parroquiaSeleccionada}
-                      onChange={(e) => {
-                        vibrarHaptico();
-                        setParroquiaSeleccionada(e.target.value);
-                      }}
-                      style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '12px' }}
-                    >
-                      {parroquiasCaracas.map((p) => (
-                        <option key={p} value={p}>{p}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '2px' }}>Parroquia activa:</label>
+                  <select
+                    value={parroquiaSeleccionada}
+                    onChange={(e) => {
+                      vibrarHaptico();
+                      setParroquiaSeleccionada(e.target.value);
+                    }}
+                    style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '12px' }}
+                  >
+                    <option value="todas">🌐 Todas las parroquias</option>
+                    {parroquiasCaracas.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
 
                 <div>
                   <label style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '2px' }}>Comisión:</label>
