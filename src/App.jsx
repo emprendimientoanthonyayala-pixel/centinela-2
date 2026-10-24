@@ -475,6 +475,8 @@ function App() {
     return emprendimientosEjemplo;
   });
   const [mostrarFormEmprendimiento, setMostrarFormEmprendimiento] = useState(false);
+  const [filtroParroquiaEmp, setFiltroParroquiaEmp] = useState('todas');
+  const [filtroCategoriaEmp, setFiltroCategoriaEmp] = useState('todas');
   const [fotosEmprendimiento, setFotosEmprendimiento] = useState([]);
   const [formEmprendimiento, setFormEmprendimiento] = useState({
     nombre: '',
@@ -511,6 +513,8 @@ function App() {
     return tareasEjemplo;
   });
   const [mostrarFormTarea, setMostrarFormTarea] = useState(false);
+  const [filtroEstadoTarea, setFiltroEstadoTarea] = useState('Todas');
+  const [filtroParroquiaTarea, setFiltroParroquiaTarea] = useState('todas');
   const [formTarea, setFormTarea] = useState({
     titulo: '',
     parroquia: 'Caricuao',
@@ -1524,15 +1528,30 @@ function App() {
   });
 
   const emprendimientosFiltrados = emprendimientos.filter((e) => {
-    const coincideParroquia = !parroquiaSeleccionada || e.parroquia === parroquiaSeleccionada;
+    const coincideParroquia = filtroParroquiaEmp === 'todas'
+      ? true
+      : e.parroquia === filtroParroquiaEmp;
+    const coincideCategoria = filtroCategoriaEmp === 'todas'
+      ? true
+      : e.categoria === filtroCategoriaEmp;
     const coincideComision = comisionSeleccionada === 'todas' || e.comision === comisionSeleccionada;
-    return coincideParroquia && coincideComision;
+    return coincideParroquia && coincideCategoria && coincideComision;
   });
 
   const tareasFiltradas = tareas.filter((t) => {
-    const coincideParroquia = !parroquiaSeleccionada || t.parroquia === parroquiaSeleccionada;
+    const pTarget = filtroParroquiaTarea === 'todas' ? parroquiaSeleccionada : filtroParroquiaTarea;
+    const coincideParroquia = filtroParroquiaTarea === 'todas'
+      ? (!parroquiaSeleccionada || t.parroquia === parroquiaSeleccionada || t.parroquia === 'Caracas General' || t.parroquia === 'Todas')
+      : (t.parroquia === pTarget || t.parroquia === 'Caracas General' || t.parroquia === 'Todas');
     const coincideComision = comisionSeleccionada === 'todas' || t.comision === comisionSeleccionada;
-    return coincideParroquia && coincideComision;
+    const coincideEstado = filtroEstadoTarea === 'Todas'
+      ? true
+      : filtroEstadoTarea === 'Pendientes'
+      ? t.estado === 'Pendiente'
+      : filtroEstadoTarea === 'En Proceso'
+      ? t.estado === 'En Proceso'
+      : t.estado === 'Cumplida' || t.estado === 'Cumplido';
+    return coincideParroquia && coincideComision && coincideEstado;
   });
 
   const reportesFiltrados = reportes.filter((r) => {
@@ -3006,10 +3025,55 @@ function App() {
               <div>
                 <p className="section-label">GESTIÓN OPERATIVA: {parroquiaSeleccionada.toUpperCase()}</p>
                 <h2>Tareas y Compromisos</h2>
-                <p className="page-description">Seguimiento de tareas comunitarias asignadas a las comisiones.</p>
+                <p className="page-description">Seguimiento de tareas comunitarias asignadas por líderes estadales y parroquiales.</p>
               </div>
               <button className="back-button" onClick={() => handleAction('inicio')}>Inicio</button>
             </div>
+
+            {/* Filtros de estado de tareas */}
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
+              {['Todas', 'Pendientes', 'En Proceso', 'Cumplidas'].map((est) => (
+                <button
+                  key={est}
+                  type="button"
+                  onClick={() => {
+                    vibrarHaptico();
+                    setFiltroEstadoTarea(est);
+                  }}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: filtroEstadoTarea === est ? '#2563eb' : '#f1f5f9',
+                    color: filtroEstadoTarea === est ? '#ffffff' : '#475569',
+                  }}
+                >
+                  {est}
+                </button>
+              ))}
+            </div>
+
+            {/* Selector de Parroquia para Estadal / SuperUsuario */}
+            {esNivelEstadal && (
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '4px' }}>
+                  Filtrar parroquia de tarea:
+                </label>
+                <select
+                  value={filtroParroquiaTarea}
+                  onChange={(e) => setFiltroParroquiaTarea(e.target.value)}
+                  style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                >
+                  <option value="todas">Ver todas las parroquias de Caracas</option>
+                  {parroquiasCaracas.map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <button
               type="button"
@@ -3032,9 +3096,23 @@ function App() {
                 <div className="section-title-row">
                   <div>
                     <p className="section-label">NUEVA TAREA ({formularioInicial.rol})</p>
-                    <h3>Registrar tarea para {parroquiaSeleccionada}</h3>
+                    <h3>Registrar tarea</h3>
                   </div>
                 </div>
+
+                <label className="evento-form-field">
+                  <span>Alcance / Parroquia Asignada</span>
+                  <select
+                    value={formTarea.parroquia}
+                    onChange={(e) => setFormTarea((prev) => ({ ...prev, parroquia: e.target.value }))}
+                    required
+                  >
+                    <option value="Todas">Toda Caracas (Estadal)</option>
+                    {parroquiasCaracas.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </label>
 
                 <label className="evento-form-field">
                   <span>Título de la tarea</span>
@@ -3414,10 +3492,10 @@ function App() {
           <section className="emprendimientos-page">
             <div className="page-heading">
               <div>
-                <p className="section-label">RED DE PRODUCCIÓN Y ECONOMÍA: {parroquiaSeleccionada.toUpperCase()}</p>
-                <h2>Emprendimientos Locales</h2>
+                <p className="section-label">RED DE PRODUCCIÓN Y ECONOMÍA LOCAL</p>
+                <h2>Emprendimientos Caracas</h2>
                 <p className="page-description">
-                  Iniciativas, proyectos productivos y comercios populares comunitarios.
+                  Iniciativas, proyectos productivos y comercios populares de las 22 parroquias.
                 </p>
               </div>
 
@@ -3427,6 +3505,44 @@ function App() {
               >
                 Inicio
               </button>
+            </div>
+
+            {/* Filtros de Parroquia y Categoría para Emprendimientos */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '14px' }}>
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '4px' }}>
+                  Filtrar Parroquia:
+                </label>
+                <select
+                  value={filtroParroquiaEmp}
+                  onChange={(e) => setFiltroParroquiaEmp(e.target.value)}
+                  style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                >
+                  <option value="todas">Todas las parroquias</option>
+                  {parroquiasCaracas.map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '4px' }}>
+                  Filtrar Categoría:
+                </label>
+                <select
+                  value={filtroCategoriaEmp}
+                  onChange={(e) => setFiltroCategoriaEmp(e.target.value)}
+                  style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                >
+                  <option value="todas">Todas las categorías</option>
+                  <option value="Textil y Calzado">Textil y Calzado</option>
+                  <option value="Alimentos y Gastronomía">Alimentos y Gastronomía</option>
+                  <option value="Servicios y Reparación">Servicios y Reparación</option>
+                  <option value="Artesanía y Cultura">Artesanía y Cultura</option>
+                  <option value="Tecnología y Comunicación">Tecnología y Comunicación</option>
+                  <option value="Otros">Otros</option>
+                </select>
+              </div>
             </div>
 
             <button
