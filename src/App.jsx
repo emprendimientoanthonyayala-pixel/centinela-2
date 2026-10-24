@@ -382,7 +382,7 @@ function App() {
   const [formularioEvento, setFormularioEvento] = useState({
     titulo: '',
     nivel: 'parroquial',
-    parroquia: 'Caricuao',
+    parroquia: '',
     comision: 'accion-socioterritorial',
     fecha: '',
     horaInicio: '',
@@ -850,12 +850,14 @@ function App() {
       return;
     }
 
+    const parroquiaDestino = formularioEvento.parroquia || parroquiaSeleccionada || 'Sucre';
+
     const nuevoEvento = {
       id: crearIdUnico('evento'),
       titulo: formularioEvento.titulo.trim(),
       nivel: formularioEvento.nivel,
       estado: 'convocado',
-      parroquia: formularioEvento.parroquia || parroquiaSeleccionada,
+      parroquia: parroquiaDestino,
       comision: formularioEvento.comision,
       estadoTerritorial: 'Distrito Capital',
       municipio: 'Libertador',
@@ -871,6 +873,7 @@ function App() {
     };
 
     setEventos((prev) => [nuevoEvento, ...prev]);
+    setParroquiaSeleccionada(parroquiaDestino);
 
     // Guardar en Supabase en segundo plano si la tabla está configurada
     supabase
@@ -901,7 +904,7 @@ function App() {
     setFormularioEvento({
       titulo: '',
       nivel: 'parroquial',
-      parroquia: parroquiaSeleccionada,
+      parroquia: '',
       comision: 'accion-socioterritorial',
       fecha: '',
       horaInicio: '',
@@ -1938,6 +1941,21 @@ function App() {
                 </label>
 
                 <label className="evento-form-field">
+                  <span>Parroquia</span>
+                  <select
+                    value={formReporte.parroquia || parroquiaSeleccionada}
+                    onChange={(e) => setFormReporte((prev) => ({ ...prev, parroquia: e.target.value }))}
+                    required
+                  >
+                    {parroquiasCaracas.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="evento-form-field">
                   <span>Reportado por / Vocería</span>
                   <input
                     value={formReporte.reportadoPor}
@@ -2201,9 +2219,7 @@ function App() {
                     }}
                     style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '12px' }}
                   >
-                    {[
-                      'Altagracia', 'Antímano', 'El Recreo', 'El Valle', 'La Candelaria', 'Caricuao', 'Catedral', 'Coche', 'El Junquito', 'El Paraíso', 'La Vega', 'Macarao', 'San Agustín', 'San Bernardino', 'San José', 'San Juan', 'San Pedro', 'Santa Rosalía', 'Santa Teresa', 'Sucre (Catia)', '23 de Enero'
-                    ].map((p) => (
+                    {parroquiasCaracas.map((p) => (
                       <option key={p} value={p}>{p}</option>
                     ))}
                   </select>
@@ -2293,6 +2309,22 @@ function App() {
                     placeholder="Ejemplo: Jornada comunitaria"
                     required
                   />
+                </label>
+
+                <label className="evento-form-field">
+                  <span>Parroquia del evento</span>
+                  <select
+                    name="parroquia"
+                    value={formularioEvento.parroquia || parroquiaSeleccionada}
+                    onChange={actualizarFormularioEvento}
+                    required
+                  >
+                    {parroquiasCaracas.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
                 </label>
 
                 <label className="evento-form-field">
@@ -3034,9 +3066,7 @@ function App() {
                     style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px', background: '#f8fafc' }}
                   >
                     <option value="todas">🌐 Todas las parroquias ({usuariosRegistrados.length})</option>
-                    {[
-                      'Altagracia', 'Antímano', 'El Recreo', 'El Valle', 'La Candelaria', 'Caricuao', 'Catedral', 'Coche', 'El Junquito', 'El Paraíso', 'La Vega', 'Macarao', 'San Agustín', 'San Bernardino', 'San José', 'San Juan', 'San Pedro', 'Santa Rosalía', 'Santa Teresa', 'Sucre (Catia)', '23 de Enero'
-                    ].map((p) => {
+                    {parroquiasCaracas.map((p) => {
                       const count = usuariosRegistrados.filter((u) => u.parroquia === p).length;
                       return (
                         <option key={p} value={p}>
@@ -3616,9 +3646,7 @@ function App() {
                     onChange={(e) => setFormComunicado({ ...formComunicado, parroquiaEspecifica: e.target.value })}
                     style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
                   >
-                    {[
-                      'Altagracia', 'Antímano', 'El Recreo', 'El Valle', 'La Candelaria', 'Caricuao', 'Catedral', 'Coche', 'El Junquito', 'El Paraíso', 'La Vega', 'Macarao', 'San Agustín', 'San Bernardino', 'San José', 'San Juan', 'San Pedro', 'Santa Rosalía', 'Santa Teresa', 'Sucre (Catia)', '23 de Enero'
-                    ].map((p) => (
+                    {parroquiasCaracas.map((p) => (
                       <option key={p} value={p}>{p}</option>
                     ))}
                   </select>
