@@ -352,6 +352,45 @@ function App() {
         }));
         setUsuariosRegistrados(usuariosRemotos);
       }
+
+      const { data: dataEmp, error: errEmp } = await supabase
+        .from('emprendimientos')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!errEmp && dataEmp && dataEmp.length > 0) {
+        const empRemotos = dataEmp.map((e) => ({
+          id: e.id,
+          nombre: e.nombre,
+          categoria: e.categoria,
+          parroquia: e.parroquia,
+          comision: e.comision,
+          responsable: e.responsable,
+          contacto: e.contacto,
+          descripcion: e.descripcion,
+          imagenes: e.imagenes || [],
+        }));
+        setEmprendimientos(empRemotos);
+      }
+
+      const { data: dataTar, error: errTar } = await supabase
+        .from('tareas')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!errTar && dataTar && dataTar.length > 0) {
+        const tareasRemotas = dataTar.map((t) => ({
+          id: t.id,
+          titulo: t.titulo,
+          parroquia: t.parroquia,
+          comision: t.comision,
+          estado: t.estado,
+          prioridad: t.prioridad,
+          responsable: t.responsable,
+          fechaLimite: t.fecha_limite || t.fechaLimite,
+        }));
+        setTareas(tareasRemotas);
+      }
     } catch (err) {
       console.warn('Supabase offline o tablas no inicializadas:', err);
     }
@@ -1148,6 +1187,24 @@ function App() {
     };
 
     setEmprendimientos((prev) => [nuevoEmp, ...prev]);
+
+    supabase
+      .from('emprendimientos')
+      .insert({
+        id: nuevoEmp.id,
+        nombre: nuevoEmp.nombre,
+        categoria: nuevoEmp.categoria,
+        parroquia: nuevoEmp.parroquia,
+        comision: nuevoEmp.comision,
+        responsable: nuevoEmp.responsable,
+        contacto: nuevoEmp.contacto,
+        descripcion: nuevoEmp.descripcion,
+        imagenes: nuevoEmp.imagenes,
+      })
+      .then(({ error }) => {
+        if (error) console.warn('Supabase emprendimiento insert error:', error);
+      });
+
     setFormEmprendimiento({
       nombre: '',
       categoria: 'Textil y Calzado',
@@ -1183,6 +1240,23 @@ function App() {
     };
 
     setTareas((prev) => [nuevaTarea, ...prev]);
+
+    supabase
+      .from('tareas')
+      .insert({
+        id: nuevaTarea.id,
+        titulo: nuevaTarea.titulo,
+        parroquia: nuevaTarea.parroquia,
+        comision: nuevaTarea.comision,
+        estado: nuevaTarea.estado,
+        prioridad: nuevaTarea.prioridad,
+        responsable: nuevaTarea.responsable,
+        fecha_limite: nuevaTarea.fechaLimite,
+      })
+      .then(({ error }) => {
+        if (error) console.warn('Supabase tarea insert error:', error);
+      });
+
     setFormTarea({
       titulo: '',
       parroquia: parroquiaSeleccionada,
@@ -1200,6 +1274,14 @@ function App() {
     setTareas((prev) =>
       prev.map((t) => (t.id === id ? { ...t, estado: nuevoEstado } : t))
     );
+
+    supabase
+      .from('tareas')
+      .update({ estado: nuevoEstado })
+      .eq('id', id)
+      .then(({ error }) => {
+        if (error) console.warn('Supabase tarea status update error:', error);
+      });
   };
 
   const crearReporte = (e) => {
@@ -2651,18 +2733,34 @@ function App() {
                         QR DE ASISTENCIA
                       </p>
 
-                      <QRCodeSVG
-                        value={obtenerValorQR(
-                          eventoSeleccionado
-                        )}
-                        size={190}
-                        includeMargin
-                      />
+                      {eventoSeleccionado.estado === 'en-curso' ? (
+                        <>
+                          <QRCodeSVG
+                            value={obtenerValorQR(
+                              eventoSeleccionado
+                            )}
+                            size={190}
+                            includeMargin
+                          />
 
-                      <small>
-                        Cada usuario registrado debe escanear
-                        este código durante el evento.
-                      </small>
+                          <small>
+                            Cada usuario registrado debe escanear
+                            este código durante el evento.
+                          </small>
+                        </>
+                      ) : (
+                        <div style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '12px', padding: '16px', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>
+                          <span style={{ fontSize: '24px', display: 'block', marginBottom: '6px' }}>🔒</span>
+                          <strong style={{ color: '#475569', fontSize: '13px', display: 'block' }}>
+                            QR Inactivo
+                          </strong>
+                          <small style={{ color: '#64748b', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                            {eventoSeleccionado.estado === 'culminado'
+                              ? 'El evento ha culminado. El código QR ya no está disponible.'
+                              : 'El código QR solo estará disponible cuando el evento sea marcado En Curso.'}
+                          </small>
+                        </div>
+                      )}
                     </div>
                   </div>
 
