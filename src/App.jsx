@@ -240,6 +240,7 @@ function App() {
 
   const [registroCompletado, setRegistroCompletado] = useState(false);
   const [telegramUserId, setTelegramUserId] = useState(null);
+  const [telegramAutodetectado, setTelegramAutodetectado] = useState(false);
   const [formularioInicial, setFormularioInicial] = useState({
     cedula: '',
     nombresApellidos: '',
@@ -561,71 +562,98 @@ function App() {
   });
 
   useEffect(() => {
-    const telegramWebApp = window.Telegram?.WebApp;
-    if (telegramWebApp) telegramWebApp.ready();
-
-    const usuarioTelegram = telegramWebApp?.initDataUnsafe?.user;
-    const tgId = usuarioTelegram?.id ? String(usuarioTelegram.id) : null;
-    if (tgId) setTelegramUserId(tgId);
-
-    const storageKey = tgId ? `perfilUsuario_${tgId}` : 'perfilUsuario';
-    const datosGuardados = localStorage.getItem(storageKey);
-
-    if (datosGuardados) {
-      try {
-        const datos = JSON.parse(datosGuardados);
-        setFormularioInicial((prev) => ({ ...prev, ...datos }));
-        if (datos.parroquia) setParroquiaSeleccionada(datos.parroquia);
-        setRegistroCompletado(true);
-      } catch {
-        localStorage.removeItem(storageKey);
-      }
-    }
-
-    if (usuarioTelegram) {
-      const nombresTelegram = [usuarioTelegram.first_name, usuarioTelegram.last_name].filter(Boolean).join(' ');
-      let handleDetectado = '';
-      if (usuarioTelegram.username) {
-        handleDetectado = `@${usuarioTelegram.username}`;
-      } else if (usuarioTelegram.first_name) {
-        handleDetectado = `@${usuarioTelegram.first_name.toLowerCase().replace(/\s+/g, '_')}`;
-      } else {
-        handleDetectado = `@user_${tgId || 'telegram'}`;
+    const detectarUsuarioTelegram = () => {
+      const telegramWebApp = window.Telegram?.WebApp;
+      if (telegramWebApp) {
+        try {
+          telegramWebApp.ready();
+          telegramWebApp.expand();
+        } catch {}
       }
 
-      setFormularioInicial((prev) => ({
-        ...prev,
-        nombresApellidos: prev.nombresApellidos ? prev.nombresApellidos : nombresTelegram,
-        usuarioTelegram: prev.usuarioTelegram || handleDetectado,
-      }));
+      const usuarioTelegram = telegramWebApp?.initDataUnsafe?.user;
+      if (usuarioTelegram) {
+        const tgId = usuarioTelegram.id ? String(usuarioTelegram.id) : null;
+        if (tgId) setTelegramUserId(tgId);
 
-      // Sincronizar con el registro remoto en Supabase por ID o usuario Telegram
-      supabase
-        .from('usuarios')
-        .select('*')
-        .or(`id.eq.usr-tg-${tgId},usuario_telegram.eq.${handleDetectado}`)
-        .then(({ data, error }) => {
-          if (!error && data && data.length > 0) {
-            const perfilRemoto = data[0];
-            setFormularioInicial((prev) => {
-              const actualizado = {
-                ...prev,
-                cedula: perfilRemoto.cedula || prev.cedula,
-                nombresApellidos: perfilRemoto.nombres_apellidos || prev.nombresApellidos,
-                usuarioTelegram: perfilRemoto.usuario_telegram || handleDetectado,
-                parroquia: perfilRemoto.parroquia || prev.parroquia,
-                rol: perfilRemoto.rol || prev.rol,
-              };
-              localStorage.setItem(storageKey, JSON.stringify(actualizado));
-              return actualizado;
-            });
-            if (perfilRemoto.parroquia) setParroquiaSeleccionada(perfilRemoto.parroquia);
+        const storageKey = tgId ? `perfilUsuario_${tgId}` : 'perfilUsuario';
+        const datosGuardados = localStorage.getItem(storageKey);
+
+        const nombresTelegram = [usuarioTelegram.first_name, usuarioTelegram.last_name].filter(Boolean).join(' ');
+        let handleDetectado = '';
+        if (usuarioTelegram.username) {
+          handleDetectado = `@${usuarioTelegram.username}`;
+        } else if (usuarioTelegram.first_name) {
+          handleDetectado = `@${usuarioTelegram.first_name.toLowerCase().replace(/\s+/g, '_')}`;
+        } else {
+          handleDetectado = `@user_${tgId || 'telegram'}`;
+        }
+
+        setTelegramAutodetectado(true);
+
+        if (datosGuardados) {
+          try {
+            const datos = JSON.parse(datosGuardados);
+            setFormularioInicial((prev) => ({
+              ...prev,
+              ...datos,
+              usuarioTelegram: datos.usuarioTelegram || handleDetectado,
+            }));
+            if (datos.parroquia) setParroquiaSeleccionada(datos.parroquia);
             setRegistroCompletado(true);
-          } else {
-            // Si no existe en Supabase, forzar la pantalla de registro inicial
-            setRegistroCompletado(false);
+          } catch {
+            localStorage.removeItem(storageKey);
           }
-        });
+        } else {
+          setFormularioInicial((prev) => ({
+            ...prev,
+            nombresApellidos: prev.nombresApellidos || nombresTelegram,
+            usuarioTelegram: prev.usuarioTelegram || handleDetectado,
+          }));
+        }
+
+        // Sincronizar con el registro remoto en Supabase
+        supabase
+          .from('usuarios')
+          .select('*')
+          .or(`id.eq.usr-tg-${tgId},usuario_telegram.eq.${handleDetectado}`)
+          .then(({ data, error }) => {
+            if (!error && data && data.length > 0) {
+              const perfilRemoto = data[0];
+              setFormularioInicial((prev) => {
+                const actualizado = {
+                  ...prev,
+                  cedula: perfilRemoto.cedula || prev.cedula,
+                  nombresApellidos: perfilRemoto.nombres_apellidos || prev.nombresApellidos,
+                  usuarioTelegram: perfilRemoto.usuario_telegram || handleDetectado,
+                  parroquia: perfilRemoto.parroquia || prev.parroquia,
+                  rol: perfilRemoto.rol || prev.rol,
+                };
+                localStorage.setItem(storageKey, JSON.stringify(actualizado));
+                return actualizado;
+              });
+              if (perfilRemoto.parroquia) setParroquiaSeleccionada(perfilRemoto.parroquia);
+              setRegistroCompletado(true);
+            }
+          });
+
+        return true;
+      }
+      return false;
+    };
+
+    const detectado = detectarUsuarioTelegram();
+
+    if (!detectado) {
+      let intentos = 0;
+      const intervalo = setInterval(() => {
+        intentos++;
+        const exito = detectarUsuarioTelegram();
+        if (exito || intentos >= 10) {
+          clearInterval(intervalo);
+        }
+      }, 300);
+      return () => clearInterval(intervalo);
     }
   }, []);
 
@@ -1548,7 +1576,7 @@ function App() {
             <label style={{ display: 'block', marginBottom: '14px' }}>
               <span>Usuario de Telegram</span>
               <input name="usuarioTelegram" value={formularioInicial.usuarioTelegram} onChange={actualizarFormulario} required placeholder="@usuario_telegram" style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px', background: '#ffffff' }} />
-              {formularioInicial.usuarioTelegram && (
+              {telegramAutodetectado && (
                 <small style={{ color: '#2563eb', fontSize: '11px', marginTop: '2px', display: 'block' }}>
                   ✓ Usuario de Telegram autodetectado. Puedes editarlo si lo deseas.
                 </small>
