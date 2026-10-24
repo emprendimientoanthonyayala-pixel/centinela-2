@@ -1399,6 +1399,23 @@ function App() {
       });
   };
 
+  const eliminarTarea = (id) => {
+    vibrarHaptico();
+    if (!window.confirm('¿Estás seguro de que deseas eliminar esta tarea de la lista?')) return;
+
+    setTareas((prev) => prev.filter((t) => t.id !== id));
+
+    supabase
+      .from('tareas')
+      .delete()
+      .eq('id', id)
+      .then(({ error }) => {
+        if (error) console.warn('Supabase tarea delete error:', error);
+      });
+
+    alert('Tarea eliminada correctamente.');
+  };
+
   const crearReporte = (e) => {
     e.preventDefault();
     vibrarHaptico();
@@ -3272,7 +3289,7 @@ function App() {
                     <p className="evento-location">👤 Responsable: {tarea.responsable}</p>
                     <p className="evento-date">◷ Límite: {tarea.fechaLimite} · Prioridad: {tarea.prioridad}</p>
 
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
                       {tarea.estado !== 'En Proceso' && tarea.estado !== 'Cumplida' && (
                         <button type="button" className="secondary-button" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={() => cambiarEstadoTarea(tarea.id, 'En Proceso')}>
                           Marcar En Proceso
@@ -3281,6 +3298,26 @@ function App() {
                       {tarea.estado !== 'Cumplida' && (
                         <button type="button" className="primary-button" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={() => cambiarEstadoTarea(tarea.id, 'Cumplida')}>
                           Marcar Cumplida ✓
+                        </button>
+                      )}
+                      {(esSuperUsuario ||
+                        ['Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario'].includes(formularioInicial.rol) ||
+                        tarea.responsable === formularioInicial.nombresApellidos) && (
+                        <button
+                          type="button"
+                          style={{
+                            fontSize: '12px',
+                            padding: '6px 12px',
+                            background: '#fef2f2',
+                            color: '#dc2626',
+                            border: '1px solid #fca5a5',
+                            borderRadius: '8px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                          }}
+                          onClick={() => eliminarTarea(tarea.id)}
+                        >
+                          🗑️ Eliminar
                         </button>
                       )}
                     </div>
