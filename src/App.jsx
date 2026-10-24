@@ -586,6 +586,9 @@ function App() {
   useEffect(() => {
     if (!esNivelEstadal && formularioInicial.parroquia) {
       setParroquiaSeleccionada(formularioInicial.parroquia);
+      setTerritoryType('parroquial');
+    } else if (esNivelEstadal) {
+      setTerritoryType('estadal');
     }
   }, [esNivelEstadal, formularioInicial.parroquia]);
 
@@ -1461,8 +1464,16 @@ function App() {
               <div className="territory-location">
                 <span className="location-icon">⌖</span>
                 <div>
-                  <strong>{formularioInicial.estado || 'Caracas'}</strong>
-                  <small>Territorio de trabajo asignado</small>
+                  <strong>
+                    {territoryType === 'parroquial'
+                      ? `Parroquia ${formularioInicial.parroquia || parroquiaSeleccionada}`
+                      : formularioInicial.estado || 'Distrito Capital'}
+                  </strong>
+                  <small>
+                    {territoryType === 'parroquial'
+                      ? `Consejo Popular Parroquial (${formularioInicial.parroquia || parroquiaSeleccionada})`
+                      : 'Territorio de trabajo asignado (Estadal)'}
+                  </small>
                 </div>
               </div>
 
@@ -1485,49 +1496,29 @@ function App() {
                   </summary>
 
                   <div className="territory-menu">
-                    <button
-                      type="button"
-                      className={`territory-option ${
-                        territoryType === 'estadal'
-                          ? 'territory-option-selected'
-                          : ''
-                      }`}
-                      onClick={(event) => {
-                        vibrarHaptico();
-                        setTerritoryType('estadal');
-                        event.currentTarget.closest('details').open = false;
-                      }}
-                    >
-                      <span className="territory-option-icon">
-                        {territoryType === 'estadal' ? '✓' : '○'}
-                      </span>
-                      <span className="territory-option-content">
-                        <strong>Estadal</strong>
-                        <small>Vista general del estado</small>
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      className={`territory-option ${
-                        territoryType === 'municipal'
-                          ? 'territory-option-selected'
-                          : ''
-                      }`}
-                      onClick={(event) => {
-                        vibrarHaptico();
-                        setTerritoryType('municipal');
-                        event.currentTarget.closest('details').open = false;
-                      }}
-                    >
-                      <span className="territory-option-icon">
-                        {territoryType === 'municipal' ? '✓' : '○'}
-                      </span>
-                      <span className="territory-option-content">
-                        <strong>Municipal</strong>
-                        <small>Organización municipal</small>
-                      </span>
-                    </button>
+                    {esNivelEstadal && (
+                      <button
+                        type="button"
+                        className={`territory-option ${
+                          territoryType === 'estadal'
+                            ? 'territory-option-selected'
+                            : ''
+                        }`}
+                        onClick={(event) => {
+                          vibrarHaptico();
+                          setTerritoryType('estadal');
+                          event.currentTarget.closest('details').open = false;
+                        }}
+                      >
+                        <span className="territory-option-icon">
+                          {territoryType === 'estadal' ? '✓' : '○'}
+                        </span>
+                        <span className="territory-option-content">
+                          <strong>Estadal</strong>
+                          <small>Vista general del estado</small>
+                        </span>
+                      </button>
+                    )}
 
                     <button
                       type="button"
@@ -1547,7 +1538,7 @@ function App() {
                       </span>
                       <span className="territory-option-content">
                         <strong>Parroquial</strong>
-                        <small>Trabajo de la parroquia</small>
+                        <small>Trabajo de la parroquia ({formularioInicial.parroquia || parroquiaSeleccionada})</small>
                       </span>
                     </button>
                   </div>
@@ -1726,30 +1717,45 @@ function App() {
 
             <section className="section-block">
               <div className="section-title-row">
-                <h3>Actividad reciente</h3>
+                <h3>Eventos recientes culminados</h3>
                 <button
                   className="text-button"
                   onClick={() => handleAction('feed')}
                 >
-                  Ver todo
+                  Ver todo en el Feed
                 </button>
               </div>
 
               <div className="activity-list">
-                {recentActivity.map((activity) => (
-                  <article className="activity-item" key={activity.title}>
-                    <span className={`activity-dot ${activity.color}`}></span>
-                    <div className="activity-content">
-                      <div className="activity-meta">
-                        <span>{activity.type}</span>
-                        <time>{activity.time}</time>
+                {eventosCulminados.length === 0 ? (
+                  <div style={{ padding: '16px', background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>
+                    Aún no hay eventos culminados con evidencias cargadas.
+                  </div>
+                ) : (
+                  eventosCulminados.slice(0, 5).map((evento) => (
+                    <article
+                      className="activity-item"
+                      key={evento.id}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => {
+                        vibrarHaptico();
+                        setActiveTab('eventos');
+                        abrirEvento(evento.id);
+                      }}
+                    >
+                      <span className="activity-dot green"></span>
+                      <div className="activity-content">
+                        <div className="activity-meta">
+                          <span>Culminado · {evento.parroquia}</span>
+                          <time>{evento.fecha}</time>
+                        </div>
+                        <h4>{evento.titulo}</h4>
+                        <p>⌖ {evento.lugar} · {evento.asistentes.length} asistentes con evidencias</p>
                       </div>
-                      <h4>{activity.title}</h4>
-                      <p>{activity.location}</p>
-                    </div>
-                    <span className="arrow">›</span>
-                  </article>
-                ))}
+                      <span className="arrow">›</span>
+                    </article>
+                  ))
+                )}
               </div>
             </section>
           </>
