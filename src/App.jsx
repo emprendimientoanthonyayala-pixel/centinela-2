@@ -223,6 +223,50 @@ function obtenerValorQR(evento) {
 }
 
 function App() {
+  const [esModoOscuro, setEsModoOscuro] = useState(() => {
+    return window.Telegram?.WebApp?.colorScheme === 'dark';
+  });
+
+  useEffect(() => {
+    const tgWebApp = window.Telegram?.WebApp;
+    if (tgWebApp) {
+      if (tgWebApp.colorScheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        setEsModoOscuro(true);
+      } else {
+        document.body.classList.remove('dark-mode');
+        setEsModoOscuro(false);
+      }
+
+      const handleThemeChange = () => {
+        if (tgWebApp.colorScheme === 'dark') {
+          document.body.classList.add('dark-mode');
+          setEsModoOscuro(true);
+        } else {
+          document.body.classList.remove('dark-mode');
+          setEsModoOscuro(false);
+        }
+      };
+
+      tgWebApp.onEvent('themeChanged', handleThemeChange);
+      return () => {
+        tgWebApp.offEvent('themeChanged', handleThemeChange);
+      };
+    }
+  }, []);
+
+  const alternarModoOscuro = () => {
+    setEsModoOscuro((prev) => {
+      const nuevo = !prev;
+      if (nuevo) {
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+      }
+      return nuevo;
+    });
+  };
+
   const [showAllQuickActions, setShowAllQuickActions] = useState(false);
   const [pinnedQuickActionTabs, setPinnedQuickActionTabs] = useState(() => {
     try {
@@ -264,7 +308,17 @@ function App() {
   const [selectedPost, setSelectedPost] = useState(null);
   const [activeFilter, setActiveFilter] = useState('Todo');
 
+  const [fotoLightboxUrl, setFotoLightboxUrl] = useState(null);
+  const [toasts, setToasts] = useState([]);
   const [mostrarModalRol, setMostrarModalRol] = useState(false);
+
+  const mostrarToast = (mensaje, tipo = 'info') => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, mensaje, tipo }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3500);
+  };
 
   // Indicadores Económicos State
   const [indicadoresEconomicos, setIndicadoresEconomicos] = useState({
@@ -435,8 +489,13 @@ function App() {
 
     const canalRealtime = supabase
       .channel('public:realtime')
-      .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
         cargarDatosNube();
+        if (payload.eventType === 'INSERT') {
+          mostrarToast(`✨ Nuevo registro en tiempo real (${payload.table})`, 'éxito');
+        } else if (payload.eventType === 'UPDATE') {
+          mostrarToast(`🔄 Actualización recibida (${payload.table})`, 'info');
+        }
       })
       .subscribe();
 
@@ -1736,9 +1795,16 @@ function App() {
               👤 {formularioInicial.rol} ▾
             </span>
 
-            <button className="notification-button" aria-label="Notificaciones" onClick={() => vibrarHaptico()}>
-              <span>♢</span>
-              <i></i>
+            <button
+              className="notification-button"
+              aria-label="Alternar Tema"
+              onClick={() => {
+                vibrarHaptico();
+                alternarModoOscuro();
+              }}
+              title={esModoOscuro ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
+            >
+              <span>{esModoOscuro ? '☀️' : '🌙'}</span>
             </button>
           </div>
         </header>
@@ -2191,25 +2257,17 @@ function App() {
                 ))}
               </div>
 
-              {/* Gráfica de Cumplimiento por Vocería */}
+              {/* Gráfica de Cumplimiento por Vocería con Anillos Circulares */}
               <p className="section-label" style={{ marginTop: '20px' }}>GRÁFICA DE CUMPLIMIENTO EN VIVO ({infoParroquiaActual.nombre})</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', marginTop: '12px', padding: '12px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                 {[
                   { label: 'Integración', val: cumplimientoActual.integracion, color: '#2563eb' },
                   { label: 'Sistematización', val: cumplimientoActual.sistematizacion, color: '#9333ea' },
-                  { label: 'Comunicación Popular', val: cumplimientoActual.comunicacion, color: '#16a34a' },
-                  { label: 'Movilización Territorial', val: cumplimientoActual.movilizacion, color: '#ea580c' },
-                  { label: 'Formación Integral', val: cumplimientoActual.formacion, color: '#0d9488' },
+                  { label: 'Comunicación', val: cumplimientoActual.comunicacion, color: '#16a34a' },
+                  { label: 'Movilización', val: cumplimientoActual.movilizacion, color: '#ea580c' },
+                  { label: 'Formación', val: cumplimientoActual.formacion, color: '#0d9488' },
                 ].map((item) => (
-                  <div key={item.label}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '600', marginBottom: '4px', color: '#1e293b' }}>
-                      <span>{item.label}</span>
-                      <span>{item.val}%</span>
-                    </div>
-                    <div style={{ width: '100%', height: '10px', background: '#e2e8f0', borderRadius: '6px', overflow: 'hidden' }}>
-                      <div style={{ width: `${item.val}%`, height: '100%', background: item.color, borderRadius: '6px', transition: 'width 0.5s ease' }}></div>
-                    </div>
-                  </div>
+                  <AnilloProgresoCircular key={item.label} porcentaje={item.val} color={item.color} label={item.label} />
                 ))}
               </div>
 
@@ -2455,7 +2513,17 @@ function App() {
                   {Array.isArray(post.evidencias) && post.evidencias.length > 0 && (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '8px', margin: '12px 0' }}>
                       {post.evidencias.map((foto, idx) => (
-                        <img key={idx} src={foto} alt={`Evidencia ${idx + 1}`} style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                        <img
+                          key={idx}
+                          src={foto}
+                          alt={`Evidencia ${idx + 1}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            vibrarHaptico();
+                            setFotoLightboxUrl(foto);
+                          }}
+                          style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0', cursor: 'zoom-in' }}
+                        />
                       ))}
                     </div>
                   )}
@@ -2799,7 +2867,16 @@ function App() {
                     key={evento.id}
                   >
                     {evento.flyerImage && (
-                      <img src={evento.flyerImage} alt={evento.titulo} style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '10px', marginBottom: '10px' }} />
+                      <img
+                        src={evento.flyerImage}
+                        alt={evento.titulo}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          vibrarHaptico();
+                          setFotoLightboxUrl(evento.flyerImage);
+                        }}
+                        style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '10px', marginBottom: '10px', cursor: 'zoom-in' }}
+                      />
                     )}
 
                     <div className="evento-card-top">
@@ -2885,7 +2962,15 @@ function App() {
                   </div>
 
                   {eventoSeleccionado.flyerImage && (
-                    <img src={eventoSeleccionado.flyerImage} alt="Flyer Evento" style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '12px', marginBottom: '12px' }} />
+                    <img
+                      src={eventoSeleccionado.flyerImage}
+                      alt="Flyer Evento"
+                      onClick={() => {
+                        vibrarHaptico();
+                        setFotoLightboxUrl(eventoSeleccionado.flyerImage);
+                      }}
+                      style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '12px', marginBottom: '12px', cursor: 'zoom-in' }}
+                    />
                   )}
 
                   <div className="evento-detail-layout">
@@ -3830,7 +3915,17 @@ function App() {
                     {Array.isArray(emp.imagenes) && emp.imagenes.length > 0 && (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(60px, 1fr))', gap: '6px', margin: '10px 0' }}>
                         {emp.imagenes.map((foto, idx) => (
-                          <img key={idx} src={foto} alt={`Foto ${idx + 1}`} style={{ width: '100%', height: '70px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #e2e8f0' }} />
+                          <img
+                            key={idx}
+                            src={foto}
+                            alt={`Foto ${idx + 1}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              vibrarHaptico();
+                              setFotoLightboxUrl(foto);
+                            }}
+                            style={{ width: '100%', height: '70px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #e2e8f0', cursor: 'zoom-in' }}
+                          />
                         ))}
                       </div>
                     )}
@@ -3992,6 +4087,101 @@ function App() {
           </section>
         ) : null}
       </main>
+
+      {toasts.length > 0 && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 100005,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            width: '90%',
+            maxWidth: '380px',
+            pointerEvents: 'none',
+          }}
+        >
+          {toasts.map((toast) => (
+            <div
+              key={toast.id}
+              style={{
+                background: '#1e293b',
+                color: '#f8fafc',
+                border: '1px solid #334155',
+                padding: '12px 16px',
+                borderRadius: '12px',
+                fontSize: '13px',
+                fontWeight: '600',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                animation: 'aparecerDetalle 0.2s ease-out',
+              }}
+            >
+              <span>{toast.mensaje}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {fotoLightboxUrl && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 100000,
+            background: 'rgba(0, 0, 0, 0.88)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            boxSizing: 'border-box',
+          }}
+          onClick={() => setFotoLightboxUrl(null)}
+        >
+          <button
+            onClick={() => setFotoLightboxUrl(null)}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.2)',
+              border: '1px solid rgba(255, 255, 255, 0.4)',
+              color: '#ffffff',
+              fontSize: '24px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            ×
+          </button>
+          <img
+            src={fotoLightboxUrl}
+            alt="Visor de Fotografía"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '100%',
+              maxHeight: '90vh',
+              objectFit: 'contain',
+              borderRadius: '16px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+            }}
+          />
+        </div>
+      )}
 
       {mostrarModalRol && (
         <div className="detail-overlay" onClick={() => setMostrarModalRol(false)}>
@@ -4293,6 +4483,37 @@ function App() {
           onClick={() => handleAction('menu')}
         />
       </nav>
+    </div>
+  );
+}
+
+function AnilloProgresoCircular({ porcentaje, color, label }) {
+  const radio = 18;
+  const circunferencia = 2 * Math.PI * radio;
+  const offset = circunferencia - (porcentaje / 100) * circunferencia;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+      <svg width="50" height="50" viewBox="0 0 48 48">
+        <circle cx="24" cy="24" r={radio} fill="none" stroke="#e2e8f0" strokeWidth="4" />
+        <circle
+          cx="24"
+          cy="24"
+          r={radio}
+          fill="none"
+          stroke={color}
+          strokeWidth="4"
+          strokeDasharray={circunferencia}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          transform="rotate(-90 24 24)"
+          style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+        />
+        <text x="24" y="28" textAnchor="middle" fontSize="10" fontWeight="700" fill="#1e293b">
+          {porcentaje}%
+        </text>
+      </svg>
+      <span style={{ fontSize: '10px', color: '#64748b', marginTop: '4px', fontWeight: '600' }}>{label}</span>
     </div>
   );
 }
