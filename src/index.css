@@ -691,11 +691,32 @@ h1 span {
 }
 
 .feed-card {
-  border: 1px solid #e3ebee;
+  border: 1px solid var(--border-color, #e3ebee);
   border-radius: 18px;
-  background: white;
+  background: var(--card-bg, white);
   padding: 15px;
   box-shadow: 0 5px 14px rgba(31, 57, 75, 0.04);
+}
+
+.feed-gallery-slider {
+  display: flex !important;
+  gap: 10px !important;
+  overflow-x: auto !important;
+  scroll-snap-type: x mandatory !important;
+  padding-bottom: 6px !important;
+  margin: 12px 0 !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.feed-gallery-slide-img {
+  flex: 0 0 85% !important;
+  max-width: 260px !important;
+  height: 160px !important;
+  object-fit: cover !important;
+  border-radius: 12px !important;
+  border: 1px solid var(--border-color, #e2e8f0) !important;
+  scroll-snap-align: center !important;
+  cursor: zoom-in !important;
 }
 
 .feed-card-header {

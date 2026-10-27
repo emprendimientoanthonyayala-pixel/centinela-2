@@ -784,6 +784,7 @@ function App() {
   const puedeCrearEvento = ['Super Usuario', 'Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario'].includes(formularioInicial.rol);
   const puedeAdministrarEvento = ['Super Usuario', 'Administrador Estadal', 'Coordinador Parroquial'].includes(formularioInicial.rol);
   const puedeAsignarTarea = ['Super Usuario', 'Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario'].includes(formularioInicial.rol);
+  const puedeCambiarEstadoTarea = ['Super Usuario', 'Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario'].includes(formularioInicial.rol);
 
   // Restricción de territorio por rol
   useEffect(() => {
@@ -1763,7 +1764,33 @@ function App() {
     return coincideParroquia && coincideComision;
   });
 
-  const cumplimientoActual = infoParroquiaActual.cumplimiento || cumplimientoEstadalGlobal;
+  const calcularCumplimientoDinamico = () => {
+    const tareasParroquia = tareas.filter(
+      (t) => parroquiaSeleccionada === 'todas' || t.parroquia === parroquiaSeleccionada || t.parroquia === 'Todas' || t.parroquia === 'Caracas General'
+    );
+    const eventosParroquia = eventos.filter(
+      (e) => parroquiaSeleccionada === 'todas' || e.parroquia === parroquiaSeleccionada || e.parroquia === 'Todas' || e.nivel === 'estadal'
+    );
+
+    const totalActividades = tareasParroquia.length + eventosParroquia.length;
+    if (totalActividades === 0) {
+      return { integracion: 0, sistematizacion: 0, comunicacion: 0, movilizacion: 0, formacion: 0 };
+    }
+
+    const tareasCumplidas = tareasParroquia.filter((t) => t.estado === 'Cumplida' || t.estado === 'Cumplido').length;
+    const eventosCulminados = eventosParroquia.filter((e) => e.estado === 'culminado').length;
+    const porcentajeBase = Math.min(100, Math.round(((tareasCumplidas + eventosCulminados) / totalActividades) * 100));
+
+    return {
+      integracion: porcentajeBase,
+      sistematizacion: porcentajeBase,
+      comunicacion: porcentajeBase,
+      movilizacion: porcentajeBase,
+      formacion: porcentajeBase,
+    };
+  };
+
+  const cumplimientoActual = calcularCumplimientoDinamico();
 
   return (
     <div className="app-shell">
@@ -2511,7 +2538,7 @@ function App() {
                   </p>
 
                   {Array.isArray(post.evidencias) && post.evidencias.length > 0 && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '8px', margin: '12px 0' }}>
+                    <div className="feed-gallery-slider">
                       {post.evidencias.map((foto, idx) => (
                         <img
                           key={idx}
@@ -2522,7 +2549,7 @@ function App() {
                             vibrarHaptico();
                             setFotoLightboxUrl(foto);
                           }}
-                          style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0', cursor: 'zoom-in' }}
+                          className="feed-gallery-slide-img"
                         />
                       ))}
                     </div>
@@ -3424,12 +3451,12 @@ function App() {
                     <p className="evento-date">◷ Límite: {tarea.fechaLimite} · Prioridad: {tarea.prioridad}</p>
 
                     <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
-                      {tarea.estado !== 'En Proceso' && tarea.estado !== 'Cumplida' && (
+                      {(puedeCambiarEstadoTarea || tarea.responsable === formularioInicial.nombresApellidos) && tarea.estado !== 'En Proceso' && tarea.estado !== 'Cumplida' && (
                         <button type="button" className="secondary-button" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={() => cambiarEstadoTarea(tarea.id, 'En Proceso')}>
                           Marcar En Proceso
                         </button>
                       )}
-                      {tarea.estado !== 'Cumplida' && (
+                      {(puedeCambiarEstadoTarea || tarea.responsable === formularioInicial.nombresApellidos) && tarea.estado !== 'Cumplida' && (
                         <button type="button" className="primary-button" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={() => cambiarEstadoTarea(tarea.id, 'Cumplida')}>
                           Marcar Cumplida ✓
                         </button>
@@ -3512,7 +3539,7 @@ function App() {
                     <span className="mesa-icon">◎</span>
                     <div>
                       <small>Cumplimiento estimado</small>
-                      <strong>{cumplimientoActual[voceria.id] || 75}%</strong>
+                      <strong>{cumplimientoActual[voceria.id] || 0}%</strong>
                     </div>
                   </div>
                 </article>
