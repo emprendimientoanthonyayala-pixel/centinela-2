@@ -106,6 +106,7 @@ const quickActionsBase = [
   { icon: '✓', label: 'Tareas', tab: 'tareas' },
   { icon: '▤', label: 'Reportes', tab: 'reportes' },
   { icon: '₿', label: 'Emprendimientos', tab: 'emprendimientos' },
+  { icon: '💛', label: 'Donaciones', tab: 'donaciones' },
 ];
 
 const recentActivity = [];
@@ -283,6 +284,7 @@ function App() {
   });
 
   const [registroCompletado, setRegistroCompletado] = useState(false);
+  const [mostrarModalRegistro, setMostrarModalRegistro] = useState(false);
   const [telegramUserId, setTelegramUserId] = useState(null);
   const [telegramAutodetectado, setTelegramAutodetectado] = useState(false);
   const [formularioInicial, setFormularioInicial] = useState({
@@ -1032,6 +1034,11 @@ function App() {
 
   const handleAction = (tab) => {
     vibrarHaptico();
+    const publicTabs = ['inicio', 'feed', 'emprendimientos', 'donaciones'];
+    if (!registroCompletado && !publicTabs.includes(tab)) {
+      setMostrarModalRegistro(true);
+      return;
+    }
     setActiveTab(tab);
   };
 
@@ -1612,72 +1619,90 @@ function App() {
 
     if (formularioInicial.parroquia) setParroquiaSeleccionada(formularioInicial.parroquia);
     setRegistroCompletado(true);
+    setMostrarModalRegistro(false);
     cargarDatosNube();
   };
 
-  if (!registroCompletado) {
+  const renderModalRegistro = () => {
+    if (!mostrarModalRegistro) return null;
     return (
-      <div style={{ minHeight: '100vh', padding: '24px', background: '#f4f7fb', boxSizing: 'border-box' }}>
-        <div style={{ maxWidth: '620px', margin: '0 auto', padding: '24px', background: '#ffffff', borderRadius: '18px', boxShadow: '0 4px 18px rgba(0, 0, 0, 0.08)' }}>
-          <h1 style={{ marginTop: 0 }}>Completa tu registro</h1>
-          <p style={{ color: '#5f6b7a', lineHeight: 1.5 }}>
-            Antes de entrar a Centinela 2.0 necesitamos tus datos y asignación de rol.
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        background: 'rgba(0, 0, 0, 0.65)', backdropFilter: 'blur(4px)',
+        zIndex: 100002, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '16px', boxSizing: 'border-box'
+      }}>
+        <div style={{
+          background: '#ffffff', borderRadius: '18px', maxWidth: '520px', width: '100%',
+          maxHeight: '90vh', overflowY: 'auto', padding: '20px', position: 'relative',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <div>
+              <p className="section-label" style={{ margin: 0 }}>UNIRSE A CENTINELA 2.0</p>
+              <h2 style={{ margin: '4px 0 0 0', fontSize: '20px' }}>Registro Comunitario</h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => setMostrarModalRegistro(false)}
+              style={{ border: 'none', background: '#f1f5f9', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', fontSize: '18px' }}
+            >
+              ×
+            </button>
+          </div>
+          <p style={{ color: '#5f6b7a', fontSize: '12px', lineHeight: 1.4, margin: '0 0 16px 0' }}>
+            Regístrate para vincularte a tu Parroquia, registrar asistencias a eventos con QR, postular emprendimientos y participar en las tareas comunitarias.
           </p>
           <form onSubmit={guardarRegistroInicial}>
-            <label style={{ display: 'block', marginBottom: '14px' }}>
-              <span>Cédula</span>
-              <input name="cedula" value={formularioInicial.cedula} onChange={actualizarFormulario} required placeholder="Ej. V-12345678" style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px' }} />
+            <label style={{ display: 'block', marginBottom: '12px' }}>
+              <span style={{ fontSize: '12px', fontWeight: '600' }}>Cédula</span>
+              <input name="cedula" value={formularioInicial.cedula} onChange={actualizarFormulario} required placeholder="Ej. V-12345678" style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '8px' }} />
             </label>
 
-            <label style={{ display: 'block', marginBottom: '14px' }}>
-              <span>Nombres y apellidos</span>
-              <input name="nombresApellidos" value={formularioInicial.nombresApellidos} onChange={actualizarFormulario} required placeholder="Escribe tus nombres y apellidos" style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px' }} />
+            <label style={{ display: 'block', marginBottom: '12px' }}>
+              <span style={{ fontSize: '12px', fontWeight: '600' }}>Nombres y apellidos</span>
+              <input name="nombresApellidos" value={formularioInicial.nombresApellidos} onChange={actualizarFormulario} required placeholder="Escribe tus nombres y apellidos" style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '8px' }} />
             </label>
 
-            <label style={{ display: 'block', marginBottom: '14px' }}>
-              <span>Usuario de Telegram</span>
-              <input name="usuarioTelegram" value={formularioInicial.usuarioTelegram} onChange={actualizarFormulario} required placeholder="@usuario_telegram" style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px', background: '#ffffff' }} />
-              {telegramAutodetectado && (
-                <small style={{ color: '#2563eb', fontSize: '11px', marginTop: '2px', display: 'block' }}>
-                  ✓ Usuario de Telegram autodetectado. Puedes editarlo si lo deseas.
-                </small>
-              )}
+            <label style={{ display: 'block', marginBottom: '12px' }}>
+              <span style={{ fontSize: '12px', fontWeight: '600' }}>Usuario de Telegram</span>
+              <input name="usuarioTelegram" value={formularioInicial.usuarioTelegram} onChange={actualizarFormulario} required placeholder="@usuario_telegram" style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '8px', background: '#ffffff' }} />
             </label>
 
-            <label style={{ display: 'block', marginBottom: '14px' }}>
-              <span>Género</span>
-              <select name="genero" value={formularioInicial.genero} onChange={actualizarFormulario} required style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px', background: '#ffffff' }}>
+            <label style={{ display: 'block', marginBottom: '12px' }}>
+              <span style={{ fontSize: '12px', fontWeight: '600' }}>Género</span>
+              <select name="genero" value={formularioInicial.genero} onChange={actualizarFormulario} required style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '8px', background: '#ffffff' }}>
                 <option value="">Selecciona una opción</option>
                 <option value="Femenino">Femenino</option>
                 <option value="Masculino">Masculino</option>
               </select>
             </label>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.8fr', gap: '12px', marginBottom: '14px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.8fr', gap: '8px', marginBottom: '12px' }}>
               <div>
-                <label htmlFor="fechaNacimiento" style={{ display: 'block', marginBottom: '6px', color: '#263449', fontSize: '14px', fontWeight: '600' }}>Fecha de nacimiento</label>
-                <input id="fechaNacimiento" name="fechaNacimiento" type="date" value={formularioInicial.fechaNacimiento} onChange={actualizarFormulario} max={obtenerFechaActualLocal()} required style={{ width: '100%', padding: '12px', border: '1px solid #cbd5e1', borderRadius: '10px' }} />
+                <label htmlFor="fechaNacimiento" style={{ display: 'block', marginBottom: '4px', color: '#263449', fontSize: '12px', fontWeight: '600' }}>Fecha de nacimiento</label>
+                <input id="fechaNacimiento" name="fechaNacimiento" type="date" value={formularioInicial.fechaNacimiento} onChange={actualizarFormulario} max={obtenerFechaActualLocal()} required style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '8px', boxSizing: 'border-box' }} />
               </div>
               <div>
-                <span style={{ display: 'block', marginBottom: '6px', color: '#263449', fontSize: '14px', fontWeight: '600' }}>Edad</span>
-                <div style={{ padding: '12px', background: '#f1f7f5', border: '1px solid #d8eee6', borderRadius: '10px', fontWeight: '500' }}>
-                  {formularioInicial.fechaNacimiento ? `${calcularEdad(formularioInicial.fechaNacimiento)} años` : '—'}
+                <span style={{ display: 'block', marginBottom: '4px', color: '#263449', fontSize: '12px', fontWeight: '600' }}>Edad</span>
+                <div style={{ padding: '10px', background: '#f1f7f5', border: '1px solid #d8eee6', borderRadius: '8px', fontWeight: '500', fontSize: '12px' }}>
+                  {formularioInicial.fechaNacimiento ? `${calcularEdad(formularioInicial.fechaNacimiento)}` : '—'}
                 </div>
               </div>
             </div>
 
-            <label style={{ display: 'block', marginBottom: '14px' }}>
-              <span>Estado</span>
-              <select name="estado" value={formularioInicial.estado} onChange={actualizarFormulario} required style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px', background: '#ffffff' }}>
+            <label style={{ display: 'block', marginBottom: '12px' }}>
+              <span style={{ fontSize: '12px', fontWeight: '600' }}>Estado</span>
+              <select name="estado" value={formularioInicial.estado} onChange={actualizarFormulario} required style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '8px', background: '#ffffff' }}>
                 <option value="">Selecciona estado</option>
                 <option value="Distrito Capital">Distrito Capital</option>
                 <option value="Miranda">Miranda</option>
               </select>
             </label>
 
-            <label style={{ display: 'block', marginBottom: '14px' }}>
-              <span>Municipio</span>
-              <select name="municipio" value={formularioInicial.municipio} onChange={actualizarFormulario} required disabled={!formularioInicial.estado} style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px', background: '#ffffff' }}>
+            <label style={{ display: 'block', marginBottom: '12px' }}>
+              <span style={{ fontSize: '12px', fontWeight: '600' }}>Municipio</span>
+              <select name="municipio" value={formularioInicial.municipio} onChange={actualizarFormulario} required disabled={!formularioInicial.estado} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '8px', background: '#ffffff' }}>
                 <option value="">Selecciona municipio</option>
                 {(municipiosPorEstado[formularioInicial.estado] || []).map((m) => (
                   <option key={m} value={m}>{m}</option>
@@ -1685,9 +1710,9 @@ function App() {
               </select>
             </label>
 
-            <label style={{ display: 'block', marginBottom: '14px' }}>
-              <span>Parroquia (Consejo Popular Parroquial)</span>
-              <select name="parroquia" value={formularioInicial.parroquia} onChange={actualizarFormulario} required disabled={!formularioInicial.municipio} style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px', background: '#ffffff' }}>
+            <label style={{ display: 'block', marginBottom: '12px' }}>
+              <span style={{ fontSize: '12px', fontWeight: '600' }}>Parroquia</span>
+              <select name="parroquia" value={formularioInicial.parroquia} onChange={actualizarFormulario} required disabled={!formularioInicial.municipio} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '8px', background: '#ffffff' }}>
                 <option value="">Selecciona parroquia</option>
                 {parroquiasCaracas.map((p) => (
                   <option key={p} value={p}>{p}</option>
@@ -1695,29 +1720,29 @@ function App() {
               </select>
             </label>
 
-            <label style={{ display: 'block', marginBottom: '14px' }}>
-              <span>Comuna</span>
-              <input name="comuna" value={formularioInicial.comuna} onChange={actualizarFormulario} required placeholder="Nombre de tu comuna" style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px' }} />
+            <label style={{ display: 'block', marginBottom: '12px' }}>
+              <span style={{ fontSize: '12px', fontWeight: '600' }}>Comuna (Opcional)</span>
+              <input name="comuna" value={formularioInicial.comuna} onChange={actualizarFormulario} placeholder="Nombre de tu comuna (opcional)" style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '8px' }} />
+            </label>
+
+            <label style={{ display: 'block', marginBottom: '12px' }}>
+              <span style={{ fontSize: '12px', fontWeight: '600' }}>Consejo Comunal (Opcional)</span>
+              <input name="concejoComunal" value={formularioInicial.concejoComunal} onChange={actualizarFormulario} placeholder="Nombre de tu consejo comunal (opcional)" style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '8px' }} />
             </label>
 
             <label style={{ display: 'block', marginBottom: '14px' }}>
-              <span>Concejo comunal</span>
-              <input name="concejoComunal" value={formularioInicial.concejoComunal} onChange={actualizarFormulario} required placeholder="Nombre de tu concejo comunal" style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px' }} />
+              <span style={{ fontSize: '12px', fontWeight: '600' }}>Teléfono</span>
+              <input name="telefono" type="tel" value={formularioInicial.telefono} onChange={actualizarFormulario} required placeholder="Teléfono de contacto" style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '8px' }} />
             </label>
 
-            <label style={{ display: 'block', marginBottom: '14px' }}>
-              <span>Teléfono</span>
-              <input name="telefono" type="tel" value={formularioInicial.telefono} onChange={actualizarFormulario} required placeholder="Teléfono de contacto" style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px' }} />
-            </label>
-
-            <button type="submit" style={{ width: '100%', padding: '14px', border: 0, borderRadius: '10px', background: '#2563eb', color: '#ffffff', fontSize: '16px', fontWeight: '600', cursor: 'pointer' }}>
+            <button type="submit" style={{ width: '100%', padding: '12px', border: 0, borderRadius: '10px', background: '#2563eb', color: '#ffffff', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>
               Ingresar a mi Consejo Popular
             </button>
           </form>
         </div>
       </div>
     );
-  }
+  };
 
   const eventosMostrados = eventos.filter((e) => {
     const coincideParroquia =
@@ -1802,6 +1827,19 @@ function App() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {!registroCompletado && (
+              <button
+                type="button"
+                onClick={() => setMostrarModalRegistro(true)}
+                style={{
+                  background: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '8px',
+                  padding: '6px 12px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: '4px'
+                }}
+              >
+                ✍️ Registrarme
+              </button>
+            )}
             <span
               onClick={() => {
                 vibrarHaptico();
@@ -1838,6 +1876,27 @@ function App() {
 
         {activeTab === 'inicio' && (
           <>
+            {!registroCompletado && (
+              <div style={{
+                background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '14px',
+                padding: '12px 14px', marginBottom: '16px', display: 'flex', alignItems: 'center',
+                justifyContent: 'space-between', gap: '10px'
+              }}>
+                <div style={{ fontSize: '12px', color: '#1e40af', lineHeight: 1.4 }}>
+                  <strong>👋 Modo Público Activo:</strong> Puedes explorar el Feed, Emprendimientos y Donaciones. Para sumarte a las tareas y reportes de tu parroquia, regístrate.
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMostrarModalRegistro(true)}
+                  style={{
+                    background: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '8px',
+                    padding: '8px 12px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0
+                  }}
+                >
+                  Registrarme
+                </button>
+              </div>
+            )}
             <section className="welcome-section">
               <div>
                 <p className="muted-text">Bienvenido de nuevo</p>
@@ -3782,6 +3841,60 @@ function App() {
               </button>
             </div>
 
+            {/* Accesos rápidos de Servicios Populares: Antojos, Mandaditos, MotoPana Express */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '16px' }}>
+              <div
+                onClick={() => setFiltroCategoriaEmp(filtroCategoriaEmp === 'Antojos' ? 'todas' : 'Antojos')}
+                style={{
+                  background: filtroCategoriaEmp === 'Antojos' ? '#fef3c7' : '#ffffff',
+                  border: filtroCategoriaEmp === 'Antojos' ? '2px solid #d97706' : '1px solid #cbd5e1',
+                  borderRadius: '12px',
+                  padding: '10px 6px',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                }}
+              >
+                <div style={{ fontSize: '24px', marginBottom: '4px' }}>🍩</div>
+                <div style={{ fontWeight: '700', fontSize: '12px', color: '#1e293b' }}>Antojos</div>
+                <div style={{ fontSize: '10px', color: '#64748b' }}>Postres & snacks</div>
+              </div>
+
+              <div
+                onClick={() => setFiltroCategoriaEmp(filtroCategoriaEmp === 'Mandaditos' ? 'todas' : 'Mandaditos')}
+                style={{
+                  background: filtroCategoriaEmp === 'Mandaditos' ? '#e0f2fe' : '#ffffff',
+                  border: filtroCategoriaEmp === 'Mandaditos' ? '2px solid #0284c7' : '1px solid #cbd5e1',
+                  borderRadius: '12px',
+                  padding: '10px 6px',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                }}
+              >
+                <div style={{ fontSize: '24px', marginBottom: '4px' }}>📦</div>
+                <div style={{ fontWeight: '700', fontSize: '12px', color: '#1e293b' }}>Mandaditos</div>
+                <div style={{ fontSize: '10px', color: '#64748b' }}>Diligencias & envíos</div>
+              </div>
+
+              <div
+                onClick={() => setFiltroCategoriaEmp(filtroCategoriaEmp === 'MotoPana Express' ? 'todas' : 'MotoPana Express')}
+                style={{
+                  background: filtroCategoriaEmp === 'MotoPana Express' ? '#dcfce7' : '#ffffff',
+                  border: filtroCategoriaEmp === 'MotoPana Express' ? '2px solid #16a34a' : '1px solid #cbd5e1',
+                  borderRadius: '12px',
+                  padding: '10px 6px',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                }}
+              >
+                <div style={{ fontSize: '24px', marginBottom: '4px' }}>🛵</div>
+                <div style={{ fontWeight: '700', fontSize: '12px', color: '#1e293b' }}>MotoPana</div>
+                <div style={{ fontSize: '10px', color: '#64748b' }}>Movilidad 2 ruedas</div>
+              </div>
+            </div>
+
             {/* Filtros de Parroquia y Categoría para Emprendimientos */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '14px' }}>
               <div>
@@ -3810,6 +3923,9 @@ function App() {
                   style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px' }}
                 >
                   <option value="todas">Todas las categorías</option>
+                  <option value="Antojos">🍩 Antojos (Postres y Comida rápida)</option>
+                  <option value="Mandaditos">📦 Mandaditos (Diligencias y Envíos)</option>
+                  <option value="MotoPana Express">🛵 MotoPana Express (Movilidad en 2 ruedas)</option>
                   <option value="Textil y Calzado">Textil y Calzado</option>
                   <option value="Alimentos y Gastronomía">Alimentos y Gastronomía</option>
                   <option value="Servicios y Reparación">Servicios y Reparación</option>
@@ -3857,6 +3973,9 @@ function App() {
                     value={formEmprendimiento.categoria}
                     onChange={(e) => setFormEmprendimiento((prev) => ({ ...prev, categoria: e.target.value }))}
                   >
+                    <option value="Antojos">🍩 Antojos (Postres y Comida rápida)</option>
+                    <option value="Mandaditos">📦 Mandaditos (Diligencias y Envíos)</option>
+                    <option value="MotoPana Express">🛵 MotoPana Express (Movilidad en 2 ruedas)</option>
                     <option value="Textil y Calzado">Textil y Calzado</option>
                     <option value="Alimentos y Bebidas">Alimentos y Bebidas</option>
                     <option value="Artesanía y Cultura">Artesanía y Cultura</option>
@@ -3995,6 +4114,111 @@ function App() {
               )}
             </div>
           </section>
+        ) : activeTab === 'donaciones' ? (
+          <section className="donaciones-page">
+            <div className="page-heading">
+              <div>
+                <p className="section-label">AUTOGESTIÓN Y SOLIDARIDAD</p>
+                <h2>Fondo de Apoyo Comunitario</h2>
+                <p className="page-description">
+                  Impulsa las actividades socioculturales, brigadas comunitarias y proyectos productivos de Caracas.
+                </p>
+              </div>
+
+              <button
+                className="back-button"
+                onClick={() => handleAction('inicio')}
+              >
+                Inicio
+              </button>
+            </div>
+
+            <div style={{ background: '#ffffff', borderRadius: '16px', padding: '16px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '10px' }}>
+                <span style={{ fontSize: '32px' }}>🤝</span>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '16px' }}>Apoya el Poder Popular</h3>
+                  <small style={{ color: '#64748b' }}>Autonomía y fortalecimiento socioterritorial</small>
+                </div>
+              </div>
+              <p style={{ fontSize: '13px', color: '#475569', lineHeight: 1.5, margin: 0 }}>
+                Las contribuciones voluntarias financian insumos para jornadas comunitarias, recuperación de espacios públicos, logística de eventos populares y apoyo a emprendimientos comunales en las 22 parroquias de Caracas.
+              </p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '20px' }}>
+              <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '10px', border: '1px solid #cbd5e1', textAlign: 'center' }}>
+                <span style={{ fontSize: '20px' }}>🛠</span>
+                <strong style={{ display: 'block', fontSize: '11px', marginTop: '4px' }}>Jornadas y Obras</strong>
+                <small style={{ fontSize: '10px', color: '#64748b' }}>Pintura, bombillos, herramientas.</small>
+              </div>
+
+              <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '10px', border: '1px solid #cbd5e1', textAlign: 'center' }}>
+                <span style={{ fontSize: '20px' }}>🥖</span>
+                <strong style={{ display: 'block', fontSize: '11px', marginTop: '4px' }}>Encadenamiento</strong>
+                <small style={{ fontSize: '10px', color: '#64748b' }}>Impulso a emprendedores locales.</small>
+              </div>
+
+              <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '10px', border: '1px solid #cbd5e1', textAlign: 'center' }}>
+                <span style={{ fontSize: '20px' }}>📚</span>
+                <strong style={{ display: 'block', fontSize: '11px', marginTop: '4px' }}>Formación y Cultura</strong>
+                <small style={{ fontSize: '10px', color: '#64748b' }}>Talleres populares y juveniles.</small>
+              </div>
+            </div>
+
+            <div style={{ background: '#ffffff', borderRadius: '16px', padding: '18px', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <h3 style={{ margin: 0, fontSize: '16px' }}>Canales de Aporte y Colaboración</h3>
+                <span style={{ fontSize: '11px', background: registroCompletado ? '#dcfce7' : '#fef3c7', color: registroCompletado ? '#16a34a' : '#d97706', padding: '2px 8px', borderRadius: '6px', fontWeight: 'bold' }}>
+                  {registroCompletado ? 'Datos habilitados' : 'Registro Requerido'}
+                </span>
+              </div>
+
+              {registroCompletado ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px' }}>
+                    <strong style={{ fontSize: '13px', color: '#1e293b', display: 'block' }}>📲 Pago Móvil Comunitario</strong>
+                    <div style={{ fontSize: '12px', color: '#475569', marginTop: '4px' }}>
+                      <div>• Banco: <strong>Banco de Venezuela (0102)</strong></div>
+                      <div>• Cédula / RIF: <strong>J-50123456-7</strong></div>
+                      <div>• Teléfono: <strong>0412-5550199</strong></div>
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px' }}>
+                    <strong style={{ fontSize: '13px', color: '#1e293b', display: 'block' }}>🏛 Cuenta Corriente Bancaria</strong>
+                    <div style={{ fontSize: '12px', color: '#475569', marginTop: '4px' }}>
+                      <div>• Banco de Venezuela: <strong>0102-0123-45-0000123456</strong></div>
+                      <div>• Titular: <strong>Fondo de Desarrollo Comunal Caracas</strong></div>
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px' }}>
+                    <strong style={{ fontSize: '13px', color: '#1e293b', display: 'block' }}>🪙 USDT (TRC-20) / Criptoactivos</strong>
+                    <div style={{ fontSize: '12px', color: '#475569', marginTop: '4px', wordBreak: 'break-all' }}>
+                      <code>TX7kCommunityCaracasSupportTRC20Vol99</code>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '16px 8px', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+                  <span style={{ fontSize: '28px' }}>🔒</span>
+                  <h4 style={{ margin: '8px 0 4px 0', fontSize: '15px' }}>Datos protegidos para la comunidad</h4>
+                  <p style={{ fontSize: '12px', color: '#64748b', maxWidth: '340px', margin: '0 auto 14px auto' }}>
+                    Para visualizar los datos bancarios y cuentas de apoyo de las brigadas comunales, completa tu registro con cédula y parroquia.
+                  </p>
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={() => setMostrarModalRegistro(true)}
+                    style={{ maxWidth: '220px', margin: '0 auto', padding: '10px 16px', fontSize: '13px' }}
+                  >
+                    Registrarme para ver datos
+                  </button>
+                </div>
+              )}
+            </div>
+          </section>
         ) : activeTab === 'menu' ? (
           <section className="menu-page">
             <div className="page-heading">
@@ -4113,6 +4337,7 @@ function App() {
             </div>
           </section>
         ) : null}
+      {renderModalRegistro()}
       </main>
 
       {toasts.length > 0 && (
