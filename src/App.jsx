@@ -97,7 +97,52 @@ const cumplimientoEstadalGlobal = {
   formacion: 76,
 };
 
-// Puntos de referencia de Caracas con coordenadas GPS para MotoPana Express
+// Configuración de tipos de vehículos y tarifas comunitarias
+const TIPOS_VEHICULO_PANA = {
+  moto: {
+    id: 'moto',
+    nombre: 'MotoPana',
+    icono: '🛵',
+    subtitulo: 'Movilidad rápida en 2 ruedas',
+    base: 1.5,
+    porKm: 0.5,
+    minimo: 2.5,
+    velocidadPromedioKmh: 25,
+    tiempoBaseMin: 4,
+  },
+  carro: {
+    id: 'carro',
+    nombre: 'CarroPana',
+    icono: '🚗',
+    subtitulo: 'Carro cómodo para personas / familias',
+    base: 3.0,
+    porKm: 0.85,
+    minimo: 4.5,
+    velocidadPromedioKmh: 20,
+    tiempoBaseMin: 6,
+  },
+  camion: {
+    id: 'camion',
+    nombre: 'PanaCarga',
+    icono: '🚚',
+    subtitulo: 'Camión / Camioneta de flete y carga pesada',
+    base: 10.0,
+    porKm: 2.0,
+    minimo: 15.0,
+    velocidadPromedioKmh: 18,
+    tiempoBaseMin: 12,
+  },
+};
+
+// Transportistas registrados de ejemplo inicial
+const conductoresPanaIniciales = [
+  { id: 'c-01', nombre: 'Carlos Mendoza', telefono: '0412-1112233', tipoVehiculo: 'moto', modelo: 'Empire Keeway 150 (Negra)', placa: 'AB1C23D', parroquia: 'El Recreo', estado: 'disponible', calificacion: 4.9 },
+  { id: 'c-02', nombre: 'José Gregorio Silva', telefono: '0414-2223344', tipoVehiculo: 'moto', modelo: 'Bera SBR 150 (Azul)', placa: 'AD4E56F', parroquia: 'Sucre (Catia)', estado: 'disponible', calificacion: 4.8 },
+  { id: 'c-03', nombre: 'Wilmer Ramírez', telefono: '0424-3334455', tipoVehiculo: 'carro', modelo: 'Chevrolet Aveo (Plata)', placa: 'AC7G89H', parroquia: 'Chacao', estado: 'disponible', calificacion: 5.0 },
+  { id: 'c-04', nombre: 'Eudis Paredes', telefono: '0416-4445566', tipoVehiculo: 'camion', modelo: 'Ford 350 Plataforma / Barandas', placa: 'AA9J01K', parroquia: 'Coche', estado: 'disponible', calificacion: 4.9 },
+];
+
+// Puntos de referencia de Caracas con coordenadas GPS para MotoPana Express y Pana Móvil
 const puntosCaracasGPS = [
   { id: 'plaza-vzla', nombre: 'Plaza Venezuela / La Previsora', lat: 10.4965, lon: -66.8858, parroquia: 'El Recreo' },
   { id: 'chacao', nombre: 'Chacao / Metro Chacao', lat: 10.4925, lon: -66.8533, parroquia: 'Chacao' },
@@ -631,20 +676,94 @@ function App() {
     fechaLimite: obtenerFechaActualLocal(),
   });
 
-  // MotoPana Express State
+  // Pana Móvil (MotoPana, CarroPana, PanaCarga) State
   const [mostrarModalMotoPana, setMostrarModalMotoPana] = useState(false);
+  const [panaSubTab, setPanaSubTab] = useState('solicitar'); // 'solicitar', 'muro', 'registro'
+  const [panaCategoriaServicio, setPanaCategoriaServicio] = useState('viaje'); // 'viaje', 'mandadito'
+  const [vehiculoSeleccionado, setVehiculoSeleccionado] = useState('moto'); // 'moto', 'carro', 'camion'
   const [motoPanaOrigenId, setMotoPanaOrigenId] = useState('plaza-vzla');
   const [motoPanaOrigenCustom, setMotoPanaOrigenCustom] = useState('');
   const [motoPanaDestinoId, setMotoPanaDestinoId] = useState('petare');
   const [motoPanaDestinoCustom, setMotoPanaDestinoCustom] = useState('');
+  const [motoPanaDestinoCoords, setMotoPanaDestinoCoords] = useState(null);
   const [motoPanaNotas, setMotoPanaNotas] = useState('');
   const [motoPanaGpsActivo, setMotoPanaGpsActivo] = useState(false);
   const [motoPanaGpsCoords, setMotoPanaGpsCoords] = useState(null);
   const [motoPanaGpsCargando, setMotoPanaGpsCargando] = useState(false);
+  const [modoSeleccionMapa, setModoSeleccionMapa] = useState('A'); // 'A' o 'B' para tocar en el mapa
   const [motoPanaWhatsappDestino, setMotoPanaWhatsappDestino] = useState(
     () => localStorage.getItem('motopana_whatsapp_url') || 'https://chat.whatsapp.com/DR2MAxM98s7JhC76o4Bcja?s=cl&p=i&mlu=4&ilr=4&iam=2'
   );
   const [motoPanaCopiado, setMotoPanaCopiado] = useState(false);
+
+  // Conductores Comunitarios Registrados (Moto, Carro, Camión)
+  const [conductoresPana, setConductoresPana] = useState(() => {
+    try {
+      const guardados = localStorage.getItem('conductoresPanaCentinela');
+      if (guardados) {
+        const parsed = JSON.parse(guardados);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return conductoresPanaIniciales;
+  });
+
+  // Solicitudes Comunitarias de Viajes y Mandaditos
+  const [solicitudesPana, setSolicitudesPana] = useState(() => {
+    try {
+      const guardadas = localStorage.getItem('solicitudesPanaCentinela');
+      if (guardadas) {
+        const parsed = JSON.parse(guardadas);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [
+      {
+        id: 'sol-01',
+        categoria: 'viaje',
+        tipoVehiculo: 'moto',
+        pasajero: 'Yelitza Morales',
+        contacto: '@yelitzaccs',
+        origen: 'Sabana Grande / Bulevar',
+        destino: 'La Candelaria / Parque Carabobo',
+        distanciaKm: 3.4,
+        tiempoMin: 12,
+        precioUsd: 3.2,
+        precioBs: 1424,
+        notas: 'Llevar 1 casco para dama',
+        estado: 'en-espera', // 'en-espera', 'aceptado', 'completado'
+        conductorAsignado: null,
+        fechaHora: 'Hoy 10:15 AM'
+      },
+      {
+        id: 'sol-02',
+        categoria: 'mandadito',
+        tipoVehiculo: 'moto',
+        pasajero: 'Pastelería La Esperanza (Antojos)',
+        contacto: '0412-9988776',
+        origen: 'Chacao / Metro Chacao',
+        destino: 'Altamira / Plaza Francia',
+        distanciaKm: 1.8,
+        tiempoMin: 8,
+        precioUsd: 2.5,
+        precioBs: 1112,
+        notas: 'Entrega de torta refrigerada en caja frágil',
+        estado: 'en-espera',
+        conductorAsignado: null,
+        fechaHora: 'Hoy 10:30 AM'
+      }
+    ];
+  });
+
+  // Formulario para registro de nuevo conductor
+  const [formNuevoConductor, setFormNuevoConductor] = useState({
+    nombre: '',
+    telefono: '',
+    tipoVehiculo: 'moto',
+    modelo: '',
+    placa: '',
+    parroquia: 'El Recreo'
+  });
 
   // Reportes State
   const [reportes, setReportes] = useState(() => {
@@ -1091,33 +1210,140 @@ function App() {
     parroquial: 'Consejo Popular Parroquial',
   };
 
-  // Cálculo de ruta y tarifa MotoPana Express
+  // Configuración del vehículo activo y cálculo de tarifa comunitaria
+  const infoVehiculoActivo = TIPOS_VEHICULO_PANA[vehiculoSeleccionado] || TIPOS_VEHICULO_PANA.moto;
+
+  // Cálculo de ruta y tarifa Pana Móvil (Moto, Carro, Carga)
   const origenPunto = puntosCaracasGPS.find((p) => p.id === motoPanaOrigenId) || puntosCaracasGPS[0];
   const destinoPunto = puntosCaracasGPS.find((p) => p.id === motoPanaDestinoId) || puntosCaracasGPS[3];
 
-  const origenCoords = motoPanaGpsActivo && motoPanaGpsCoords ? motoPanaGpsCoords : { lat: origenPunto.lat, lon: origenPunto.lon };
-  const destinoCoords = { lat: destinoPunto.lat, lon: destinoPunto.lon };
+  const origenCoords = motoPanaGpsActivo && motoPanaGpsCoords
+    ? motoPanaGpsCoords
+    : { lat: origenPunto.lat, lon: origenPunto.lon };
+
+  const destinoCoords = motoPanaDestinoCoords
+    ? motoPanaDestinoCoords
+    : { lat: destinoPunto.lat, lon: destinoPunto.lon };
 
   const origenNombreFinal = motoPanaGpsActivo
-    ? (motoPanaOrigenCustom || '📍 Mi Ubicación GPS Actual')
+    ? (motoPanaOrigenCustom || '📍 Mi Ubicación GPS / Mapa')
     : (motoPanaOrigenCustom ? `${origenPunto.nombre} (${motoPanaOrigenCustom})` : origenPunto.nombre);
 
-  const destinoNombreFinal = motoPanaDestinoCustom
-    ? `${destinoPunto.nombre} (${motoPanaDestinoCustom})`
-    : destinoPunto.nombre;
+  const destinoNombreFinal = motoPanaDestinoCoords
+    ? (motoPanaDestinoCustom || '🏁 Punto Marcado en Mapa')
+    : (motoPanaDestinoCustom ? `${destinoPunto.nombre} (${motoPanaDestinoCustom})` : destinoPunto.nombre);
 
   const distanciaCalculadaKm = Math.max(
-    1.2,
+    1.0,
     calcularDistanciaKm(origenCoords.lat, origenCoords.lon, destinoCoords.lat, destinoCoords.lon)
   );
 
-  // Estimación de tiempo en moto (promedio 25 km/h tráfico caraqueño + 4 min base)
-  const tiempoEstimadoMinutos = Math.round((distanciaCalculadaKm / 25) * 60) + 4;
+  // Estimación de tiempo según el vehículo
+  const tiempoEstimadoMinutos =
+    Math.round((distanciaCalculadaKm / infoVehiculoActivo.velocidadPromedioKmh) * 60) +
+    infoVehiculoActivo.tiempoBaseMin;
 
-  // Tarifa MotoPana Comunitaria ($1.50 base arranque + $0.50 por km, mín $2.50)
-  const tarifaUsd = Math.max(2.5, Math.round((1.5 + distanciaCalculadaKm * 0.5) * 10) / 10);
-  const tasaReferencialBs = 445.0; // Tasa referencial oficial para el cálculo comunitario
+  // Tarifa Comunitaria según el tipo de vehículo
+  const tarifaCalculadaBruta = infoVehiculoActivo.base + distanciaCalculadaKm * infoVehiculoActivo.porKm;
+  const tarifaUsd = Math.max(
+    infoVehiculoActivo.minimo,
+    Math.round(tarifaCalculadaBruta * 10) / 10
+  );
+  const tasaReferencialBs = 445.0; // Tasa referencial oficial comunitaria
   const tarifaBs = Math.round(tarifaUsd * tasaReferencialBs);
+
+  // Registro de nuevo conductor
+  const registrarConductorPana = (e) => {
+    e.preventDefault();
+    if (!formNuevoConductor.nombre.trim() || !formNuevoConductor.telefono.trim()) {
+      alert('Por favor indica tu nombre completo y número de WhatsApp.');
+      return;
+    }
+    const nuevo = {
+      id: `c-${Date.now()}`,
+      nombre: formNuevoConductor.nombre.trim(),
+      telefono: formNuevoConductor.telefono.trim(),
+      tipoVehiculo: formNuevoConductor.tipoVehiculo,
+      modelo: formNuevoConductor.modelo.trim() || 'Vehículo particular',
+      placa: (formNuevoConductor.placa.trim() || 'En trámite').toUpperCase(),
+      parroquia: formNuevoConductor.parroquia,
+      estado: 'disponible',
+      calificacion: 5.0
+    };
+    const listaActualizada = [nuevo, ...conductoresPana];
+    setConductoresPana(listaActualizada);
+    try {
+      localStorage.setItem('conductoresPanaCentinela', JSON.stringify(listaActualizada));
+    } catch {}
+    setFormNuevoConductor({
+      nombre: '',
+      telefono: '',
+      tipoVehiculo: 'moto',
+      modelo: '',
+      placa: '',
+      parroquia: 'El Recreo'
+    });
+    mostrarToast(`¡Bienvenido ${nuevo.nombre}! Quedaste registrado en la red Pana Móvil.`);
+    setPanaSubTab('muro');
+  };
+
+  // Crear y publicar solicitud en el Muro Comunitario
+  const crearSolicitudTransporte = () => {
+    vibrarHaptico();
+    const pasajero = formularioInicial.nombresApellidos || 'Vecino Comunitario';
+    const contacto = formularioInicial.usuarioTelegram
+      ? `@${formularioInicial.usuarioTelegram.replace('@', '')}`
+      : 'En la comunidad';
+
+    const nuevaSolicitud = {
+      id: `sol-${Date.now()}`,
+      categoria: panaCategoriaServicio, // 'viaje' o 'mandadito'
+      tipoVehiculo: vehiculoSeleccionado,
+      pasajero,
+      contacto,
+      origen: origenNombreFinal,
+      destino: destinoNombreFinal,
+      distanciaKm: distanciaCalculadaKm,
+      tiempoMin: tiempoEstimadoMinutos,
+      precioUsd: tarifaUsd,
+      precioBs: tarifaBs,
+      notas: motoPanaNotas.trim(),
+      estado: 'en-espera',
+      conductorAsignado: null,
+      fechaHora: 'Hace un momento'
+    };
+
+    const lista = [nuevaSolicitud, ...solicitudesPana];
+    setSolicitudesPana(lista);
+    try {
+      localStorage.setItem('solicitudesPanaCentinela', JSON.stringify(lista));
+    } catch {}
+
+    mostrarToast('✓ Solicitud publicada en la bolsa comunitaria');
+    setPanaSubTab('muro');
+  };
+
+  // Aceptar solicitud por un conductor
+  const aceptarSolicitudTransporte = (solicitudId) => {
+    vibrarHaptico();
+    const nombreConductor = formularioInicial.nombresApellidos || 'Conductor Pana';
+    const lista = solicitudesPana.map((s) => {
+      if (s.id === solicitudId) {
+        return {
+          ...s,
+          estado: 'aceptado',
+          conductorAsignado: nombreConductor,
+          horaAceptado: 'Ahora mismo'
+        };
+      }
+      return s;
+    });
+    setSolicitudesPana(lista);
+    try {
+      localStorage.setItem('solicitudesPanaCentinela', JSON.stringify(lista));
+    } catch {}
+    mostrarToast(`✓ ¡Aceptaste el servicio! Coordina de inmediato con el solicitante.`);
+  };
 
   const activarGpsMotoPana = () => {
     if (!navigator.geolocation) {
@@ -1143,23 +1369,27 @@ function App() {
   };
 
   const generarMensajeDespachoMotoPana = () => {
-    const pasajero = formularioInicial.nombresApellidos || 'Pasajero Comunitario';
-    const telefono = formularioInicial.usuarioTelegram ? `@${formularioInicial.usuarioTelegram.replace('@', '')}` : 'Contacto en App';
+    const solicitante = formularioInicial.nombresApellidos || 'Vecino Comunitario';
+    const telefono = formularioInicial.usuarioTelegram ? `@${formularioInicial.usuarioTelegram.replace('@', '')}` : 'Contacto en Centinela';
     const gpsUrl = motoPanaGpsActivo && motoPanaGpsCoords
       ? `https://maps.google.com/?q=${motoPanaGpsCoords.lat.toFixed(5)},${motoPanaGpsCoords.lon.toFixed(5)}`
       : `https://maps.google.com/?q=${origenCoords.lat},${origenCoords.lon}`;
 
-    return `🚨 *¡SOLICITUD DE MOTOPANA EXPRESS!* 🛵💨\n\n` +
-      `👤 *Pasajero:* ${pasajero}\n` +
+    const tipoTexto = panaCategoriaServicio === 'mandadito' ? 'MANDADITO / ENCOMIENDA' : 'VIAJE / TRASLADO';
+    const iconoVehiculo = infoVehiculoActivo.icono;
+
+    return `🚨 *¡NUEVA SOLICITUD PANA MÓVIL!* ${iconoVehiculo}💨\n\n` +
+      `📌 *Servicio:* ${tipoTexto} (${infoVehiculoActivo.nombre})\n` +
+      `👤 *Solicitante:* ${solicitante}\n` +
       `📞 *Contacto:* ${telefono}\n` +
-      `🚩 *Origen:* ${origenNombreFinal}\n` +
-      `🏁 *Destino:* ${destinoNombreFinal}\n` +
-      `📏 *Distancia:* ${distanciaCalculadaKm} km aprox.\n` +
-      `⏱️ *Tiempo estimado:* ${tiempoEstimadoMinutos} min\n` +
-      `💵 *Tarifa sugerida:* *$${tarifaUsd.toFixed(2)} USD* (aprox. Bs. ${tarifaBs.toLocaleString('es-VE')})\n` +
-      (motoPanaNotas ? `📝 *Nota:* ${motoPanaNotas}\n` : '') +
-      `🗺️ *Ubicación Origen:* ${gpsUrl}\n\n` +
-      `👉 *¿Quién toma la carrera? Responde con "LA TOMO" y número de placa/casco.* 🏍️`;
+      `🚩 *Origen (Punto A):* ${origenNombreFinal}\n` +
+      `🏁 *Destino (Punto B):* ${destinoNombreFinal}\n` +
+      `📏 *Distancia estimada:* ${distanciaCalculadaKm} km\n` +
+      `⏱️ *Tiempo aprox.:* ${tiempoEstimadoMinutos} min\n` +
+      `💵 *Tarifa sugerida:* *$${tarifaUsd.toFixed(2)} USD* (≈ Bs. ${tarifaBs.toLocaleString('es-VE')})\n` +
+      (motoPanaNotas ? `📝 *Detalles:* ${motoPanaNotas}\n` : '') +
+      `🗺️ *Ubicación en Mapa:* ${gpsUrl}\n\n` +
+      `👉 *¿Quién toma el servicio? Responde con "LO TOMO" indicando tu nombre y placa.* 🇻🇪`;
   };
 
   const enviarSolicitudWhatsAppMotoPana = () => {
@@ -4026,10 +4256,16 @@ function App() {
               </div>
 
               <div
-                onClick={() => setFiltroCategoriaEmp(filtroCategoriaEmp === 'Mandaditos' ? 'todas' : 'Mandaditos')}
+                onClick={() => {
+                  vibrarHaptico();
+                  setPanaCategoriaServicio('mandadito');
+                  setVehiculoSeleccionado('moto');
+                  setPanaSubTab('solicitar');
+                  setMostrarModalMotoPana(true);
+                }}
                 style={{
-                  background: filtroCategoriaEmp === 'Mandaditos' ? '#e0f2fe' : '#ffffff',
-                  border: filtroCategoriaEmp === 'Mandaditos' ? '2px solid #0284c7' : '1px solid #cbd5e1',
+                  background: '#e0f2fe',
+                  border: '2px solid #0284c7',
                   borderRadius: '12px',
                   padding: '10px 6px',
                   textAlign: 'center',
@@ -4039,11 +4275,15 @@ function App() {
               >
                 <div style={{ fontSize: '24px', marginBottom: '4px' }}>📦</div>
                 <div style={{ fontWeight: '700', fontSize: '12px', color: '#1e293b' }}>Mandaditos</div>
-                <div style={{ fontSize: '10px', color: '#64748b' }}>Diligencias & envíos</div>
+                <div style={{ fontSize: '10px', color: '#0369a1', fontWeight: '600' }}>⚡ Cotizar Envío</div>
               </div>
 
               <div
-                onClick={() => setMostrarModalMotoPana(true)}
+                onClick={() => {
+                  vibrarHaptico();
+                  setPanaSubTab('solicitar');
+                  setMostrarModalMotoPana(true);
+                }}
                 style={{
                   background: '#dcfce7',
                   border: '2px solid #16a34a',
@@ -4054,16 +4294,16 @@ function App() {
                   boxShadow: '0 2px 6px rgba(22, 163, 74, 0.2)'
                 }}
               >
-                <div style={{ fontSize: '24px', marginBottom: '4px' }}>🛵</div>
-                <div style={{ fontWeight: '800', fontSize: '12px', color: '#15803d' }}>MotoPana</div>
-                <div style={{ fontSize: '10px', color: '#166534', fontWeight: '600' }}>⚡ Cotizar / Pedir</div>
+                <div style={{ fontSize: '24px', marginBottom: '4px' }}>🛵🚗🚚</div>
+                <div style={{ fontWeight: '800', fontSize: '11px', color: '#15803d' }}>Pana Móvil</div>
+                <div style={{ fontSize: '10px', color: '#166534', fontWeight: '600' }}>Moto·Carro·Carga</div>
               </div>
             </div>
 
-            {/* Banner destacado MotoPana Express */}
+            {/* Banner destacado Pana Móvil: Moto, Carro y Camión de Carga */}
             <div
               style={{
-                background: 'linear-gradient(135deg, #15803d 0%, #166534 100%)',
+                background: 'linear-gradient(135deg, #15803d 0%, #0f172a 100%)',
                 borderRadius: '16px',
                 padding: '14px 16px',
                 marginBottom: '16px',
@@ -4071,21 +4311,25 @@ function App() {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                boxShadow: '0 4px 12px rgba(21, 128, 61, 0.2)'
+                boxShadow: '0 4px 12px rgba(21, 128, 61, 0.25)'
               }}
             >
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '18px' }}>🛵</span>
-                  <strong style={{ fontSize: '14px' }}>MotoPana Express Caracas</strong>
+                  <span style={{ fontSize: '20px' }}>🛵🚗🚚</span>
+                  <strong style={{ fontSize: '14px' }}>Pana Móvil Caracas</strong>
                 </div>
                 <p style={{ margin: '4px 0 0', fontSize: '11px', opacity: 0.9 }}>
-                  Cotiza tu ruta Punto A ➔ Punto B y pide tu moto al grupo al instante.
+                  MotoPana, CarroPana y Flete/Carga. Cotiza en mapa GPS y pide al WhatsApp grupal.
                 </p>
               </div>
               <button
                 type="button"
-                onClick={() => setMostrarModalMotoPana(true)}
+                onClick={() => {
+                  vibrarHaptico();
+                  setPanaSubTab('solicitar');
+                  setMostrarModalMotoPana(true);
+                }}
                 style={{
                   background: '#ffffff',
                   color: '#15803d',
@@ -4099,7 +4343,7 @@ function App() {
                   marginLeft: '8px'
                 }}
               >
-                Pedir Moto
+                Abrir Red
               </button>
             </div>
 
@@ -4285,6 +4529,39 @@ function App() {
                     )}
 
                     <p style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>👤 Responsable: {emp.responsable} · 📞 {emp.contacto}</p>
+
+                    {/* Botón de Pedir Delivery / Envío con MotoPana para Antojos o Emprendimientos */}
+                    <div style={{ marginTop: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          vibrarHaptico();
+                          setPanaCategoriaServicio('mandadito');
+                          setVehiculoSeleccionado('moto');
+                          setMotoPanaOrigenCustom(`${emp.nombre} (${emp.parroquia}) - Contacto: ${emp.contacto}`);
+                          setMotoPanaNotas(`Delivery de pedido para ${emp.nombre}.`);
+                          setPanaSubTab('solicitar');
+                          setMostrarModalMotoPana(true);
+                        }}
+                        style={{
+                          width: '100%',
+                          background: '#ecfdf5',
+                          border: '1px solid #6ee7b7',
+                          color: '#047857',
+                          borderRadius: '8px',
+                          padding: '7px 10px',
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <span>🛵</span> Pedir delivery / envío con MotoPana
+                      </button>
+                    </div>
 
                     {/* Botones de Edición y Eliminación */}
                     {(esSuperUsuario ||
@@ -4911,117 +5188,320 @@ function App() {
         </div>
       )}
 
-      {/* Modal Interactivo MotoPana Express: Cotizador y Despacho */}
+      {/* Modal Interactivo Pana Móvil: Moto, Carro & PanaCarga (Camión) */}
       {mostrarModalMotoPana && (
         <div className="detail-overlay" onClick={() => setMostrarModalMotoPana(false)}>
-          <div className="detail-bubble" onClick={(e) => e.stopPropagation()}>
+          <div className="detail-bubble" onClick={(e) => e.stopPropagation()} style={{ maxHeight: '92vh', overflowY: 'auto' }}>
             <div className="bubble-handle"></div>
             <div className="detail-panel-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '24px' }}>🛵</span>
+                <span style={{ fontSize: '26px' }}>{infoVehiculoActivo.icono}</span>
                 <div>
-                  <p className="section-label" style={{ color: '#16a34a' }}>MOVILIDAD EN 2 RUEDAS</p>
-                  <h3>MotoPana Express Caracas</h3>
+                  <p className="section-label" style={{ color: '#16a34a' }}>RED COMUNITARIA DE TRANSPORTE</p>
+                  <h3>Pana Móvil Caracas</h3>
                 </div>
               </div>
               <button className="close-button" onClick={() => setMostrarModalMotoPana(false)}>×</button>
             </div>
 
-            <div className="motopana-container">
-              {/* Mapa GPS Interactivo de Caracas con ruta y motos activas */}
-              <div className="motopana-map-wrapper">
-                <div className="motopana-map-overlay">
-                  <div className="motopana-map-pulse"></div>
-                  <span>Red Activa: 4 motos cerca en Caracas</span>
+            {/* Sub-pestañas: Solicitar Servicio, Muro de Carreras / Pedidos, Registro de Transportistas */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', margin: '10px 0 14px 0' }}>
+              <button
+                type="button"
+                onClick={() => { vibrarHaptico(); setPanaSubTab('solicitar'); }}
+                style={{
+                  padding: '8px 4px',
+                  borderRadius: '8px',
+                  border: panaSubTab === 'solicitar' ? '2px solid #16a34a' : '1px solid #cbd5e1',
+                  background: panaSubTab === 'solicitar' ? '#dcfce7' : '#ffffff',
+                  color: panaSubTab === 'solicitar' ? '#15803d' : '#475569',
+                  fontWeight: panaSubTab === 'solicitar' ? '700' : '500',
+                  fontSize: '12px',
+                  cursor: 'pointer'
+                }}
+              >
+                📍 Pedir Servicio
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { vibrarHaptico(); setPanaSubTab('muro'); }}
+                style={{
+                  padding: '8px 4px',
+                  borderRadius: '8px',
+                  border: panaSubTab === 'muro' ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                  background: panaSubTab === 'muro' ? '#dbeafe' : '#ffffff',
+                  color: panaSubTab === 'muro' ? '#1d4ed8' : '#475569',
+                  fontWeight: panaSubTab === 'muro' ? '700' : '500',
+                  fontSize: '12px',
+                  cursor: 'pointer'
+                }}
+              >
+                📋 Muro ({solicitudesPana.filter((s) => s.estado === 'en-espera').length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { vibrarHaptico(); setPanaSubTab('registro'); }}
+                style={{
+                  padding: '8px 4px',
+                  borderRadius: '8px',
+                  border: panaSubTab === 'registro' ? '2px solid #d97706' : '1px solid #cbd5e1',
+                  background: panaSubTab === 'registro' ? '#fef3c7' : '#ffffff',
+                  color: panaSubTab === 'registro' ? '#b45309' : '#475569',
+                  fontWeight: panaSubTab === 'registro' ? '700' : '500',
+                  fontSize: '12px',
+                  cursor: 'pointer'
+                }}
+              >
+                🪪 Afiliarse
+              </button>
+            </div>
+
+            {panaSubTab === 'solicitar' && (
+              <div className="motopana-container">
+                {/* Selector de tipo de vehículo: MotoPana, CarroPana, PanaCarga */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '8px' }}>
+                  {Object.values(TIPOS_VEHICULO_PANA).map((veh) => {
+                    const seleccionado = vehiculoSeleccionado === veh.id;
+                    return (
+                      <div
+                        key={veh.id}
+                        onClick={() => { vibrarHaptico(); setVehiculoSeleccionado(veh.id); }}
+                        style={{
+                          background: seleccionado ? '#f0fdf4' : '#ffffff',
+                          border: seleccionado ? '2px solid #16a34a' : '1px solid #cbd5e1',
+                          borderRadius: '10px',
+                          padding: '8px 4px',
+                          textAlign: 'center',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <div style={{ fontSize: '22px' }}>{veh.icono}</div>
+                        <div style={{ fontWeight: '700', fontSize: '11px', color: seleccionado ? '#15803d' : '#1e293b' }}>
+                          {veh.nombre}
+                        </div>
+                        <div style={{ fontSize: '9px', color: '#64748b' }}>
+                          desde ${veh.minimo.toFixed(1)}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
 
-                {/* SVG Interactivo representativo de Caracas */}
-                {(() => {
-                  // Mapear coordenadas a vista SVG 100% (Lat 10.42 a 10.53, Lon -67.00 a -66.80)
-                  const mapCoordsToSvg = (lat, lon) => {
+                {/* Selector de Categoría de Servicio: Pasajeros / Viaje o Mandadito / Encomienda */}
+                <div style={{ display: 'flex', gap: '8px', background: '#f1f5f9', padding: '4px', borderRadius: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => { vibrarHaptico(); setPanaCategoriaServicio('viaje'); }}
+                    style={{
+                      flex: 1,
+                      padding: '6px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: panaCategoriaServicio === 'viaje' ? '#ffffff' : 'transparent',
+                      color: panaCategoriaServicio === 'viaje' ? '#0f172a' : '#64748b',
+                      fontWeight: '700',
+                      fontSize: '11px',
+                      cursor: 'pointer',
+                      boxShadow: panaCategoriaServicio === 'viaje' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                    }}
+                  >
+                    👤 Traslado / Pasajeros
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { vibrarHaptico(); setPanaCategoriaServicio('mandadito'); }}
+                    style={{
+                      flex: 1,
+                      padding: '6px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: panaCategoriaServicio === 'mandadito' ? '#ffffff' : 'transparent',
+                      color: panaCategoriaServicio === 'mandadito' ? '#0f172a' : '#64748b',
+                      fontWeight: '700',
+                      fontSize: '11px',
+                      cursor: 'pointer',
+                      boxShadow: panaCategoriaServicio === 'mandadito' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                    }}
+                  >
+                    📦 Mandadito / Encomienda
+                  </button>
+                </div>
+
+                {/* Selector táctil en mapa: Modo para fijar A o fijar B */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '6px 10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '11px' }}>
+                  <span style={{ color: '#475569', fontWeight: '600' }}>
+                    👉 Toca en el mapa para ubicar:
+                  </span>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setModoSeleccionMapa('A')}
+                      style={{
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        border: modoSeleccionMapa === 'A' ? '2px solid #16a34a' : '1px solid #cbd5e1',
+                        background: modoSeleccionMapa === 'A' ? '#dcfce7' : '#ffffff',
+                        color: modoSeleccionMapa === 'A' ? '#15803d' : '#475569',
+                        fontWeight: '700',
+                        fontSize: '11px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🟢 Punto A (Origen)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setModoSeleccionMapa('B')}
+                      style={{
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        border: modoSeleccionMapa === 'B' ? '2px solid #d97706' : '1px solid #cbd5e1',
+                        background: modoSeleccionMapa === 'B' ? '#fef3c7' : '#ffffff',
+                        color: modoSeleccionMapa === 'B' ? '#b45309' : '#475569',
+                        fontWeight: '700',
+                        fontSize: '11px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🏁 Punto B (Destino)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Mapa GPS Interactivo de Caracas con ruta y vehículos activos */}
+                <div className="motopana-map-wrapper">
+                  <div className="motopana-map-overlay">
+                    <div className="motopana-map-pulse"></div>
+                    <span>
+                      {conductoresPana.filter((c) => c.tipoVehiculo === vehiculoSeleccionado).length} {infoVehiculoActivo.nombre} activos en Caracas
+                    </span>
+                  </div>
+
+                  {/* SVG Interactivo representativo de Caracas */}
+                  {(() => {
                     const minLat = 10.42;
                     const maxLat = 10.53;
                     const minLon = -67.00;
                     const maxLon = -66.80;
-                    const x = ((lon - minLon) / (maxLon - minLon)) * 340 + 30;
-                    const y = ((maxLat - lat) / (maxLat - minLat)) * 140 + 30;
-                    return { x: Math.max(20, Math.min(380, x)), y: Math.max(20, Math.min(180, y)) };
-                  };
 
-                  const posA = mapCoordsToSvg(origenCoords.lat, origenCoords.lon);
-                  const posB = mapCoordsToSvg(destinoCoords.lat, destinoCoords.lon);
+                    const mapCoordsToSvg = (lat, lon) => {
+                      const x = ((lon - minLon) / (maxLon - minLon)) * 340 + 30;
+                      const y = ((maxLat - lat) / (maxLat - minLat)) * 140 + 30;
+                      return { x: Math.max(20, Math.min(380, x)), y: Math.max(20, Math.min(180, y)) };
+                    };
 
-                  return (
-                    <svg viewBox="0 0 400 200" style={{ width: '100%', height: '100%' }}>
-                      <defs>
-                        <linearGradient id="gridGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#1e293b" />
-                          <stop offset="100%" stopColor="#0f172a" />
-                        </linearGradient>
-                        <linearGradient id="routeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                          <stop offset="0%" stopColor="#22c55e" />
-                          <stop offset="100%" stopColor="#eab308" />
-                        </linearGradient>
-                      </defs>
-                      <rect width="400" height="200" fill="url(#gridGrad)" />
-                      {/* Líneas de autopistas principales de Caracas */}
-                      <path d="M 30,130 Q 150,110 240,105 T 370,120" fill="none" stroke="#334155" strokeWidth="4" />
-                      <path d="M 120,40 Q 160,100 180,180" fill="none" stroke="#334155" strokeWidth="3" />
-                      <path d="M 230,30 Q 240,90 260,180" fill="none" stroke="#334155" strokeWidth="2.5" />
-                      <text x="320" y="30" fill="#475569" fontSize="9" fontWeight="600">ÁVILA (NORTE)</text>
-                      <text x="30" y="190" fill="#475569" fontSize="9" fontWeight="600">CARACAS GPS</text>
+                    const svgToCoords = (svgX, svgY) => {
+                      const clampedX = Math.max(30, Math.min(370, svgX));
+                      const clampedY = Math.max(30, Math.min(170, svgY));
+                      const lon = minLon + ((clampedX - 30) / 340) * (maxLon - minLon);
+                      const lat = maxLat - ((clampedY - 30) / 140) * (maxLat - minLat);
+                      return {
+                        lat: Math.round(lat * 10000) / 10000,
+                        lon: Math.round(lon * 10000) / 10000
+                      };
+                    };
 
-                      {/* Motos activas patrullando en el mapa */}
-                      <g transform="translate(190, 85)">
-                        <circle r="7" fill="#16a34a" opacity="0.3" />
-                        <circle r="4" fill="#22c55e" />
-                        <text x="8" y="4" fill="#86efac" fontSize="9">🛵 #12</text>
-                      </g>
-                      <g transform="translate(260, 115)">
-                        <circle r="7" fill="#16a34a" opacity="0.3" />
-                        <circle r="4" fill="#22c55e" />
-                        <text x="8" y="4" fill="#86efac" fontSize="9">🛵 #07</text>
-                      </g>
-                      <g transform="translate(130, 120)">
-                        <circle r="7" fill="#16a34a" opacity="0.3" />
-                        <circle r="4" fill="#22c55e" />
-                        <text x="8" y="4" fill="#86efac" fontSize="9">🛵 #19</text>
-                      </g>
+                    const manejarClickEnMapa = (e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const clickX = ((e.clientX - rect.left) / rect.width) * 400;
+                      const clickY = ((e.clientY - rect.top) / rect.height) * 200;
+                      const coords = svgToCoords(clickX, clickY);
 
-                      {/* Línea de ruta A -> B */}
-                      <line
-                        x1={posA.x}
-                        y1={posA.y}
-                        x2={posB.x}
-                        y2={posB.y}
-                        stroke="url(#routeGrad)"
-                        strokeWidth="3.5"
-                        strokeDasharray="6,4"
-                      />
+                      vibrarHaptico();
+                      if (modoSeleccionMapa === 'A') {
+                        setMotoPanaGpsCoords(coords);
+                        setMotoPanaGpsActivo(true);
+                        setMotoPanaOrigenCustom(`Coordenadas: ${coords.lat}, ${coords.lon}`);
+                        mostrarToast('✓ Punto A (Origen) fijado en el mapa');
+                      } else {
+                        setMotoPanaDestinoCoords(coords);
+                        setMotoPanaDestinoCustom(`Coordenadas: ${coords.lat}, ${coords.lon}`);
+                        mostrarToast('✓ Punto B (Destino) fijado en el mapa');
+                      }
+                    };
 
-                      {/* Marcador A (Origen) */}
-                      <g transform={`translate(${posA.x}, ${posA.y})`}>
-                        <circle r="9" fill="#22c55e" opacity="0.3" />
-                        <circle r="5" fill="#22c55e" />
-                        <text x="-4" y="3" fill="#ffffff" fontSize="8" fontWeight="bold">A</text>
-                        <text x="8" y="4" fill="#ffffff" fontSize="10" fontWeight="bold" stroke="#000000" strokeWidth="0.5">
-                          {motoPanaGpsActivo ? '📍 GPS' : 'Punto A'}
-                        </text>
-                      </g>
+                    const posA = mapCoordsToSvg(origenCoords.lat, origenCoords.lon);
+                    const posB = mapCoordsToSvg(destinoCoords.lat, destinoCoords.lon);
 
-                      {/* Marcador B (Destino) */}
-                      <g transform={`translate(${posB.x}, ${posB.y})`}>
-                        <circle r="9" fill="#eab308" opacity="0.3" />
-                        <circle r="5" fill="#eab308" />
-                        <text x="-3.5" y="3" fill="#000000" fontSize="8" fontWeight="bold">B</text>
-                        <text x="8" y="4" fill="#fde047" fontSize="10" fontWeight="bold" stroke="#000000" strokeWidth="0.5">
-                          Punto B
-                        </text>
-                      </g>
-                    </svg>
-                  );
-                })()}
-              </div>
+                    return (
+                      <svg
+                        viewBox="0 0 400 200"
+                        onClick={manejarClickEnMapa}
+                        style={{ width: '100%', height: '100%', cursor: 'crosshair' }}
+                      >
+                        <defs>
+                          <linearGradient id="gridGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#1e293b" />
+                            <stop offset="100%" stopColor="#0f172a" />
+                          </linearGradient>
+                          <linearGradient id="routeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#22c55e" />
+                            <stop offset="100%" stopColor="#eab308" />
+                          </linearGradient>
+                        </defs>
+                        <rect width="400" height="200" fill="url(#gridGrad)" />
+
+                        {/* Líneas de autopistas principales de Caracas */}
+                        <path d="M 30,130 Q 150,110 240,105 T 370,120" fill="none" stroke="#334155" strokeWidth="4" />
+                        <path d="M 120,40 Q 160,100 180,180" fill="none" stroke="#334155" strokeWidth="3" />
+                        <path d="M 230,30 Q 240,90 260,180" fill="none" stroke="#334155" strokeWidth="2.5" />
+                        <text x="310" y="26" fill="#64748b" fontSize="9" fontWeight="600">⛰️ EL ÁVILA (NORTE)</text>
+                        <text x="30" y="190" fill="#64748b" fontSize="9" fontWeight="600">📍 CARACAS GPS INTERACTIVO (Toca el mapa)</text>
+
+                        {/* Transportistas patrullando según vehículo */}
+                        <g transform="translate(190, 85)">
+                          <circle r="7" fill="#16a34a" opacity="0.3" />
+                          <circle r="4" fill="#22c55e" />
+                          <text x="8" y="4" fill="#86efac" fontSize="9">{infoVehiculoActivo.icono} #01</text>
+                        </g>
+                        <g transform="translate(260, 115)">
+                          <circle r="7" fill="#16a34a" opacity="0.3" />
+                          <circle r="4" fill="#22c55e" />
+                          <text x="8" y="4" fill="#86efac" fontSize="9">{infoVehiculoActivo.icono} #02</text>
+                        </g>
+                        <g transform="translate(130, 120)">
+                          <circle r="7" fill="#16a34a" opacity="0.3" />
+                          <circle r="4" fill="#22c55e" />
+                          <text x="8" y="4" fill="#86efac" fontSize="9">{infoVehiculoActivo.icono} #03</text>
+                        </g>
+
+                        {/* Línea de ruta A -> B */}
+                        <line
+                          x1={posA.x}
+                          y1={posA.y}
+                          x2={posB.x}
+                          y2={posB.y}
+                          stroke="url(#routeGrad)"
+                          strokeWidth="3.5"
+                          strokeDasharray="6,4"
+                        />
+
+                        {/* Marcador A (Origen) */}
+                        <g transform={`translate(${posA.x}, ${posA.y})`}>
+                          <circle r="9" fill="#22c55e" opacity="0.4" />
+                          <circle r="5" fill="#22c55e" />
+                          <text x="-4" y="3" fill="#ffffff" fontSize="8" fontWeight="bold">A</text>
+                          <text x="8" y="4" fill="#ffffff" fontSize="10" fontWeight="bold" stroke="#000000" strokeWidth="0.5">
+                            {motoPanaGpsActivo ? '📍 Origen' : 'Punto A'}
+                          </text>
+                        </g>
+
+                        {/* Marcador B (Destino) */}
+                        <g transform={`translate(${posB.x}, ${posB.y})`}>
+                          <circle r="9" fill="#eab308" opacity="0.4" />
+                          <circle r="5" fill="#eab308" />
+                          <text x="-3.5" y="3" fill="#000000" fontSize="8" fontWeight="bold">B</text>
+                          <text x="8" y="4" fill="#fde047" fontSize="10" fontWeight="bold" stroke="#000000" strokeWidth="0.5">
+                            🏁 Destino
+                          </text>
+                        </g>
+                      </svg>
+                    );
+                  })()}
+                </div>
 
               {/* Selector de Origen (Punto A) */}
               <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
@@ -5170,30 +5650,307 @@ function App() {
                 </div>
               )}
 
-              {/* Botón de Despacho al Grupo de WhatsApp */}
-              <button
-                type="button"
-                onClick={enviarSolicitudWhatsAppMotoPana}
-                style={{
-                  background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '14px',
-                  fontWeight: '700',
-                  fontSize: '15px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  boxShadow: '0 4px 14px rgba(37, 211, 102, 0.35)',
-                  marginTop: '4px'
-                }}
-              >
-                <span>📲</span> Pedir MotoPana al Grupo de WhatsApp
-              </button>
+              {/* Botones de Acción: Publicar en Muro y Despacho WhatsApp */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px' }}>
+                <button
+                  type="button"
+                  onClick={crearSolicitudTransporte}
+                  style={{
+                    background: '#1e293b',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '13px',
+                    fontWeight: '700',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  }}
+                >
+                  <span>📢</span> Publicar en Muro Comunitario
+                </button>
+
+                <button
+                  type="button"
+                  onClick={enviarSolicitudWhatsAppMotoPana}
+                  style={{
+                    background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '14px',
+                    fontWeight: '700',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 14px rgba(37, 211, 102, 0.35)'
+                  }}
+                >
+                  <span>📲</span> Despachar al Grupo de WhatsApp
+                </button>
+              </div>
             </div>
+          )}
+
+          {/* Sub-pestaña: Muro de Carreras / Pedidos Comunitarios */}
+          {panaSubTab === 'muro' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <strong style={{ fontSize: '13px', color: '#1e293b', display: 'block' }}>Bolsa de Carreras y Envíos</strong>
+                  <span style={{ fontSize: '11px', color: '#64748b' }}>Acepta solicitudes directas de la comunidad</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPanaSubTab('solicitar')}
+                  style={{ background: '#16a34a', color: 'white', border: 'none', borderRadius: '6px', padding: '5px 10px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                >
+                  + Nueva Solicitud
+                </button>
+              </div>
+
+              {solicitudesPana.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '24px', background: '#ffffff', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+                  <span style={{ fontSize: '32px' }}>📭</span>
+                  <h4 style={{ margin: '8px 0 4px 0' }}>No hay solicitudes activas</h4>
+                  <p style={{ fontSize: '12px', color: '#64748b' }}>Sé el primero en solicitar un viaje o mandadito.</p>
+                </div>
+              ) : (
+                solicitudesPana.map((sol) => {
+                  const vehiculo = TIPOS_VEHICULO_PANA[sol.tipoVehiculo] || TIPOS_VEHICULO_PANA.moto;
+                  const esAceptado = sol.estado === 'aceptado';
+                  return (
+                    <div
+                      key={sol.id}
+                      style={{
+                        background: '#ffffff',
+                        borderRadius: '12px',
+                        padding: '12px',
+                        border: esAceptado ? '2px solid #16a34a' : '1px solid #e2e8f0',
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.04)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '20px' }}>{vehiculo.icono}</span>
+                          <div>
+                            <strong style={{ fontSize: '13px', color: '#1e293b' }}>
+                              {sol.categoria === 'mandadito' ? '📦 Mandadito / Encomienda' : '👤 Viaje Comunitario'}
+                            </strong>
+                            <div style={{ fontSize: '10px', color: '#64748b' }}>
+                              Solicitado por {sol.pasajero} ({sol.contacto}) · {sol.fechaHora}
+                            </div>
+                          </div>
+                        </div>
+
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: '700',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            background: esAceptado ? '#dcfce7' : '#fef3c7',
+                            color: esAceptado ? '#15803d' : '#b45309'
+                          }}
+                        >
+                          {esAceptado ? '✓ Aceptado' : '⏳ En espera'}
+                        </span>
+                      </div>
+
+                      <div style={{ background: '#f8fafc', padding: '8px 10px', borderRadius: '8px', fontSize: '12px', marginBottom: '8px' }}>
+                        <div><strong style={{ color: '#16a34a' }}>A (Origen):</strong> {sol.origen}</div>
+                        <div style={{ marginTop: '2px' }}><strong style={{ color: '#d97706' }}>B (Destino):</strong> {sol.destino}</div>
+                        {sol.notas && (
+                          <div style={{ marginTop: '4px', fontStyle: 'italic', color: '#475569' }}>
+                            💬 "{sol.notas}"
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '8px' }}>
+                        <div>
+                          <span style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a' }}>
+                            ${sol.precioUsd.toFixed(2)} USD
+                          </span>
+                          <span style={{ fontSize: '11px', color: '#64748b', marginLeft: '6px' }}>
+                            ≈ Bs. {sol.precioBs.toLocaleString('es-VE')} ({sol.distanciaKm} km)
+                          </span>
+                        </div>
+
+                        {!esAceptado ? (
+                          <button
+                            type="button"
+                            onClick={() => aceptarSolicitudTransporte(sol.id)}
+                            style={{
+                              background: '#16a34a',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '8px',
+                              padding: '7px 12px',
+                              fontSize: '12px',
+                              fontWeight: '700',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            🤝 Aceptar Servicio
+                          </button>
+                        ) : (
+                          <div style={{ fontSize: '11px', color: '#15803d', fontWeight: '600' }}>
+                            Asignado a: {sol.conductorAsignado}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+
+          {/* Sub-pestaña: Registro de Transportistas (Moto, Carro, Camión) */}
+          {panaSubTab === 'registro' && (
+            <div style={{ background: '#ffffff', borderRadius: '12px', padding: '14px', border: '1px solid #e2e8f0' }}>
+              <div style={{ marginBottom: '12px' }}>
+                <h4 style={{ margin: 0, fontSize: '15px', color: '#1e293b' }}>Afiliación de Transportistas Comunitarios</h4>
+                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#64748b' }}>
+                  Únete a la red comunitaria con tu moto, vehículo particular o camión de carga en Caracas.
+                </p>
+              </div>
+
+              <form onSubmit={registrarConductorPana} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '2px' }}>
+                    Tipo de Vehículo:
+                  </label>
+                  <select
+                    value={formNuevoConductor.tipoVehiculo}
+                    onChange={(e) => setFormNuevoConductor({ ...formNuevoConductor, tipoVehiculo: e.target.value })}
+                    style={{ width: '100%', padding: '9px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                  >
+                    <option value="moto">🛵 MotoPana (Mototaxi / Delivery)</option>
+                    <option value="carro">🚗 CarroPana (Vehículo particular / Traslado)</option>
+                    <option value="camion">🚚 PanaCarga (Camión / Camioneta de Flete)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '2px' }}>
+                    Nombre y Apellidos:
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej. Juan Pérez"
+                    value={formNuevoConductor.nombre}
+                    onChange={(e) => setFormNuevoConductor({ ...formNuevoConductor, nombre: e.target.value })}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div>
+                    <label style={{ fontSize: '11px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '2px' }}>
+                      Teléfono WhatsApp:
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="0412-1234567"
+                      value={formNuevoConductor.telefono}
+                      onChange={(e) => setFormNuevoConductor({ ...formNuevoConductor, telefono: e.target.value })}
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '11px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '2px' }}>
+                      Parroquia base:
+                    </label>
+                    <select
+                      value={formNuevoConductor.parroquia}
+                      onChange={(e) => setFormNuevoConductor({ ...formNuevoConductor, parroquia: e.target.value })}
+                      style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                    >
+                      {parroquiasCaracas.map((p) => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div>
+                    <label style={{ fontSize: '11px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '2px' }}>
+                      Modelo y Color:
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ej. Empire Horse Rojo"
+                      value={formNuevoConductor.modelo}
+                      onChange={(e) => setFormNuevoConductor({ ...formNuevoConductor, modelo: e.target.value })}
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '11px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '2px' }}>
+                      Placa del Vehículo:
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ej. AB1C23D"
+                      value={formNuevoConductor.placa}
+                      onChange={(e) => setFormNuevoConductor({ ...formNuevoConductor, placa: e.target.value })}
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  style={{
+                    background: '#16a34a',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '12px',
+                    fontWeight: '700',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    marginTop: '6px'
+                  }}
+                >
+                  ✓ Registrarme como Transportista Comunitario
+                </button>
+              </form>
+
+              {/* Lista de Transportistas Registrados */}
+              <div style={{ marginTop: '16px', borderTop: '1px solid #e2e8f0', paddingTop: '12px' }}>
+                <strong style={{ fontSize: '12px', color: '#334155', display: 'block', marginBottom: '8px' }}>
+                  Transportistas Activos en la Red ({conductoresPana.length}):
+                </strong>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto' }}>
+                  {conductoresPana.map((c) => {
+                    const veh = TIPOS_VEHICULO_PANA[c.tipoVehiculo] || TIPOS_VEHICULO_PANA.moto;
+                    return (
+                      <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f8fafc', borderRadius: '8px', fontSize: '11px' }}>
+                        <div>
+                          <strong>{veh.icono} {c.nombre}</strong> · {c.modelo} ({c.placa})
+                          <div style={{ color: '#64748b' }}>📍 {c.parroquia} · 📞 {c.telefono}</div>
+                        </div>
+                        <span style={{ color: '#16a34a', fontWeight: 'bold' }}>⭐ {c.calificacion}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
           </div>
         </div>
       )}
