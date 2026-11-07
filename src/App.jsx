@@ -1243,14 +1243,24 @@ function App() {
     Math.round((distanciaCalculadaKm / infoVehiculoActivo.velocidadPromedioKmh) * 60) +
     infoVehiculoActivo.tiempoBaseMin;
 
+  // Descuento del 40% por primer uso en Pana Móvil
+  const [primerUsoPana, setPrimerUsoPana] = useState(() => {
+    return localStorage.getItem('pana_primer_uso_completado') !== 'true';
+  });
+
   // Tarifa Comunitaria según el tipo de vehículo
   const tarifaCalculadaBruta = infoVehiculoActivo.base + distanciaCalculadaKm * infoVehiculoActivo.porKm;
-  const tarifaUsd = Math.max(
+  const tarifaBaseUsd = Math.max(
     infoVehiculoActivo.minimo,
     Math.round(tarifaCalculadaBruta * 10) / 10
   );
+  const tarifaUsd = primerUsoPana
+    ? Math.max(1.5, Math.round(tarifaBaseUsd * 0.6 * 10) / 10) // 40% de descuento
+    : tarifaBaseUsd;
+
   const tasaReferencialBs = 445.0; // Tasa referencial oficial comunitaria
   const tarifaBs = Math.round(tarifaUsd * tasaReferencialBs);
+  const tarifaBaseBs = Math.round(tarifaBaseUsd * tasaReferencialBs);
 
   // Registro de nuevo conductor
   const registrarConductorPana = (e) => {
@@ -1380,13 +1390,15 @@ function App() {
 
     return `🚨 *¡NUEVA SOLICITUD PANA MÓVIL!* ${iconoVehiculo}💨\n\n` +
       `📌 *Servicio:* ${tipoTexto} (${infoVehiculoActivo.nombre})\n` +
+      (primerUsoPana ? `🎉 *Beneficio:* ¡40% DE DESCUENTO POR 1ER VIAJE APLICADO! 🎁\n` : '') +
       `👤 *Solicitante:* ${solicitante}\n` +
       `📞 *Contacto:* ${telefono}\n` +
       `🚩 *Origen (Punto A):* ${origenNombreFinal}\n` +
       `🏁 *Destino (Punto B):* ${destinoNombreFinal}\n` +
       `📏 *Distancia estimada:* ${distanciaCalculadaKm} km\n` +
       `⏱️ *Tiempo aprox.:* ${tiempoEstimadoMinutos} min\n` +
-      `💵 *Tarifa sugerida:* *$${tarifaUsd.toFixed(2)} USD* (≈ Bs. ${tarifaBs.toLocaleString('es-VE')})\n` +
+      `💵 *Tarifa a pagar:* *$${tarifaUsd.toFixed(2)} USD* (≈ Bs. ${tarifaBs.toLocaleString('es-VE')})` +
+      (primerUsoPana ? ` _(Precio regular: $${tarifaBaseUsd.toFixed(2)} USD)_` : '') + `\n` +
       (motoPanaNotas ? `📝 *Detalles:* ${motoPanaNotas}\n` : '') +
       `🗺️ *Ubicación en Mapa:* ${gpsUrl}\n\n` +
       `👉 *¿Quién toma el servicio? Responde con "LO TOMO" indicando tu nombre y placa.* 🇻🇪`;
@@ -5587,14 +5599,36 @@ function App() {
                 />
               </div>
 
+              {/* Banner de Promoción 1er Uso 40% OFF */}
+              {primerUsoPana && (
+                <div style={{ background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)', border: '1px solid #f59e0b', borderRadius: '10px', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '22px' }}>🎁</span>
+                  <div>
+                    <div style={{ fontWeight: '800', fontSize: '12px', color: '#b45309' }}>
+                      ¡40% DE DESCUENTO EN TU PRIMER VIAJE!
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#78350f' }}>
+                      Promoción de bienvenida comunitaria aplicada a tu tarifa.
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Tarjeta de Resumen y Cotización */}
               <div className="motopana-fare-card">
                 <div>
                   <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', opacity: 0.9 }}>
-                    Tarifa estimada MotoPana
+                    Tarifa {primerUsoPana ? 'con 40% OFF' : 'estimada'} {infoVehiculoActivo.nombre}
                   </div>
-                  <div style={{ fontSize: '24px', fontWeight: '800', lineHeight: '1.2' }}>
-                    ${tarifaUsd.toFixed(2)} <span style={{ fontSize: '14px', fontWeight: '500' }}>USD</span>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                    <div style={{ fontSize: '26px', fontWeight: '800', lineHeight: '1.2' }}>
+                      ${tarifaUsd.toFixed(2)} <span style={{ fontSize: '14px', fontWeight: '500' }}>USD</span>
+                    </div>
+                    {primerUsoPana && (
+                      <span style={{ fontSize: '13px', textDecoration: 'line-through', opacity: 0.75 }}>
+                        ${tarifaBaseUsd.toFixed(2)}
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: '11px', opacity: 0.85 }}>
                     ≈ Bs. {tarifaBs.toLocaleString('es-VE')}
@@ -5603,11 +5637,16 @@ function App() {
 
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '13px', fontWeight: '700' }}>
-                    🛵 ~{tiempoEstimadoMinutos} min
+                    {infoVehiculoActivo.icono} ~{tiempoEstimadoMinutos} min
                   </div>
                   <div style={{ fontSize: '12px', opacity: 0.9 }}>
                     📏 {distanciaCalculadaKm} km de ruta
                   </div>
+                  {primerUsoPana && (
+                    <span style={{ display: 'inline-block', background: '#22c55e', color: '#ffffff', fontSize: '9px', fontWeight: '800', padding: '2px 6px', borderRadius: '4px', marginTop: '4px' }}>
+                      AHORRAS 40%
+                    </span>
+                  )}
                 </div>
               </div>
 
