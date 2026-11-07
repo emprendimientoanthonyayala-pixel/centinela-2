@@ -78,6 +78,8 @@ button {
 
 .top-header {
   margin-bottom: 26px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .eyebrow,

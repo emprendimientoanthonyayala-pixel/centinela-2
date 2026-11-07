@@ -1034,7 +1034,7 @@ function App() {
 
   const handleAction = (tab) => {
     vibrarHaptico();
-    const publicTabs = ['inicio', 'feed', 'emprendimientos', 'donaciones'];
+    const publicTabs = ['inicio', 'feed', 'emprendimientos', 'donaciones', 'eventos'];
     if (!registroCompletado && !publicTabs.includes(tab)) {
       setMostrarModalRegistro(true);
       return;
@@ -4717,16 +4717,16 @@ function App() {
           onClick={() => handleAction('feed')}
         />
         <NavButton
-          icon="◎"
-          label="Territorio"
-          active={activeTab === 'territorio' || activeTab === 'territory'}
-          onClick={() => handleAction('territorio')}
+          icon="🛍️"
+          label="Emprendimientos"
+          active={activeTab === 'emprendimientos'}
+          onClick={() => handleAction('emprendimientos')}
         />
         <NavButton
-          icon="✓"
-          label="Tareas"
-          active={activeTab === 'tareas'}
-          onClick={() => handleAction('tareas')}
+          icon="📅"
+          label="Eventos"
+          active={activeTab === 'eventos'}
+          onClick={() => handleAction('eventos')}
         />
         <NavButton
           icon="☰"
