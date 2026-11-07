@@ -18,7 +18,7 @@ const voceriasEstructuraDefinicion = [
 
 // Representaciones / Estructura Política Adicional
 const representacionesAdicionalesDefinicion = [
-  { id: 'jpsuv', nombre: 'Coordinación de la JPSUV', icon: '✦', color: 'red', descripcion: 'Juventud del Partido Unido de Venezuela' },
+  { id: 'jpsuv', nombre: 'Coordinación de la JPSUV', icon: '✦', color: 'red', descripcion: 'Juventud del Partido Socialista Unido de Venezuela' },
   { id: 'estado-mayor', nombre: 'Estado Mayor', icon: '✦', color: 'blue', descripcion: 'Coordinación estratégica y política' },
   { id: 'movimientos', nombre: 'Movimientos Sociales', icon: '✦', color: 'green', descripcion: 'Organizaciones comunitarias y frentes' },
   { id: 'gpp', nombre: 'Gran Polo Patriótico', icon: '✦', color: 'orange', descripcion: 'Alianza política y social' },
@@ -116,7 +116,6 @@ const parroquiasCaracas = parroquiasCaracasInfo.map((p) => p.nombre);
 
 const municipiosPorEstado = {
   'Distrito Capital': ['Libertador'],
-  Miranda: ['Acevedo', 'Baruta', 'Chacao', 'Guaicaipuro', 'Sucre'],
 };
 
 
@@ -158,6 +157,38 @@ function crearIdUnico(prefijo) {
   return `${prefijo}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+function comprimirImagenDataUrl(file, maxWidth = 600, quality = 0.6) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrlCompressed = canvas.toDataURL('image/jpeg', quality);
+        resolve(dataUrlCompressed);
+      };
+      img.onerror = () => resolve(e.target.result);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(file);
+  });
+}
+
 function vibrarHaptico() {
   if (window.Telegram?.WebApp?.HapticFeedback) {
     window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
@@ -191,6 +222,50 @@ function obtenerValorQR(evento) {
 }
 
 function App() {
+  const [esModoOscuro, setEsModoOscuro] = useState(() => {
+    return window.Telegram?.WebApp?.colorScheme === 'dark';
+  });
+
+  useEffect(() => {
+    const tgWebApp = window.Telegram?.WebApp;
+    if (tgWebApp) {
+      if (tgWebApp.colorScheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        setEsModoOscuro(true);
+      } else {
+        document.body.classList.remove('dark-mode');
+        setEsModoOscuro(false);
+      }
+
+      const handleThemeChange = () => {
+        if (tgWebApp.colorScheme === 'dark') {
+          document.body.classList.add('dark-mode');
+          setEsModoOscuro(true);
+        } else {
+          document.body.classList.remove('dark-mode');
+          setEsModoOscuro(false);
+        }
+      };
+
+      tgWebApp.onEvent('themeChanged', handleThemeChange);
+      return () => {
+        tgWebApp.offEvent('themeChanged', handleThemeChange);
+      };
+    }
+  }, []);
+
+  const alternarModoOscuro = () => {
+    setEsModoOscuro((prev) => {
+      const nuevo = !prev;
+      if (nuevo) {
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+      }
+      return nuevo;
+    });
+  };
+
   const [showAllQuickActions, setShowAllQuickActions] = useState(false);
   const [pinnedQuickActionTabs, setPinnedQuickActionTabs] = useState(() => {
     try {
@@ -208,6 +283,7 @@ function App() {
 
   const [registroCompletado, setRegistroCompletado] = useState(false);
   const [telegramUserId, setTelegramUserId] = useState(null);
+  const [telegramAutodetectado, setTelegramAutodetectado] = useState(false);
   const [formularioInicial, setFormularioInicial] = useState({
     cedula: '',
     nombresApellidos: '',
@@ -231,7 +307,17 @@ function App() {
   const [selectedPost, setSelectedPost] = useState(null);
   const [activeFilter, setActiveFilter] = useState('Todo');
 
+  const [fotoLightboxUrl, setFotoLightboxUrl] = useState(null);
+  const [toasts, setToasts] = useState([]);
   const [mostrarModalRol, setMostrarModalRol] = useState(false);
+
+  const mostrarToast = (mensaje, tipo = 'info') => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, mensaje, tipo }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3500);
+  };
 
   // Indicadores Económicos State
   const [indicadoresEconomicos, setIndicadoresEconomicos] = useState({
@@ -402,8 +488,13 @@ function App() {
 
     const canalRealtime = supabase
       .channel('public:realtime')
-      .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
         cargarDatosNube();
+        if (payload.eventType === 'INSERT') {
+          mostrarToast(`✨ Nuevo registro en tiempo real (${payload.table})`, 'éxito');
+        } else if (payload.eventType === 'UPDATE') {
+          mostrarToast(`🔄 Actualización recibida (${payload.table})`, 'info');
+        }
       })
       .subscribe();
 
@@ -443,11 +534,14 @@ function App() {
     return emprendimientosEjemplo;
   });
   const [mostrarFormEmprendimiento, setMostrarFormEmprendimiento] = useState(false);
+  const [empEnEdicion, setEmpEnEdicion] = useState(null);
+  const [filtroParroquiaEmp, setFiltroParroquiaEmp] = useState('todas');
+  const [filtroCategoriaEmp, setFiltroCategoriaEmp] = useState('todas');
   const [fotosEmprendimiento, setFotosEmprendimiento] = useState([]);
   const [formEmprendimiento, setFormEmprendimiento] = useState({
     nombre: '',
     categoria: 'Textil y Calzado',
-    parroquia: 'Caricuao',
+    parroquia: '',
     comision: 'produccion-economia',
     responsable: '',
     contacto: '',
@@ -460,13 +554,9 @@ function App() {
       setFotosEmprendimiento([]);
       return;
     }
-    const promesas = archivos.map((archivo) => {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve({ dataUrl: e.target.result });
-        reader.readAsDataURL(archivo);
-      });
-    });
+    const promesas = archivos.map((archivo) =>
+      comprimirImagenDataUrl(archivo, 500, 0.5).then((dataUrl) => ({ dataUrl }))
+    );
 
     Promise.all(promesas).then((data) => setFotosEmprendimiento(data));
   };
@@ -483,6 +573,8 @@ function App() {
     return tareasEjemplo;
   });
   const [mostrarFormTarea, setMostrarFormTarea] = useState(false);
+  const [filtroEstadoTarea, setFiltroEstadoTarea] = useState('Todas');
+  const [filtroParroquiaTarea, setFiltroParroquiaTarea] = useState('todas');
   const [formTarea, setFormTarea] = useState({
     titulo: '',
     parroquia: 'Caricuao',
@@ -528,88 +620,141 @@ function App() {
   });
 
   useEffect(() => {
-    const telegramWebApp = window.Telegram?.WebApp;
-    if (telegramWebApp) telegramWebApp.ready();
-
-    const usuarioTelegram = telegramWebApp?.initDataUnsafe?.user;
-    const tgId = usuarioTelegram?.id ? String(usuarioTelegram.id) : null;
-    if (tgId) setTelegramUserId(tgId);
-
-    const storageKey = tgId ? `perfilUsuario_${tgId}` : 'perfilUsuario';
-    const datosGuardados = localStorage.getItem(storageKey);
-
-    if (datosGuardados) {
-      try {
-        const datos = JSON.parse(datosGuardados);
-        setFormularioInicial((prev) => ({ ...prev, ...datos }));
-        if (datos.parroquia) setParroquiaSeleccionada(datos.parroquia);
-        setRegistroCompletado(true);
-      } catch {
-        localStorage.removeItem(storageKey);
+    const detectarUsuarioTelegram = () => {
+      const telegramWebApp = window.Telegram?.WebApp;
+      if (telegramWebApp) {
+        try {
+          telegramWebApp.ready();
+          telegramWebApp.expand();
+        } catch {}
       }
-    }
 
-    if (usuarioTelegram) {
-      const nombresTelegram = [usuarioTelegram.first_name, usuarioTelegram.last_name].filter(Boolean).join(' ');
-      const usuarioTelegramTexto = usuarioTelegram.username ? `@${usuarioTelegram.username}` : String(usuarioTelegram.id || '');
-      setFormularioInicial((prev) => ({
-        ...prev,
-        nombresApellidos: prev.nombresApellidos ? prev.nombresApellidos : nombresTelegram,
-        usuarioTelegram: usuarioTelegramTexto,
-      }));
+      const usuarioTelegram = telegramWebApp?.initDataUnsafe?.user;
+      if (usuarioTelegram) {
+        const tgId = usuarioTelegram.id ? String(usuarioTelegram.id) : null;
+        if (tgId) setTelegramUserId(tgId);
 
-      // Sincronizar directamente con el registro remoto de Supabase por telegramUserId
-      supabase
-        .from('usuarios')
-        .select('*')
-        .or(`id.eq.usr-tg-${tgId},usuario_telegram.eq.${usuarioTelegramTexto}`)
-        .then(({ data, error }) => {
-          if (!error && data && data.length > 0) {
-            const perfilRemoto = data[0];
-            setFormularioInicial((prev) => {
-              const actualizado = {
-                ...prev,
-                cedula: perfilRemoto.cedula || prev.cedula,
-                nombresApellidos: perfilRemoto.nombres_apellidos || prev.nombresApellidos,
-                parroquia: perfilRemoto.parroquia || prev.parroquia,
-                rol: perfilRemoto.rol || prev.rol,
-              };
-              localStorage.setItem(storageKey, JSON.stringify(actualizado));
-              return actualizado;
-            });
-            if (perfilRemoto.parroquia) setParroquiaSeleccionada(perfilRemoto.parroquia);
+        const storageKey = tgId ? `perfilUsuario_${tgId}` : 'perfilUsuario';
+        const datosGuardados = localStorage.getItem(storageKey);
+
+        const nombresTelegram = [usuarioTelegram.first_name, usuarioTelegram.last_name].filter(Boolean).join(' ');
+        let handleDetectado = '';
+        if (usuarioTelegram.username) {
+          handleDetectado = `@${usuarioTelegram.username}`;
+        } else if (usuarioTelegram.first_name) {
+          handleDetectado = `@${usuarioTelegram.first_name.toLowerCase().replace(/\s+/g, '_')}`;
+        } else {
+          handleDetectado = `@user_${tgId || 'telegram'}`;
+        }
+
+        setTelegramAutodetectado(true);
+
+        if (datosGuardados) {
+          try {
+            const datos = JSON.parse(datosGuardados);
+            setFormularioInicial((prev) => ({
+              ...prev,
+              ...datos,
+              usuarioTelegram: datos.usuarioTelegram || handleDetectado,
+            }));
+            if (datos.parroquia) setParroquiaSeleccionada(datos.parroquia);
             setRegistroCompletado(true);
+          } catch {
+            localStorage.removeItem(storageKey);
           }
-        });
+        } else {
+          setFormularioInicial((prev) => ({
+            ...prev,
+            nombresApellidos: prev.nombresApellidos || nombresTelegram,
+            usuarioTelegram: prev.usuarioTelegram || handleDetectado,
+          }));
+        }
+
+        // Sincronizar con el registro remoto en Supabase
+        supabase
+          .from('usuarios')
+          .select('*')
+          .or(`id.eq.usr-tg-${tgId},usuario_telegram.eq.${handleDetectado}`)
+          .then(({ data, error }) => {
+            if (!error && data && data.length > 0) {
+              const perfilRemoto = data[0];
+              setFormularioInicial((prev) => {
+                const actualizado = {
+                  ...prev,
+                  cedula: perfilRemoto.cedula || prev.cedula,
+                  nombresApellidos: perfilRemoto.nombres_apellidos || prev.nombresApellidos,
+                  usuarioTelegram: perfilRemoto.usuario_telegram || handleDetectado,
+                  parroquia: perfilRemoto.parroquia || prev.parroquia,
+                  rol: perfilRemoto.rol || prev.rol,
+                };
+                localStorage.setItem(storageKey, JSON.stringify(actualizado));
+                return actualizado;
+              });
+              if (perfilRemoto.parroquia) setParroquiaSeleccionada(perfilRemoto.parroquia);
+              setRegistroCompletado(true);
+            }
+          });
+
+        return true;
+      }
+      return false;
+    };
+
+    const detectado = detectarUsuarioTelegram();
+
+    if (!detectado) {
+      let intentos = 0;
+      const intervalo = setInterval(() => {
+        intentos++;
+        const exito = detectarUsuarioTelegram();
+        if (exito || intentos >= 10) {
+          clearInterval(intervalo);
+        }
+      }, 300);
+      return () => clearInterval(intervalo);
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('pinnedQuickActionTabs', JSON.stringify(pinnedQuickActionTabs));
+    try {
+      localStorage.setItem('pinnedQuickActionTabs', JSON.stringify(pinnedQuickActionTabs));
+    } catch {}
   }, [pinnedQuickActionTabs]);
 
   useEffect(() => {
-    localStorage.setItem('comunicadosCentinela', JSON.stringify(comunicados));
+    try {
+      localStorage.setItem('comunicadosCentinela', JSON.stringify(comunicados));
+    } catch {}
   }, [comunicados]);
 
   useEffect(() => {
-    localStorage.setItem('eventosCentinela', JSON.stringify(eventos));
+    try {
+      localStorage.setItem('eventosCentinela', JSON.stringify(eventos));
+    } catch {}
   }, [eventos]);
 
   useEffect(() => {
-    localStorage.setItem('emprendimientosCentinela', JSON.stringify(emprendimientos));
+    try {
+      localStorage.setItem('emprendimientosCentinela', JSON.stringify(emprendimientos));
+    } catch {}
   }, [emprendimientos]);
 
   useEffect(() => {
-    localStorage.setItem('tareasCentinela', JSON.stringify(tareas));
+    try {
+      localStorage.setItem('tareasCentinela', JSON.stringify(tareas));
+    } catch {}
   }, [tareas]);
 
   useEffect(() => {
-    localStorage.setItem('reportesCentinela', JSON.stringify(reportes));
+    try {
+      localStorage.setItem('reportesCentinela', JSON.stringify(reportes));
+    } catch {}
   }, [reportes]);
 
   useEffect(() => {
-    localStorage.setItem('usuariosCentinelaSystem', JSON.stringify(usuariosRegistrados));
+    try {
+      localStorage.setItem('usuariosCentinelaSystem', JSON.stringify(usuariosRegistrados));
+    } catch {}
   }, [usuariosRegistrados]);
 
   useEffect(() => {
@@ -638,6 +783,7 @@ function App() {
   const puedeCrearEvento = ['Super Usuario', 'Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario'].includes(formularioInicial.rol);
   const puedeAdministrarEvento = ['Super Usuario', 'Administrador Estadal', 'Coordinador Parroquial'].includes(formularioInicial.rol);
   const puedeAsignarTarea = ['Super Usuario', 'Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario'].includes(formularioInicial.rol);
+  const puedeCambiarEstadoTarea = ['Super Usuario', 'Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario'].includes(formularioInicial.rol);
 
   // Restricción de territorio por rol
   useEffect(() => {
@@ -891,14 +1037,12 @@ function App() {
   const seleccionarFlyerEvento = (e) => {
     const archivo = e.target.files?.[0];
     if (!archivo) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
+    comprimirImagenDataUrl(archivo).then((dataUrl) => {
       setFormularioEvento((prev) => ({
         ...prev,
-        flyerImage: event.target.result,
+        flyerImage: dataUrl,
       }));
-    };
-    reader.readAsDataURL(archivo);
+    });
   };
 
   const actualizarFormularioEvento = (event) => {
@@ -1094,20 +1238,14 @@ function App() {
       setFotosEvidencia([]);
       return;
     }
-    const promesasLectura = archivos.map((archivo) => {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          resolve({
-            nombre: archivo.name,
-            tipo: archivo.type,
-            tamaño: archivo.size,
-            dataUrl: e.target.result,
-          });
-        };
-        reader.readAsDataURL(archivo);
-      });
-    });
+    const promesasLectura = archivos.map((archivo) =>
+      comprimirImagenDataUrl(archivo).then((dataUrl) => ({
+        nombre: archivo.name,
+        tipo: 'image/jpeg',
+        tamaño: archivo.size,
+        dataUrl,
+      }))
+    );
 
     Promise.all(promesasLectura).then((data) => setFotosEvidencia(data));
   };
@@ -1169,41 +1307,85 @@ function App() {
     e.preventDefault();
     vibrarHaptico();
 
-    if (fotosEmprendimiento.length < 3 || fotosEmprendimiento.length > 5) {
-      alert('Debes adjuntar entre 3 y 5 imágenes demostrativas de tu emprendimiento.');
-      return;
+    if (empEnEdicion) {
+      // Editar Emprendimiento existente
+      const imagenesFinales = fotosEmprendimiento.length > 0
+        ? fotosEmprendimiento.map((f) => f.dataUrl)
+        : (empEnEdicion.imagenes || []);
+
+      const empActualizado = {
+        ...empEnEdicion,
+        nombre: formEmprendimiento.nombre.trim(),
+        categoria: formEmprendimiento.categoria,
+        parroquia: formEmprendimiento.parroquia || empEnEdicion.parroquia,
+        comision: formEmprendimiento.comision,
+        responsable: formEmprendimiento.responsable.trim() || empEnEdicion.responsable,
+        contacto: formEmprendimiento.contacto.trim(),
+        descripcion: formEmprendimiento.descripcion.trim(),
+        imagenes: imagenesFinales,
+      };
+
+      setEmprendimientos((prev) => prev.map((e) => (e.id === empEnEdicion.id ? empActualizado : e)));
+
+      supabase
+        .from('emprendimientos')
+        .update({
+          nombre: empActualizado.nombre,
+          categoria: empActualizado.categoria,
+          parroquia: empActualizado.parroquia,
+          comision: empActualizado.comision,
+          responsable: empActualizado.responsable,
+          contacto: empActualizado.contacto,
+          descripcion: empActualizado.descripcion,
+          imagenes: empActualizado.imagenes,
+        })
+        .eq('id', empEnEdicion.id)
+        .then(({ error }) => {
+          if (error) console.warn('Supabase emprendimiento update error:', error);
+        });
+
+      setEmpEnEdicion(null);
+      alert('Emprendimiento actualizado correctamente.');
+    } else {
+      // Crear nuevo
+      if (fotosEmprendimiento.length < 3 || fotosEmprendimiento.length > 5) {
+        alert('Debes adjuntar entre 3 y 5 imágenes demostrativas de tu emprendimiento.');
+        return;
+      }
+
+      const nuevoEmp = {
+        id: crearIdUnico('emp'),
+        nombre: formEmprendimiento.nombre.trim(),
+        categoria: formEmprendimiento.categoria,
+        parroquia: formEmprendimiento.parroquia || parroquiaSeleccionada,
+        comision: formEmprendimiento.comision,
+        responsable: formEmprendimiento.responsable.trim() || formularioInicial.nombresApellidos || 'Emprendedor Local',
+        contacto: formEmprendimiento.contacto.trim(),
+        descripcion: formEmprendimiento.descripcion.trim(),
+        imagenes: fotosEmprendimiento.map((f) => f.dataUrl),
+      };
+
+      setEmprendimientos((prev) => [nuevoEmp, ...prev]);
+
+      supabase
+        .from('emprendimientos')
+        .insert({
+          id: nuevoEmp.id,
+          nombre: nuevoEmp.nombre,
+          categoria: nuevoEmp.categoria,
+          parroquia: nuevoEmp.parroquia,
+          comision: nuevoEmp.comision,
+          responsable: nuevoEmp.responsable,
+          contacto: nuevoEmp.contacto,
+          descripcion: nuevoEmp.descripcion,
+          imagenes: nuevoEmp.imagenes,
+        })
+        .then(({ error }) => {
+          if (error) console.warn('Supabase emprendimiento insert error:', error);
+        });
+
+      alert('Emprendimiento e imágenes de encadenamiento productivo cargados exitosamente.');
     }
-
-    const nuevoEmp = {
-      id: crearIdUnico('emp'),
-      nombre: formEmprendimiento.nombre.trim(),
-      categoria: formEmprendimiento.categoria,
-      parroquia: formEmprendimiento.parroquia || parroquiaSeleccionada,
-      comision: formEmprendimiento.comision,
-      responsable: formEmprendimiento.responsable.trim() || formularioInicial.nombresApellidos || 'Emprendedor Local',
-      contacto: formEmprendimiento.contacto.trim(),
-      descripcion: formEmprendimiento.descripcion.trim(),
-      imagenes: fotosEmprendimiento.map((f) => f.dataUrl),
-    };
-
-    setEmprendimientos((prev) => [nuevoEmp, ...prev]);
-
-    supabase
-      .from('emprendimientos')
-      .insert({
-        id: nuevoEmp.id,
-        nombre: nuevoEmp.nombre,
-        categoria: nuevoEmp.categoria,
-        parroquia: nuevoEmp.parroquia,
-        comision: nuevoEmp.comision,
-        responsable: nuevoEmp.responsable,
-        contacto: nuevoEmp.contacto,
-        descripcion: nuevoEmp.descripcion,
-        imagenes: nuevoEmp.imagenes,
-      })
-      .then(({ error }) => {
-        if (error) console.warn('Supabase emprendimiento insert error:', error);
-      });
 
     setFormEmprendimiento({
       nombre: '',
@@ -1216,7 +1398,39 @@ function App() {
     });
     setFotosEmprendimiento([]);
     setMostrarFormEmprendimiento(false);
-    alert('Emprendimiento e imágenes de encadenamiento productivo cargados exitosamente.');
+  };
+
+  const iniciarEdicionEmprendimiento = (emp) => {
+    vibrarHaptico();
+    setEmpEnEdicion(emp);
+    setFormEmprendimiento({
+      nombre: emp.nombre,
+      categoria: emp.categoria,
+      parroquia: emp.parroquia,
+      comision: emp.comision || 'produccion-economia',
+      responsable: emp.responsable,
+      contacto: emp.contacto,
+      descripcion: emp.descripcion,
+    });
+    setFotosEmprendimiento([]);
+    setMostrarFormEmprendimiento(true);
+  };
+
+  const eliminarEmprendimiento = (id) => {
+    vibrarHaptico();
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este emprendimiento?')) return;
+
+    setEmprendimientos((prev) => prev.filter((e) => e.id !== id));
+
+    supabase
+      .from('emprendimientos')
+      .delete()
+      .eq('id', id)
+      .then(({ error }) => {
+        if (error) console.warn('Supabase emprendimiento delete error:', error);
+      });
+
+    alert('Emprendimiento eliminado correctamente.');
   };
 
   const crearTarea = (e) => {
@@ -1284,6 +1498,23 @@ function App() {
       });
   };
 
+  const eliminarTarea = (id) => {
+    vibrarHaptico();
+    if (!window.confirm('¿Estás seguro de que deseas eliminar esta tarea de la lista?')) return;
+
+    setTareas((prev) => prev.filter((t) => t.id !== id));
+
+    supabase
+      .from('tareas')
+      .delete()
+      .eq('id', id)
+      .then(({ error }) => {
+        if (error) console.warn('Supabase tarea delete error:', error);
+      });
+
+    alert('Tarea eliminada correctamente.');
+  };
+
   const crearReporte = (e) => {
     e.preventDefault();
     vibrarHaptico();
@@ -1314,7 +1545,11 @@ function App() {
   const actualizarFormulario = (event) => {
     const { name, value } = event.target;
     setFormularioInicial((prev) => {
-      const updated = { ...prev, [name]: value };
+      let val = value;
+      if (name === 'usuarioTelegram' && val && !val.startsWith('@')) {
+        val = `@${val}`;
+      }
+      const updated = { ...prev, [name]: val };
       if (name === 'estado') {
         updated.municipio = '';
         updated.parroquia = '';
@@ -1376,6 +1611,7 @@ function App() {
 
     if (formularioInicial.parroquia) setParroquiaSeleccionada(formularioInicial.parroquia);
     setRegistroCompletado(true);
+    cargarDatosNube();
   };
 
   if (!registroCompletado) {
@@ -1399,10 +1635,10 @@ function App() {
 
             <label style={{ display: 'block', marginBottom: '14px' }}>
               <span>Usuario de Telegram</span>
-              <input name="usuarioTelegram" value={formularioInicial.usuarioTelegram} onChange={actualizarFormulario} readOnly={Boolean(formularioInicial.usuarioTelegram)} placeholder="@usuario_telegram" style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px', background: formularioInicial.usuarioTelegram ? '#e2e8f0' : '#f8fafc', color: formularioInicial.usuarioTelegram ? '#334155' : 'inherit' }} />
-              {formularioInicial.usuarioTelegram && (
+              <input name="usuarioTelegram" value={formularioInicial.usuarioTelegram} onChange={actualizarFormulario} required placeholder="@usuario_telegram" style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px', background: '#ffffff' }} />
+              {telegramAutodetectado && (
                 <small style={{ color: '#2563eb', fontSize: '11px', marginTop: '2px', display: 'block' }}>
-                  ✓ Identificado automáticamente por Telegram
+                  ✓ Usuario de Telegram autodetectado. Puedes editarlo si lo deseas.
                 </small>
               )}
             </label>
@@ -1434,7 +1670,6 @@ function App() {
               <select name="estado" value={formularioInicial.estado} onChange={actualizarFormulario} required style={{ display: 'block', width: '100%', marginTop: '6px', padding: '12px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '10px', background: '#ffffff' }}>
                 <option value="">Selecciona estado</option>
                 <option value="Distrito Capital">Distrito Capital</option>
-                <option value="Miranda">Miranda</option>
               </select>
             </label>
 
@@ -1483,22 +1718,42 @@ function App() {
   }
 
   const eventosMostrados = eventos.filter((e) => {
-    const coincideParroquia = e.parroquia === parroquiaSeleccionada || e.nivel === 'estadal';
+    const coincideParroquia =
+      parroquiaSeleccionada === 'todas' ||
+      e.parroquia === 'Todas' ||
+      e.parroquia === 'Caracas General' ||
+      e.nivel === 'estadal' ||
+      e.parroquia === parroquiaSeleccionada;
     const coincideComision = comisionSeleccionada === 'todas' || e.comision === comisionSeleccionada;
     if (!coincideParroquia || !coincideComision) return false;
     return eventosFiltroEstado === 'historico' ? e.estado === 'culminado' : e.estado !== 'culminado';
   });
 
   const emprendimientosFiltrados = emprendimientos.filter((e) => {
-    const coincideParroquia = !parroquiaSeleccionada || e.parroquia === parroquiaSeleccionada;
+    const coincideParroquia = filtroParroquiaEmp === 'todas'
+      ? true
+      : e.parroquia === filtroParroquiaEmp;
+    const coincideCategoria = filtroCategoriaEmp === 'todas'
+      ? true
+      : e.categoria === filtroCategoriaEmp;
     const coincideComision = comisionSeleccionada === 'todas' || e.comision === comisionSeleccionada;
-    return coincideParroquia && coincideComision;
+    return coincideParroquia && coincideCategoria && coincideComision;
   });
 
   const tareasFiltradas = tareas.filter((t) => {
-    const coincideParroquia = !parroquiaSeleccionada || t.parroquia === parroquiaSeleccionada;
+    const pTarget = filtroParroquiaTarea === 'todas' ? parroquiaSeleccionada : filtroParroquiaTarea;
+    const coincideParroquia = filtroParroquiaTarea === 'todas'
+      ? (!parroquiaSeleccionada || t.parroquia === parroquiaSeleccionada || t.parroquia === 'Caracas General' || t.parroquia === 'Todas')
+      : (t.parroquia === pTarget || t.parroquia === 'Caracas General' || t.parroquia === 'Todas');
     const coincideComision = comisionSeleccionada === 'todas' || t.comision === comisionSeleccionada;
-    return coincideParroquia && coincideComision;
+    const coincideEstado = filtroEstadoTarea === 'Todas'
+      ? true
+      : filtroEstadoTarea === 'Pendientes'
+      ? t.estado === 'Pendiente'
+      : filtroEstadoTarea === 'En Proceso'
+      ? t.estado === 'En Proceso'
+      : t.estado === 'Cumplida' || t.estado === 'Cumplido';
+    return coincideParroquia && coincideComision && coincideEstado;
   });
 
   const reportesFiltrados = reportes.filter((r) => {
@@ -1507,7 +1762,33 @@ function App() {
     return coincideParroquia && coincideComision;
   });
 
-  const cumplimientoActual = infoParroquiaActual.cumplimiento || cumplimientoEstadalGlobal;
+  const calcularCumplimientoDinamico = () => {
+    const tareasParroquia = tareas.filter(
+      (t) => parroquiaSeleccionada === 'todas' || t.parroquia === parroquiaSeleccionada || t.parroquia === 'Todas' || t.parroquia === 'Caracas General'
+    );
+    const eventosParroquia = eventos.filter(
+      (e) => parroquiaSeleccionada === 'todas' || e.parroquia === parroquiaSeleccionada || e.parroquia === 'Todas' || e.nivel === 'estadal'
+    );
+
+    const totalActividades = tareasParroquia.length + eventosParroquia.length;
+    if (totalActividades === 0) {
+      return { integracion: 0, sistematizacion: 0, comunicacion: 0, movilizacion: 0, formacion: 0 };
+    }
+
+    const tareasCumplidas = tareasParroquia.filter((t) => t.estado === 'Cumplida' || t.estado === 'Cumplido').length;
+    const eventosCulminados = eventosParroquia.filter((e) => e.estado === 'culminado').length;
+    const porcentajeBase = Math.min(100, Math.round(((tareasCumplidas + eventosCulminados) / totalActividades) * 100));
+
+    return {
+      integracion: porcentajeBase,
+      sistematizacion: porcentajeBase,
+      comunicacion: porcentajeBase,
+      movilizacion: porcentajeBase,
+      formacion: porcentajeBase,
+    };
+  };
+
+  const cumplimientoActual = calcularCumplimientoDinamico();
 
   return (
     <div className="app-shell">
@@ -1539,9 +1820,16 @@ function App() {
               👤 {formularioInicial.rol} ▾
             </span>
 
-            <button className="notification-button" aria-label="Notificaciones" onClick={() => vibrarHaptico()}>
-              <span>♢</span>
-              <i></i>
+            <button
+              className="notification-button"
+              aria-label="Alternar Tema"
+              onClick={() => {
+                vibrarHaptico();
+                alternarModoOscuro();
+              }}
+              title={esModoOscuro ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
+            >
+              <span>{esModoOscuro ? '☀️' : '🌙'}</span>
             </button>
           </div>
         </header>
@@ -1994,25 +2282,17 @@ function App() {
                 ))}
               </div>
 
-              {/* Gráfica de Cumplimiento por Vocería */}
+              {/* Gráfica de Cumplimiento por Vocería con Anillos Circulares */}
               <p className="section-label" style={{ marginTop: '20px' }}>GRÁFICA DE CUMPLIMIENTO EN VIVO ({infoParroquiaActual.nombre})</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', marginTop: '12px', padding: '12px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                 {[
                   { label: 'Integración', val: cumplimientoActual.integracion, color: '#2563eb' },
                   { label: 'Sistematización', val: cumplimientoActual.sistematizacion, color: '#9333ea' },
-                  { label: 'Comunicación Popular', val: cumplimientoActual.comunicacion, color: '#16a34a' },
-                  { label: 'Movilización Territorial', val: cumplimientoActual.movilizacion, color: '#ea580c' },
-                  { label: 'Formación Integral', val: cumplimientoActual.formacion, color: '#0d9488' },
+                  { label: 'Comunicación', val: cumplimientoActual.comunicacion, color: '#16a34a' },
+                  { label: 'Movilización', val: cumplimientoActual.movilizacion, color: '#ea580c' },
+                  { label: 'Formación', val: cumplimientoActual.formacion, color: '#0d9488' },
                 ].map((item) => (
-                  <div key={item.label}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '600', marginBottom: '4px', color: '#1e293b' }}>
-                      <span>{item.label}</span>
-                      <span>{item.val}%</span>
-                    </div>
-                    <div style={{ width: '100%', height: '10px', background: '#e2e8f0', borderRadius: '6px', overflow: 'hidden' }}>
-                      <div style={{ width: `${item.val}%`, height: '100%', background: item.color, borderRadius: '6px', transition: 'width 0.5s ease' }}></div>
-                    </div>
-                  </div>
+                  <AnilloProgresoCircular key={item.label} porcentaje={item.val} color={item.color} label={item.label} />
                 ))}
               </div>
 
@@ -2256,9 +2536,19 @@ function App() {
                   </p>
 
                   {Array.isArray(post.evidencias) && post.evidencias.length > 0 && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '8px', margin: '12px 0' }}>
+                    <div className="feed-gallery-slider">
                       {post.evidencias.map((foto, idx) => (
-                        <img key={idx} src={foto} alt={`Evidencia ${idx + 1}`} style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                        <img
+                          key={idx}
+                          src={foto}
+                          alt={`Evidencia ${idx + 1}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            vibrarHaptico();
+                            setFotoLightboxUrl(foto);
+                          }}
+                          className="feed-gallery-slide-img"
+                        />
                       ))}
                     </div>
                   )}
@@ -2366,29 +2656,28 @@ function App() {
               </button>
             </div>
 
-            {/* Panel de Supervisión Parroquial para Administradores */}
+            {/* Panel de Filtros Parroquiales y Comisiones de Eventos */}
             <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '14px', marginBottom: '14px' }}>
               <strong style={{ fontSize: '13px', color: '#1e293b', display: 'block', marginBottom: '6px' }}>
-                {esNivelEstadal ? '👀 Supervisión y Monitoreo Parroquial' : `📍 Territorio Asignado: Parroquia ${parroquiaSeleccionada}`}
+                🔍 Filtro de Parroquia y Comisión
               </strong>
-              <div style={{ display: 'grid', gridTemplateColumns: esNivelEstadal ? 'repeat(2, 1fr)' : '1fr', gap: '8px' }}>
-                {esNivelEstadal && (
-                  <div>
-                    <label style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '2px' }}>Parroquia activa:</label>
-                    <select
-                      value={parroquiaSeleccionada}
-                      onChange={(e) => {
-                        vibrarHaptico();
-                        setParroquiaSeleccionada(e.target.value);
-                      }}
-                      style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '12px' }}
-                    >
-                      {parroquiasCaracas.map((p) => (
-                        <option key={p} value={p}>{p}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '2px' }}>Parroquia activa:</label>
+                  <select
+                    value={parroquiaSeleccionada}
+                    onChange={(e) => {
+                      vibrarHaptico();
+                      setParroquiaSeleccionada(e.target.value);
+                    }}
+                    style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '12px' }}
+                  >
+                    <option value="todas">🌐 Todas las parroquias</option>
+                    {parroquiasCaracas.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
 
                 <div>
                   <label style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '2px' }}>Comisión:</label>
@@ -2603,7 +2892,16 @@ function App() {
                     key={evento.id}
                   >
                     {evento.flyerImage && (
-                      <img src={evento.flyerImage} alt={evento.titulo} style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '10px', marginBottom: '10px' }} />
+                      <img
+                        src={evento.flyerImage}
+                        alt={evento.titulo}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          vibrarHaptico();
+                          setFotoLightboxUrl(evento.flyerImage);
+                        }}
+                        style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '10px', marginBottom: '10px', cursor: 'zoom-in' }}
+                      />
                     )}
 
                     <div className="evento-card-top">
@@ -2689,7 +2987,15 @@ function App() {
                   </div>
 
                   {eventoSeleccionado.flyerImage && (
-                    <img src={eventoSeleccionado.flyerImage} alt="Flyer Evento" style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '12px', marginBottom: '12px' }} />
+                    <img
+                      src={eventoSeleccionado.flyerImage}
+                      alt="Flyer Evento"
+                      onClick={() => {
+                        vibrarHaptico();
+                        setFotoLightboxUrl(eventoSeleccionado.flyerImage);
+                      }}
+                      style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '12px', marginBottom: '12px', cursor: 'zoom-in' }}
+                    />
                   )}
 
                   <div className="evento-detail-layout">
@@ -2972,10 +3278,55 @@ function App() {
               <div>
                 <p className="section-label">GESTIÓN OPERATIVA: {parroquiaSeleccionada.toUpperCase()}</p>
                 <h2>Tareas y Compromisos</h2>
-                <p className="page-description">Seguimiento de tareas comunitarias asignadas a las comisiones.</p>
+                <p className="page-description">Seguimiento de tareas comunitarias asignadas por líderes estadales y parroquiales.</p>
               </div>
               <button className="back-button" onClick={() => handleAction('inicio')}>Inicio</button>
             </div>
+
+            {/* Filtros de estado de tareas */}
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
+              {['Todas', 'Pendientes', 'En Proceso', 'Cumplidas'].map((est) => (
+                <button
+                  key={est}
+                  type="button"
+                  onClick={() => {
+                    vibrarHaptico();
+                    setFiltroEstadoTarea(est);
+                  }}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: filtroEstadoTarea === est ? '#2563eb' : '#f1f5f9',
+                    color: filtroEstadoTarea === est ? '#ffffff' : '#475569',
+                  }}
+                >
+                  {est}
+                </button>
+              ))}
+            </div>
+
+            {/* Selector de Parroquia para Estadal / SuperUsuario */}
+            {esNivelEstadal && (
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '4px' }}>
+                  Filtrar parroquia de tarea:
+                </label>
+                <select
+                  value={filtroParroquiaTarea}
+                  onChange={(e) => setFiltroParroquiaTarea(e.target.value)}
+                  style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                >
+                  <option value="todas">Ver todas las parroquias de Caracas</option>
+                  {parroquiasCaracas.map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <button
               type="button"
@@ -2998,9 +3349,23 @@ function App() {
                 <div className="section-title-row">
                   <div>
                     <p className="section-label">NUEVA TAREA ({formularioInicial.rol})</p>
-                    <h3>Registrar tarea para {parroquiaSeleccionada}</h3>
+                    <h3>Registrar tarea</h3>
                   </div>
                 </div>
+
+                <label className="evento-form-field">
+                  <span>Alcance / Parroquia Asignada</span>
+                  <select
+                    value={formTarea.parroquia}
+                    onChange={(e) => setFormTarea((prev) => ({ ...prev, parroquia: e.target.value }))}
+                    required
+                  >
+                    <option value="Todas">Toda Caracas (Estadal)</option>
+                    {parroquiasCaracas.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </label>
 
                 <label className="evento-form-field">
                   <span>Título de la tarea</span>
@@ -3083,15 +3448,35 @@ function App() {
                     <p className="evento-location">👤 Responsable: {tarea.responsable}</p>
                     <p className="evento-date">◷ Límite: {tarea.fechaLimite} · Prioridad: {tarea.prioridad}</p>
 
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-                      {tarea.estado !== 'En Proceso' && tarea.estado !== 'Cumplida' && (
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
+                      {(puedeCambiarEstadoTarea || tarea.responsable === formularioInicial.nombresApellidos) && tarea.estado !== 'En Proceso' && tarea.estado !== 'Cumplida' && (
                         <button type="button" className="secondary-button" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={() => cambiarEstadoTarea(tarea.id, 'En Proceso')}>
                           Marcar En Proceso
                         </button>
                       )}
-                      {tarea.estado !== 'Cumplida' && (
+                      {(puedeCambiarEstadoTarea || tarea.responsable === formularioInicial.nombresApellidos) && tarea.estado !== 'Cumplida' && (
                         <button type="button" className="primary-button" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={() => cambiarEstadoTarea(tarea.id, 'Cumplida')}>
                           Marcar Cumplida ✓
+                        </button>
+                      )}
+                      {(esSuperUsuario ||
+                        ['Administrador Estadal', 'Coordinador Parroquial', 'Vocero Comunitario'].includes(formularioInicial.rol) ||
+                        tarea.responsable === formularioInicial.nombresApellidos) && (
+                        <button
+                          type="button"
+                          style={{
+                            fontSize: '12px',
+                            padding: '6px 12px',
+                            background: '#fef2f2',
+                            color: '#dc2626',
+                            border: '1px solid #fca5a5',
+                            borderRadius: '8px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                          }}
+                          onClick={() => eliminarTarea(tarea.id)}
+                        >
+                          🗑️ Eliminar
                         </button>
                       )}
                     </div>
@@ -3152,7 +3537,7 @@ function App() {
                     <span className="mesa-icon">◎</span>
                     <div>
                       <small>Cumplimiento estimado</small>
-                      <strong>{cumplimientoActual[voceria.id] || 75}%</strong>
+                      <strong>{cumplimientoActual[voceria.id] || 0}%</strong>
                     </div>
                   </div>
                 </article>
@@ -3380,10 +3765,10 @@ function App() {
           <section className="emprendimientos-page">
             <div className="page-heading">
               <div>
-                <p className="section-label">RED DE PRODUCCIÓN Y ECONOMÍA: {parroquiaSeleccionada.toUpperCase()}</p>
-                <h2>Emprendimientos Locales</h2>
+                <p className="section-label">RED DE PRODUCCIÓN Y ECONOMÍA LOCAL</p>
+                <h2>Emprendimientos Caracas</h2>
                 <p className="page-description">
-                  Iniciativas, proyectos productivos y comercios populares comunitarios.
+                  Iniciativas, proyectos productivos y comercios populares de las 22 parroquias.
                 </p>
               </div>
 
@@ -3393,6 +3778,44 @@ function App() {
               >
                 Inicio
               </button>
+            </div>
+
+            {/* Filtros de Parroquia y Categoría para Emprendimientos */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '14px' }}>
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '4px' }}>
+                  Filtrar Parroquia:
+                </label>
+                <select
+                  value={filtroParroquiaEmp}
+                  onChange={(e) => setFiltroParroquiaEmp(e.target.value)}
+                  style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                >
+                  <option value="todas">Todas las parroquias</option>
+                  {parroquiasCaracas.map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'block', marginBottom: '4px' }}>
+                  Filtrar Categoría:
+                </label>
+                <select
+                  value={filtroCategoriaEmp}
+                  onChange={(e) => setFiltroCategoriaEmp(e.target.value)}
+                  style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                >
+                  <option value="todas">Todas las categorías</option>
+                  <option value="Textil y Calzado">Textil y Calzado</option>
+                  <option value="Alimentos y Gastronomía">Alimentos y Gastronomía</option>
+                  <option value="Servicios y Reparación">Servicios y Reparación</option>
+                  <option value="Artesanía y Cultura">Artesanía y Cultura</option>
+                  <option value="Tecnología y Comunicación">Tecnología y Comunicación</option>
+                  <option value="Otros">Otros</option>
+                </select>
+              </div>
             </div>
 
             <button
@@ -3411,8 +3834,8 @@ function App() {
               <form className="evento-form-card" onSubmit={crearEmprendimiento}>
                 <div className="section-title-row">
                   <div>
-                    <p className="section-label">NUEVA INICIATIVA</p>
-                    <h3>Registrar emprendimiento en {parroquiaSeleccionada}</h3>
+                    <p className="section-label">{empEnEdicion ? 'EDITAR EMPRENDIMIENTO' : 'NUEVA INICIATIVA'}</p>
+                    <h3>{empEnEdicion ? `Editando: ${empEnEdicion.nombre}` : `Registrar emprendimiento en ${parroquiaSeleccionada}`}</h3>
                   </div>
                 </div>
 
@@ -3478,10 +3901,10 @@ function App() {
                     accept="image/*"
                     multiple
                     onChange={seleccionarFotosEmprendimiento}
-                    required
+                    required={!empEnEdicion}
                   />
                   <span className="photo-counter" style={{ fontSize: '11px', color: '#64748b', display: 'block', marginTop: '4px' }}>
-                    {fotosEmprendimiento.length} de 3 a 5 fotos seleccionadas
+                    {empEnEdicion ? 'Opcional: Selecciona nuevas fotos para reemplazar las actuales' : `${fotosEmprendimiento.length} de 3 a 5 fotos seleccionadas`}
                   </span>
 
                   {fotosEmprendimiento.length > 0 && (
@@ -3493,7 +3916,9 @@ function App() {
                   )}
                 </label>
 
-                <button type="submit" className="primary-button">Guardar e integrar a la Red</button>
+                <button type="submit" className="primary-button">
+                  {empEnEdicion ? 'Guardar Cambios' : 'Guardar e integrar a la Red'}
+                </button>
               </form>
             )}
 
@@ -3515,12 +3940,54 @@ function App() {
                     {Array.isArray(emp.imagenes) && emp.imagenes.length > 0 && (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(60px, 1fr))', gap: '6px', margin: '10px 0' }}>
                         {emp.imagenes.map((foto, idx) => (
-                          <img key={idx} src={foto} alt={`Foto ${idx + 1}`} style={{ width: '100%', height: '70px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #e2e8f0' }} />
+                          <img
+                            key={idx}
+                            src={foto}
+                            alt={`Foto ${idx + 1}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              vibrarHaptico();
+                              setFotoLightboxUrl(foto);
+                            }}
+                            style={{ width: '100%', height: '70px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #e2e8f0', cursor: 'zoom-in' }}
+                          />
                         ))}
                       </div>
                     )}
 
                     <p style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>👤 Responsable: {emp.responsable} · 📞 {emp.contacto}</p>
+
+                    {/* Botones de Edición y Eliminación */}
+                    {(esSuperUsuario ||
+                      ['Administrador Estadal', 'Coordinador Parroquial'].includes(formularioInicial.rol) ||
+                      emp.responsable === formularioInicial.nombresApellidos) && (
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '12px', borderTop: '1px solid #f1f5f9', paddingTop: '10px' }}>
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          style={{ fontSize: '12px', padding: '6px 12px', flex: 1 }}
+                          onClick={() => iniciarEdicionEmprendimiento(emp)}
+                        >
+                          ✏️ Editar
+                        </button>
+                        <button
+                          type="button"
+                          style={{
+                            fontSize: '12px',
+                            padding: '6px 12px',
+                            background: '#fef2f2',
+                            color: '#dc2626',
+                            border: '1px solid #fca5a5',
+                            borderRadius: '8px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                          }}
+                          onClick={() => eliminarEmprendimiento(emp.id)}
+                        >
+                          🗑️ Eliminar
+                        </button>
+                      </div>
+                    )}
                   </article>
                 ))
               )}
@@ -3645,6 +4112,101 @@ function App() {
           </section>
         ) : null}
       </main>
+
+      {toasts.length > 0 && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 100005,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            width: '90%',
+            maxWidth: '380px',
+            pointerEvents: 'none',
+          }}
+        >
+          {toasts.map((toast) => (
+            <div
+              key={toast.id}
+              style={{
+                background: '#1e293b',
+                color: '#f8fafc',
+                border: '1px solid #334155',
+                padding: '12px 16px',
+                borderRadius: '12px',
+                fontSize: '13px',
+                fontWeight: '600',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                animation: 'aparecerDetalle 0.2s ease-out',
+              }}
+            >
+              <span>{toast.mensaje}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {fotoLightboxUrl && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 100000,
+            background: 'rgba(0, 0, 0, 0.88)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            boxSizing: 'border-box',
+          }}
+          onClick={() => setFotoLightboxUrl(null)}
+        >
+          <button
+            onClick={() => setFotoLightboxUrl(null)}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.2)',
+              border: '1px solid rgba(255, 255, 255, 0.4)',
+              color: '#ffffff',
+              fontSize: '24px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            ×
+          </button>
+          <img
+            src={fotoLightboxUrl}
+            alt="Visor de Fotografía"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '100%',
+              maxHeight: '90vh',
+              objectFit: 'contain',
+              borderRadius: '16px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+            }}
+          />
+        </div>
+      )}
 
       {mostrarModalRol && (
         <div className="detail-overlay" onClick={() => setMostrarModalRol(false)}>
@@ -3946,6 +4508,37 @@ function App() {
           onClick={() => handleAction('menu')}
         />
       </nav>
+    </div>
+  );
+}
+
+function AnilloProgresoCircular({ porcentaje, color, label }) {
+  const radio = 18;
+  const circunferencia = 2 * Math.PI * radio;
+  const offset = circunferencia - (porcentaje / 100) * circunferencia;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+      <svg width="50" height="50" viewBox="0 0 48 48">
+        <circle cx="24" cy="24" r={radio} fill="none" stroke="#e2e8f0" strokeWidth="4" />
+        <circle
+          cx="24"
+          cy="24"
+          r={radio}
+          fill="none"
+          stroke={color}
+          strokeWidth="4"
+          strokeDasharray={circunferencia}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          transform="rotate(-90 24 24)"
+          style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+        />
+        <text x="24" y="28" textAnchor="middle" fontSize="10" fontWeight="700" fill="#1e293b">
+          {porcentaje}%
+        </text>
+      </svg>
+      <span style={{ fontSize: '10px', color: '#64748b', marginTop: '4px', fontWeight: '600' }}>{label}</span>
     </div>
   );
 }
