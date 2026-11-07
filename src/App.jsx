@@ -97,6 +97,50 @@ const cumplimientoEstadalGlobal = {
   formacion: 76,
 };
 
+// Puntos de referencia de Caracas con coordenadas GPS para MotoPana Express
+const puntosCaracasGPS = [
+  { id: 'plaza-vzla', nombre: 'Plaza Venezuela / La Previsora', lat: 10.4965, lon: -66.8858, parroquia: 'El Recreo' },
+  { id: 'chacao', nombre: 'Chacao / Metro Chacao', lat: 10.4925, lon: -66.8533, parroquia: 'Chacao' },
+  { id: 'chacaito', nombre: 'Chacaíto / Bulevar', lat: 10.4938, lon: -66.8682, parroquia: 'El Recreo' },
+  { id: 'petare', nombre: 'Petare / Redoma de Petare', lat: 10.4795, lon: -66.8062, parroquia: 'Sucre' },
+  { id: 'sabana-grande', nombre: 'Sabana Grande / Bulevar', lat: 10.4948, lon: -66.8776, parroquia: 'El Recreo' },
+  { id: 'las-mercedes', nombre: 'Las Mercedes / C.C. Tolón', lat: 10.4779, lon: -66.8617, parroquia: 'Baruta' },
+  { id: 'catia', nombre: 'Catia / Plaza Sucre', lat: 10.5188, lon: -66.9366, parroquia: 'Sucre' },
+  { id: 'el-valle', nombre: 'El Valle / C.C. El Valle', lat: 10.4682, lon: -66.9038, parroquia: 'El Valle' },
+  { id: 'coche', nombre: 'Coche / Mercado Mayor de Coche', lat: 10.4503, lon: -66.9189, parroquia: 'Coche' },
+  { id: 'caricuao', nombre: 'Caricuao / Ruiz Pineda', lat: 10.4355, lon: -66.9806, parroquia: 'Caricuao' },
+  { id: 'antimano', nombre: 'Antímano / Estación Metro', lat: 10.4673, lon: -66.9631, parroquia: 'Antímano' },
+  { id: 'el-paraiso', nombre: 'El Paraíso / Plaza Madariaga', lat: 10.4851, lon: -66.9328, parroquia: 'El Paraíso' },
+  { id: 'san-martin', nombre: 'San Martín / Maternidad', lat: 10.4968, lon: -66.9312, parroquia: 'San Juan' },
+  { id: 'la-candelaria', nombre: 'La Candelaria / Parque Carabobo', lat: 10.5042, lon: -66.9079, parroquia: 'Candelaria' },
+  { id: 'capitolio', nombre: 'Capitolio / El Silencio / Centro', lat: 10.5057, lon: -66.9157, parroquia: 'Catedral' },
+  { id: '23-enero', nombre: '23 de Enero / Cuartel de la Montaña', lat: 10.5085, lon: -66.9304, parroquia: '23 de Enero' },
+  { id: 'la-pastora', nombre: 'La Pastora / Puerta de Caracas', lat: 10.5212, lon: -66.9201, parroquia: 'La Pastora' },
+  { id: 'san-agustin', nombre: 'San Agustín / Metrocable', lat: 10.4947, lon: -66.9022, parroquia: 'San Agustín' },
+  { id: 'la-california', nombre: 'La California / Unicentro El Marqués', lat: 10.4828, lon: -66.8242, parroquia: 'Petare / Sucre' },
+  { id: 'los-dos-caminos', nombre: 'Los Dos Caminos / Parque Cristal', lat: 10.4944, lon: -66.8364, parroquia: 'Sucre' },
+  { id: 'altamira', nombre: 'Altamira / Plaza Francia', lat: 10.4981, lon: -66.8488, parroquia: 'Chacao' },
+  { id: 'san-bernardino', nombre: 'San Bernardino / Clínicas Caracas', lat: 10.5161, lon: -66.8973, parroquia: 'San Bernardino' },
+  { id: 'la-trinidad', nombre: 'La Trinidad / Sorocaima', lat: 10.4428, lon: -66.8576, parroquia: 'Baruta' },
+  { id: 'el-hatillo', nombre: 'El Hatillo / Pueblo', lat: 10.4243, lon: -66.8252, parroquia: 'El Hatillo' }
+];
+
+// Cálculo de distancia en km con fórmula de Haversine
+const calcularDistanciaKm = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Radio de la Tierra en km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+      Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c;
+  return Math.round(d * 10) / 10;
+};
+
 const quickActionsBase = [
   { icon: '▣', label: 'Feed nacional', tab: 'feed' },
   { icon: '⌂', label: 'Mi territorio', tab: 'territorio' },
@@ -587,6 +631,21 @@ function App() {
     fechaLimite: obtenerFechaActualLocal(),
   });
 
+  // MotoPana Express State
+  const [mostrarModalMotoPana, setMostrarModalMotoPana] = useState(false);
+  const [motoPanaOrigenId, setMotoPanaOrigenId] = useState('plaza-vzla');
+  const [motoPanaOrigenCustom, setMotoPanaOrigenCustom] = useState('');
+  const [motoPanaDestinoId, setMotoPanaDestinoId] = useState('petare');
+  const [motoPanaDestinoCustom, setMotoPanaDestinoCustom] = useState('');
+  const [motoPanaNotas, setMotoPanaNotas] = useState('');
+  const [motoPanaGpsActivo, setMotoPanaGpsActivo] = useState(false);
+  const [motoPanaGpsCoords, setMotoPanaGpsCoords] = useState(null);
+  const [motoPanaGpsCargando, setMotoPanaGpsCargando] = useState(false);
+  const [motoPanaWhatsappDestino, setMotoPanaWhatsappDestino] = useState(
+    () => localStorage.getItem('motopana_whatsapp_url') || 'https://chat.whatsapp.com/DR2MAxM98s7JhC76o4Bcja?s=cl&p=i&mlu=4&ilr=4&iam=2'
+  );
+  const [motoPanaCopiado, setMotoPanaCopiado] = useState(false);
+
   // Reportes State
   const [reportes, setReportes] = useState(() => {
     try {
@@ -1030,6 +1089,112 @@ function App() {
     estadal: 'Consejo Popular Estadal',
     municipal: 'Consejo Popular Municipal',
     parroquial: 'Consejo Popular Parroquial',
+  };
+
+  // Cálculo de ruta y tarifa MotoPana Express
+  const origenPunto = puntosCaracasGPS.find((p) => p.id === motoPanaOrigenId) || puntosCaracasGPS[0];
+  const destinoPunto = puntosCaracasGPS.find((p) => p.id === motoPanaDestinoId) || puntosCaracasGPS[3];
+
+  const origenCoords = motoPanaGpsActivo && motoPanaGpsCoords ? motoPanaGpsCoords : { lat: origenPunto.lat, lon: origenPunto.lon };
+  const destinoCoords = { lat: destinoPunto.lat, lon: destinoPunto.lon };
+
+  const origenNombreFinal = motoPanaGpsActivo
+    ? (motoPanaOrigenCustom || '📍 Mi Ubicación GPS Actual')
+    : (motoPanaOrigenCustom ? `${origenPunto.nombre} (${motoPanaOrigenCustom})` : origenPunto.nombre);
+
+  const destinoNombreFinal = motoPanaDestinoCustom
+    ? `${destinoPunto.nombre} (${motoPanaDestinoCustom})`
+    : destinoPunto.nombre;
+
+  const distanciaCalculadaKm = Math.max(
+    1.2,
+    calcularDistanciaKm(origenCoords.lat, origenCoords.lon, destinoCoords.lat, destinoCoords.lon)
+  );
+
+  // Estimación de tiempo en moto (promedio 25 km/h tráfico caraqueño + 4 min base)
+  const tiempoEstimadoMinutos = Math.round((distanciaCalculadaKm / 25) * 60) + 4;
+
+  // Tarifa MotoPana Comunitaria ($1.50 base arranque + $0.50 por km, mín $2.50)
+  const tarifaUsd = Math.max(2.5, Math.round((1.5 + distanciaCalculadaKm * 0.5) * 10) / 10);
+  const tasaReferencialBs = 445.0; // Tasa referencial oficial para el cálculo comunitario
+  const tarifaBs = Math.round(tarifaUsd * tasaReferencialBs);
+
+  const activarGpsMotoPana = () => {
+    if (!navigator.geolocation) {
+      alert('La geolocalización no está disponible en este navegador o dispositivo.');
+      return;
+    }
+    setMotoPanaGpsCargando(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setMotoPanaGpsCoords({
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+        });
+        setMotoPanaGpsActivo(true);
+        setMotoPanaGpsCargando(false);
+      },
+      (err) => {
+        setMotoPanaGpsCargando(false);
+        alert('No se pudo obtener la ubicación GPS. Verifica los permisos de localización.');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  const generarMensajeDespachoMotoPana = () => {
+    const pasajero = formularioInicial.nombresApellidos || 'Pasajero Comunitario';
+    const telefono = formularioInicial.usuarioTelegram ? `@${formularioInicial.usuarioTelegram.replace('@', '')}` : 'Contacto en App';
+    const gpsUrl = motoPanaGpsActivo && motoPanaGpsCoords
+      ? `https://maps.google.com/?q=${motoPanaGpsCoords.lat.toFixed(5)},${motoPanaGpsCoords.lon.toFixed(5)}`
+      : `https://maps.google.com/?q=${origenCoords.lat},${origenCoords.lon}`;
+
+    return `🚨 *¡SOLICITUD DE MOTOPANA EXPRESS!* 🛵💨\n\n` +
+      `👤 *Pasajero:* ${pasajero}\n` +
+      `📞 *Contacto:* ${telefono}\n` +
+      `🚩 *Origen:* ${origenNombreFinal}\n` +
+      `🏁 *Destino:* ${destinoNombreFinal}\n` +
+      `📏 *Distancia:* ${distanciaCalculadaKm} km aprox.\n` +
+      `⏱️ *Tiempo estimado:* ${tiempoEstimadoMinutos} min\n` +
+      `💵 *Tarifa sugerida:* *$${tarifaUsd.toFixed(2)} USD* (aprox. Bs. ${tarifaBs.toLocaleString('es-VE')})\n` +
+      (motoPanaNotas ? `📝 *Nota:* ${motoPanaNotas}\n` : '') +
+      `🗺️ *Ubicación Origen:* ${gpsUrl}\n\n` +
+      `👉 *¿Quién toma la carrera? Responde con "LA TOMO" y número de placa/casco.* 🏍️`;
+  };
+
+  const enviarSolicitudWhatsAppMotoPana = () => {
+    vibrarHaptico();
+    const textoMensaje = generarMensajeDespachoMotoPana();
+
+    // Guardar URL en localStorage si el usuario la editó
+    if (motoPanaWhatsappDestino) {
+      localStorage.setItem('motopana_whatsapp_url', motoPanaWhatsappDestino);
+    }
+
+    // Copiar mensaje al portapapeles para facilitar pegado en grupos de WhatsApp
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(textoMensaje).then(() => {
+        setMotoPanaCopiado(true);
+        setTimeout(() => setMotoPanaCopiado(false), 4000);
+      }).catch(() => {});
+    }
+
+    const destino = (motoPanaWhatsappDestino || '').trim();
+    if (destino.startsWith('http://') || destino.startsWith('https://')) {
+      // Es un enlace de grupo o enlace directo
+      if (destino.includes('chat.whatsapp.com')) {
+        // Enlace de invitación de grupo de WhatsApp
+        window.open(destino, '_blank');
+      } else {
+        const urlFinal = `${destino}${destino.includes('?') ? '&' : '?'}text=${encodeURIComponent(textoMensaje)}`;
+        window.open(urlFinal, '_blank');
+      }
+    } else {
+      // Es un número telefónico
+      const numLimpio = destino.replace(/\D/g, '');
+      const urlWa = `https://wa.me/${numLimpio}?text=${encodeURIComponent(textoMensaje)}`;
+      window.open(urlWa, '_blank');
+    }
   };
 
   const handleAction = (tab) => {
@@ -3878,21 +4043,64 @@ function App() {
               </div>
 
               <div
-                onClick={() => setFiltroCategoriaEmp(filtroCategoriaEmp === 'MotoPana Express' ? 'todas' : 'MotoPana Express')}
+                onClick={() => setMostrarModalMotoPana(true)}
                 style={{
-                  background: filtroCategoriaEmp === 'MotoPana Express' ? '#dcfce7' : '#ffffff',
-                  border: filtroCategoriaEmp === 'MotoPana Express' ? '2px solid #16a34a' : '1px solid #cbd5e1',
+                  background: '#dcfce7',
+                  border: '2px solid #16a34a',
                   borderRadius: '12px',
                   padding: '10px 6px',
                   textAlign: 'center',
                   cursor: 'pointer',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                  boxShadow: '0 2px 6px rgba(22, 163, 74, 0.2)'
                 }}
               >
                 <div style={{ fontSize: '24px', marginBottom: '4px' }}>🛵</div>
-                <div style={{ fontWeight: '700', fontSize: '12px', color: '#1e293b' }}>MotoPana</div>
-                <div style={{ fontSize: '10px', color: '#64748b' }}>Movilidad 2 ruedas</div>
+                <div style={{ fontWeight: '800', fontSize: '12px', color: '#15803d' }}>MotoPana</div>
+                <div style={{ fontSize: '10px', color: '#166534', fontWeight: '600' }}>⚡ Cotizar / Pedir</div>
               </div>
+            </div>
+
+            {/* Banner destacado MotoPana Express */}
+            <div
+              style={{
+                background: 'linear-gradient(135deg, #15803d 0%, #166534 100%)',
+                borderRadius: '16px',
+                padding: '14px 16px',
+                marginBottom: '16px',
+                color: 'white',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                boxShadow: '0 4px 12px rgba(21, 128, 61, 0.2)'
+              }}
+            >
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '18px' }}>🛵</span>
+                  <strong style={{ fontSize: '14px' }}>MotoPana Express Caracas</strong>
+                </div>
+                <p style={{ margin: '4px 0 0', fontSize: '11px', opacity: 0.9 }}>
+                  Cotiza tu ruta Punto A ➔ Punto B y pide tu moto al grupo al instante.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMostrarModalMotoPana(true)}
+                style={{
+                  background: '#ffffff',
+                  color: '#15803d',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                  marginLeft: '8px'
+                }}
+              >
+                Pedir Moto
+              </button>
             </div>
 
             {/* Filtros de Parroquia y Categoría para Emprendimientos */}
@@ -4699,6 +4907,293 @@ function App() {
                 🚀 Publicar comunicado en vivo
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Interactivo MotoPana Express: Cotizador y Despacho */}
+      {mostrarModalMotoPana && (
+        <div className="detail-overlay" onClick={() => setMostrarModalMotoPana(false)}>
+          <div className="detail-bubble" onClick={(e) => e.stopPropagation()}>
+            <div className="bubble-handle"></div>
+            <div className="detail-panel-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '24px' }}>🛵</span>
+                <div>
+                  <p className="section-label" style={{ color: '#16a34a' }}>MOVILIDAD EN 2 RUEDAS</p>
+                  <h3>MotoPana Express Caracas</h3>
+                </div>
+              </div>
+              <button className="close-button" onClick={() => setMostrarModalMotoPana(false)}>×</button>
+            </div>
+
+            <div className="motopana-container">
+              {/* Mapa GPS Interactivo de Caracas con ruta y motos activas */}
+              <div className="motopana-map-wrapper">
+                <div className="motopana-map-overlay">
+                  <div className="motopana-map-pulse"></div>
+                  <span>Red Activa: 4 motos cerca en Caracas</span>
+                </div>
+
+                {/* SVG Interactivo representativo de Caracas */}
+                {(() => {
+                  // Mapear coordenadas a vista SVG 100% (Lat 10.42 a 10.53, Lon -67.00 a -66.80)
+                  const mapCoordsToSvg = (lat, lon) => {
+                    const minLat = 10.42;
+                    const maxLat = 10.53;
+                    const minLon = -67.00;
+                    const maxLon = -66.80;
+                    const x = ((lon - minLon) / (maxLon - minLon)) * 340 + 30;
+                    const y = ((maxLat - lat) / (maxLat - minLat)) * 140 + 30;
+                    return { x: Math.max(20, Math.min(380, x)), y: Math.max(20, Math.min(180, y)) };
+                  };
+
+                  const posA = mapCoordsToSvg(origenCoords.lat, origenCoords.lon);
+                  const posB = mapCoordsToSvg(destinoCoords.lat, destinoCoords.lon);
+
+                  return (
+                    <svg viewBox="0 0 400 200" style={{ width: '100%', height: '100%' }}>
+                      <defs>
+                        <linearGradient id="gridGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#1e293b" />
+                          <stop offset="100%" stopColor="#0f172a" />
+                        </linearGradient>
+                        <linearGradient id="routeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor="#22c55e" />
+                          <stop offset="100%" stopColor="#eab308" />
+                        </linearGradient>
+                      </defs>
+                      <rect width="400" height="200" fill="url(#gridGrad)" />
+                      {/* Líneas de autopistas principales de Caracas */}
+                      <path d="M 30,130 Q 150,110 240,105 T 370,120" fill="none" stroke="#334155" strokeWidth="4" />
+                      <path d="M 120,40 Q 160,100 180,180" fill="none" stroke="#334155" strokeWidth="3" />
+                      <path d="M 230,30 Q 240,90 260,180" fill="none" stroke="#334155" strokeWidth="2.5" />
+                      <text x="320" y="30" fill="#475569" fontSize="9" fontWeight="600">ÁVILA (NORTE)</text>
+                      <text x="30" y="190" fill="#475569" fontSize="9" fontWeight="600">CARACAS GPS</text>
+
+                      {/* Motos activas patrullando en el mapa */}
+                      <g transform="translate(190, 85)">
+                        <circle r="7" fill="#16a34a" opacity="0.3" />
+                        <circle r="4" fill="#22c55e" />
+                        <text x="8" y="4" fill="#86efac" fontSize="9">🛵 #12</text>
+                      </g>
+                      <g transform="translate(260, 115)">
+                        <circle r="7" fill="#16a34a" opacity="0.3" />
+                        <circle r="4" fill="#22c55e" />
+                        <text x="8" y="4" fill="#86efac" fontSize="9">🛵 #07</text>
+                      </g>
+                      <g transform="translate(130, 120)">
+                        <circle r="7" fill="#16a34a" opacity="0.3" />
+                        <circle r="4" fill="#22c55e" />
+                        <text x="8" y="4" fill="#86efac" fontSize="9">🛵 #19</text>
+                      </g>
+
+                      {/* Línea de ruta A -> B */}
+                      <line
+                        x1={posA.x}
+                        y1={posA.y}
+                        x2={posB.x}
+                        y2={posB.y}
+                        stroke="url(#routeGrad)"
+                        strokeWidth="3.5"
+                        strokeDasharray="6,4"
+                      />
+
+                      {/* Marcador A (Origen) */}
+                      <g transform={`translate(${posA.x}, ${posA.y})`}>
+                        <circle r="9" fill="#22c55e" opacity="0.3" />
+                        <circle r="5" fill="#22c55e" />
+                        <text x="-4" y="3" fill="#ffffff" fontSize="8" fontWeight="bold">A</text>
+                        <text x="8" y="4" fill="#ffffff" fontSize="10" fontWeight="bold" stroke="#000000" strokeWidth="0.5">
+                          {motoPanaGpsActivo ? '📍 GPS' : 'Punto A'}
+                        </text>
+                      </g>
+
+                      {/* Marcador B (Destino) */}
+                      <g transform={`translate(${posB.x}, ${posB.y})`}>
+                        <circle r="9" fill="#eab308" opacity="0.3" />
+                        <circle r="5" fill="#eab308" />
+                        <text x="-3.5" y="3" fill="#000000" fontSize="8" fontWeight="bold">B</text>
+                        <text x="8" y="4" fill="#fde047" fontSize="10" fontWeight="bold" stroke="#000000" strokeWidth="0.5">
+                          Punto B
+                        </text>
+                      </g>
+                    </svg>
+                  );
+                })()}
+              </div>
+
+              {/* Selector de Origen (Punto A) */}
+              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#16a34a', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span>📍</span> PUNTO A (ORIGEN):
+                  </label>
+                  <button
+                    type="button"
+                    onClick={activarGpsMotoPana}
+                    disabled={motoPanaGpsCargando}
+                    style={{
+                      background: motoPanaGpsActivo ? '#dcfce7' : '#ffffff',
+                      border: motoPanaGpsActivo ? '1px solid #16a34a' : '1px solid #cbd5e1',
+                      color: motoPanaGpsActivo ? '#15803d' : '#475569',
+                      borderRadius: '6px',
+                      padding: '3px 8px',
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    {motoPanaGpsCargando ? '🛰️ Buscando...' : motoPanaGpsActivo ? '✓ GPS Activo' : '🛰️ Usar mi GPS'}
+                  </button>
+                </div>
+
+                {!motoPanaGpsActivo ? (
+                  <select
+                    value={motoPanaOrigenId}
+                    onChange={(e) => setMotoPanaOrigenId(e.target.value)}
+                    style={{ width: '100%', padding: '9px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', marginBottom: '6px' }}
+                  >
+                    {puntosCaracasGPS.map((p) => (
+                      <option key={p.id} value={p.id}>{p.nombre} ({p.parroquia})</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div style={{ padding: '8px', background: '#dcfce7', borderRadius: '8px', fontSize: '12px', color: '#166534', marginBottom: '6px', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>📍 Coordenadas: {motoPanaGpsCoords?.lat.toFixed(4)}, {motoPanaGpsCoords?.lon.toFixed(4)}</span>
+                    <button
+                      type="button"
+                      onClick={() => setMotoPanaGpsActivo(false)}
+                      style={{ background: 'transparent', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                    >
+                      Cambiar a lista
+                    </button>
+                  </div>
+                )}
+
+                <input
+                  type="text"
+                  placeholder="Referencia exacta (ej. Frente al metro, esquina de la panadería...)"
+                  value={motoPanaOrigenCustom}
+                  onChange={(e) => setMotoPanaOrigenCustom(e.target.value)}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                />
+              </div>
+
+              {/* Selector de Destino (Punto B) */}
+              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: '#d97706', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px' }}>
+                  <span>🏁</span> PUNTO B (DESTINO):
+                </label>
+                <select
+                  value={motoPanaDestinoId}
+                  onChange={(e) => setMotoPanaDestinoId(e.target.value)}
+                  style={{ width: '100%', padding: '9px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', marginBottom: '6px' }}
+                >
+                  {puntosCaracasGPS.map((p) => (
+                    <option key={p.id} value={p.id}>{p.nombre} ({p.parroquia})</option>
+                  ))}
+                </select>
+
+                <input
+                  type="text"
+                  placeholder="Referencia destino (ej. Torre B piso 4, al lado de la farmacia...)"
+                  value={motoPanaDestinoCustom}
+                  onChange={(e) => setMotoPanaDestinoCustom(e.target.value)}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                />
+              </div>
+
+              {/* Tarjeta de Resumen y Cotización */}
+              <div className="motopana-fare-card">
+                <div>
+                  <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', opacity: 0.9 }}>
+                    Tarifa estimada MotoPana
+                  </div>
+                  <div style={{ fontSize: '24px', fontWeight: '800', lineHeight: '1.2' }}>
+                    ${tarifaUsd.toFixed(2)} <span style={{ fontSize: '14px', fontWeight: '500' }}>USD</span>
+                  </div>
+                  <div style={{ fontSize: '11px', opacity: 0.85 }}>
+                    ≈ Bs. {tarifaBs.toLocaleString('es-VE')}
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '13px', fontWeight: '700' }}>
+                    🛵 ~{tiempoEstimadoMinutos} min
+                  </div>
+                  <div style={{ fontSize: '12px', opacity: 0.9 }}>
+                    📏 {distanciaCalculadaKm} km de ruta
+                  </div>
+                </div>
+              </div>
+
+              {/* Notas del viaje */}
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  Instrucciones o requerimientos:
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej. Llevar 2 cascos, llevo paquete mediano, no tengo sencillo..."
+                  value={motoPanaNotas}
+                  onChange={(e) => setMotoPanaNotas(e.target.value)}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                />
+              </div>
+
+              {/* Configuración de Grupo o WhatsApp de Despacho */}
+              <details style={{ background: '#f1f5f9', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: '#475569' }}>
+                <summary style={{ cursor: 'pointer', fontWeight: '600' }}>
+                  ⚙️ Configuración del Grupo / Central de Mototaxis
+                </summary>
+                <div style={{ marginTop: '8px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: '600', display: 'block', marginBottom: '2px' }}>
+                    Enlace de grupo de WhatsApp o número telefónico:
+                  </label>
+                  <input
+                    type="text"
+                    value={motoPanaWhatsappDestino}
+                    onChange={(e) => setMotoPanaWhatsappDestino(e.target.value)}
+                    placeholder="https://chat.whatsapp.com/... o número con código de país"
+                    style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '11px' }}
+                  />
+                </div>
+              </details>
+
+              {motoPanaCopiado && (
+                <div style={{ background: '#dcfce7', color: '#15803d', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', textAlign: 'center' }}>
+                  ✓ ¡Detalles de la carrera copiados al portapapeles! Abriendo WhatsApp...
+                </div>
+              )}
+
+              {/* Botón de Despacho al Grupo de WhatsApp */}
+              <button
+                type="button"
+                onClick={enviarSolicitudWhatsAppMotoPana}
+                style={{
+                  background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '14px',
+                  fontWeight: '700',
+                  fontSize: '15px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 14px rgba(37, 211, 102, 0.35)',
+                  marginTop: '4px'
+                }}
+              >
+                <span>📲</span> Pedir MotoPana al Grupo de WhatsApp
+              </button>
+            </div>
           </div>
         </div>
       )}
