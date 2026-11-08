@@ -5689,28 +5689,31 @@ function App() {
                 </div>
               )}
 
-              {/* Botones de Acción: Publicar en Muro y Despacho WhatsApp */}
+              {/* Botones de Acción Dinámicos: Iniciar Viaje / Iniciar Pedido y WhatsApp */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px' }}>
                 <button
                   type="button"
                   onClick={crearSolicitudTransporte}
                   style={{
-                    background: '#1e293b',
+                    background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
                     color: 'white',
                     border: 'none',
                     borderRadius: '12px',
-                    padding: '13px',
-                    fontWeight: '700',
-                    fontSize: '14px',
+                    padding: '14px',
+                    fontWeight: '800',
+                    fontSize: '15px',
+                    letterSpacing: '0.3px',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    boxShadow: '0 4px 14px rgba(124, 58, 237, 0.35)',
+                    transition: 'transform 0.15s ease'
                   }}
                 >
-                  <span>📢</span> Publicar en Muro Comunitario
+                  <span>{panaCategoriaServicio === 'mandadito' ? '📦' : '🚀'}</span>
+                  <span>{panaCategoriaServicio === 'mandadito' ? 'INICIAR PEDIDO' : 'INICIAR VIAJE'}</span>
                 </button>
 
                 <button
