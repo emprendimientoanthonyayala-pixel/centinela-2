@@ -973,6 +973,10 @@ function App() {
   });
   const [adminFiltroParroquia, setAdminFiltroParroquia] = useState('todas');
   const [adminBusquedaTexto, setAdminBusquedaTexto] = useState('');
+  const [adminSubTab, setAdminSubTab] = useState('usuarios'); // 'usuarios' | 'panamovil'
+  const [adminFiltroPanaEstado, setAdminFiltroPanaEstado] = useState('todas');
+  const [mostrarQuickCommand, setMostrarQuickCommand] = useState(false);
+  const [quickCommandQuery, setQuickCommandQuery] = useState('');
   const [mostrarFormReporte, setMostrarFormReporte] = useState(false);
   const [formReporte, setFormReporte] = useState({
     servicio: 'Agua',
@@ -2230,6 +2234,7 @@ function App() {
     if (formularioInicial.parroquia) setParroquiaSeleccionada(formularioInicial.parroquia);
     setRegistroCompletado(true);
     setMostrarModalRegistro(false);
+    mostrarToast(`✓ ¡Bienvenido ${formularioInicial.nombresApellidos}! Tu registro está activo y reflejado en el sistema.`);
     cargarDatosNube();
   };
 
@@ -2469,6 +2474,24 @@ function App() {
             >
               👤 {formularioInicial.rol} ▾
             </span>
+
+            <button
+              className="notification-button"
+              aria-label="Comando Rápido"
+              onClick={() => {
+                vibrarHaptico();
+                setMostrarQuickCommand(true);
+              }}
+              title="Abrir Comando Rápido (Buscador Inteligente)"
+              style={{
+                background: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)',
+                color: '#ffffff',
+                border: 'none',
+                boxShadow: '0 2px 8px rgba(20, 184, 166, 0.3)'
+              }}
+            >
+              <span style={{ fontSize: '16px' }}>⚡</span>
+            </button>
 
             <button
               className="notification-button"
@@ -4254,16 +4277,331 @@ function App() {
           <section className="admin-page">
             <div className="page-heading">
               <div>
-                <p className="section-label">ADMINISTRACIÓN Y CONTROL DE ACCESO</p>
-                <h2>Panel de Administración Super Usuario</h2>
+                <p className="section-label">CENTRAL DE CONTROL SUPER USUARIO</p>
+                <h2>Panel de Administración Integral</h2>
                 <p className="page-description">
-                  Gestión centralizada de usuarios registrados y asignación de roles jerárquicos.
+                  Gestión de usuarios registrados, roles y control operativo de Pana Móvil y Mandaditos.
                 </p>
               </div>
 
               <button className="back-button" onClick={() => handleAction('inicio')}>Inicio</button>
             </div>
 
+            {/* Selector de sub-pestañas del Panel Admin */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '16px' }}>
+              <button
+                type="button"
+                onClick={() => { vibrarHaptico(); setAdminSubTab('usuarios'); }}
+                style={{
+                  padding: '10px 8px',
+                  borderRadius: '10px',
+                  border: adminSubTab === 'usuarios' ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                  background: adminSubTab === 'usuarios' ? '#dbeafe' : '#ffffff',
+                  color: adminSubTab === 'usuarios' ? '#1d4ed8' : '#475569',
+                  fontWeight: adminSubTab === 'usuarios' ? '700' : '500',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <span>👥</span> Usuarios y Roles ({usuariosRegistrados.length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { vibrarHaptico(); setAdminSubTab('panamovil'); }}
+                style={{
+                  padding: '10px 8px',
+                  borderRadius: '10px',
+                  border: adminSubTab === 'panamovil' ? '2px solid #7c3aed' : '1px solid #cbd5e1',
+                  background: adminSubTab === 'panamovil' ? '#ede9fe' : '#ffffff',
+                  color: adminSubTab === 'panamovil' ? '#6d28d9' : '#475569',
+                  fontWeight: adminSubTab === 'panamovil' ? '700' : '500',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <span>🛵</span> Pana Móvil & Mandaditos ({solicitudesPana.length})
+              </button>
+            </div>
+
+            {adminSubTab === 'panamovil' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {/* Banner de Monitoreo */}
+                <div style={{
+                  background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+                  borderRadius: '16px',
+                  padding: '16px 18px',
+                  color: 'white',
+                  boxShadow: '0 4px 14px rgba(124, 58, 237, 0.25)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.8px', background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+                      Torre de Control Móvil
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        vibrarHaptico();
+                        setMostrarModalMotoPana(true);
+                      }}
+                      style={{
+                        background: '#ffffff',
+                        color: '#6d28d9',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '4px 10px',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🚀 Abrir Pana Móvil
+                    </button>
+                  </div>
+                  <h3 style={{ margin: '0 0 4px 0', fontSize: '18px' }}>Dashboard Pana Móvil & Mandaditos</h3>
+                  <p style={{ margin: 0, fontSize: '12px', opacity: 0.9, lineHeight: 1.4 }}>
+                    Supervisión en tiempo real de traslados, encomiendas populares, flota de conductores y recaudación comunitaria estimada.
+                  </p>
+                </div>
+
+                {/* Métricas clave */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                  <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '10px 6px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b' }}>{solicitudesPana.length}</div>
+                    <div style={{ fontSize: '10px', color: '#64748b' }}>Total Solicitudes</div>
+                  </div>
+                  <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '10px 6px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#eab308' }}>
+                      {solicitudesPana.filter((s) => s.estado === 'en-espera').length}
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#64748b' }}>En Espera</div>
+                  </div>
+                  <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '10px 6px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>
+                      {solicitudesPana.filter((s) => s.estado === 'aceptado').length}
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#64748b' }}>En Curso</div>
+                  </div>
+                  <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '10px 6px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#16a34a' }}>
+                      {conductoresPana.length}
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#64748b' }}>Transportistas</div>
+                  </div>
+                </div>
+
+                {/* Volumen económico estimado */}
+                <div style={{
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '12px',
+                  padding: '12px 14px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <div>
+                    <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>Volumen transaccional estimado</span>
+                    <strong style={{ fontSize: '16px', color: '#16a34a' }}>
+                      ${solicitudesPana.reduce((sum, s) => sum + (parseFloat(s.precioUsd) || 0), 0).toFixed(2)} USD
+                    </strong>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>Flota activa por tipo</span>
+                    <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#1e293b' }}>
+                      🛵 {conductoresPana.filter((c) => c.tipoVehiculo === 'moto').length} | 🚗 {conductoresPana.filter((c) => c.tipoVehiculo === 'carro').length} | 🚚 {conductoresPana.filter((c) => c.tipoVehiculo === 'camion').length}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Filtro de estado de carreras */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h4 style={{ margin: 0, fontSize: '14px', color: '#1e293b' }}>📋 Gestión de Solicitudes y Despachos</h4>
+                  <select
+                    value={adminFiltroPanaEstado}
+                    onChange={(e) => setAdminFiltroPanaEstado(e.target.value)}
+                    style={{
+                      padding: '5px 8px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '11px',
+                      background: '#ffffff'
+                    }}
+                  >
+                    <option value="todas">Todas ({solicitudesPana.length})</option>
+                    <option value="en-espera">En espera</option>
+                    <option value="aceptado">Aceptadas / En curso</option>
+                    <option value="culminado">Culminadas</option>
+                  </select>
+                </div>
+
+                {/* Lista de solicitudes con control de Super Usuario */}
+                {(() => {
+                  const solicitudesFiltradas = solicitudesPana.filter((s) =>
+                    adminFiltroPanaEstado === 'todas' ? true : s.estado === adminFiltroPanaEstado
+                  );
+
+                  if (solicitudesFiltradas.length === 0) {
+                    return (
+                      <div style={{ textAlign: 'center', padding: '24px', background: '#ffffff', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+                        <span style={{ fontSize: '32px' }}>📭</span>
+                        <h4 style={{ margin: '6px 0 2px 0' }}>No hay solicitudes en este filtro</h4>
+                        <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>Las solicitudes que creen los usuarios aparecerán aquí en vivo.</p>
+                      </div>
+                    );
+                  }
+
+                  return solicitudesFiltradas.map((sol) => {
+                    const veh = TIPOS_VEHICULO_PANA[sol.tipoVehiculo] || TIPOS_VEHICULO_PANA.moto;
+                    return (
+                      <div
+                        key={sol.id}
+                        style={{
+                          background: '#ffffff',
+                          borderRadius: '12px',
+                          border: sol.estado === 'en-espera' ? '1px solid #fde047' : sol.estado === 'aceptado' ? '1px solid #93c5fd' : '1px solid #e2e8f0',
+                          padding: '12px',
+                          boxShadow: '0 1px 4px rgba(0,0,0,0.04)'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#6d28d9', background: '#f5f3ff', padding: '2px 8px', borderRadius: '4px' }}>
+                            {veh.icono} {sol.categoria === 'mandadito' ? 'Encomienda' : 'Traslado'} ({veh.nombre})
+                          </span>
+                          <span style={{
+                            fontSize: '10px',
+                            fontWeight: 'bold',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            background: sol.estado === 'en-espera' ? '#fef9c3' : sol.estado === 'aceptado' ? '#dbeafe' : '#dcfce7',
+                            color: sol.estado === 'en-espera' ? '#854d0e' : sol.estado === 'aceptado' ? '#1e40af' : '#15803d'
+                          }}>
+                            {sol.estado === 'en-espera' ? '⏳ EN ESPERA' : sol.estado === 'aceptado' ? '🚗 EN CURSO' : '✅ CULMINADO'}
+                          </span>
+                        </div>
+
+                        <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#1e293b', marginBottom: '4px' }}>
+                          {sol.pasajero} • <span style={{ color: '#2563eb' }}>{sol.contacto}</span>
+                        </div>
+
+                        <div style={{ fontSize: '12px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '8px' }}>
+                          <div>📍 <strong>Origen:</strong> {sol.origen}</div>
+                          <div>🏁 <strong>Destino:</strong> {sol.destino}</div>
+                          {sol.notas && <div>📝 <em>"{sol.notas}"</em></div>}
+                          {sol.conductorAsignado && <div style={{ color: '#16a34a', fontWeight: '600' }}>⭐ Asignado a: {sol.conductorAsignado}</div>}
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '8px' }}>
+                          <div>
+                            <strong style={{ fontSize: '14px', color: '#16a34a' }}>${sol.precioUsd}</strong>
+                            <span style={{ fontSize: '10px', color: '#64748b', marginLeft: '4px' }}>({sol.precioBs} Bs)</span>
+                          </div>
+
+                          {/* Acciones de administración de la solicitud */}
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            {sol.estado === 'en-espera' && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  vibrarHaptico();
+                                  const chofer = prompt('Ingresa el nombre del conductor asignado:', 'Carlos Mendoza');
+                                  if (chofer) {
+                                    const actualizadas = solicitudesPana.map((s) => s.id === sol.id ? { ...s, estado: 'aceptado', conductorAsignado: chofer } : s);
+                                    setSolicitudesPana(actualizadas);
+                                    try { localStorage.setItem('solicitudesPanaCentinela', JSON.stringify(actualizadas)); } catch {}
+                                    mostrarToast(`✓ Solicitud asignada a ${chofer}`);
+                                  }
+                                }}
+                                style={{ background: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                              >
+                                Asignar Chofer
+                              </button>
+                            )}
+
+                            {sol.estado === 'aceptado' && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  vibrarHaptico();
+                                  const actualizadas = solicitudesPana.map((s) => s.id === sol.id ? { ...s, estado: 'culminado' } : s);
+                                  setSolicitudesPana(actualizadas);
+                                  try { localStorage.setItem('solicitudesPanaCentinela', JSON.stringify(actualizadas)); } catch {}
+                                  mostrarToast('✓ Servicio marcado como culminado');
+                                }}
+                                style={{ background: '#16a34a', color: 'white', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                              >
+                                Culminar
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                vibrarHaptico();
+                                if (window.confirm('¿Deseas eliminar esta solicitud de Pana Móvil?')) {
+                                  const actualizadas = solicitudesPana.filter((s) => s.id !== sol.id);
+                                  setSolicitudesPana(actualizadas);
+                                  try { localStorage.setItem('solicitudesPanaCentinela', JSON.stringify(actualizadas)); } catch {}
+                                  mostrarToast('🗑 Solicitud eliminada');
+                                }
+                              }}
+                              style={{ background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', cursor: 'pointer' }}
+                            >
+                              🗑
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+
+                {/* Directorio de Conductores Comunitarios */}
+                <div style={{ marginTop: '8px' }}>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#1e293b' }}>
+                    🛵 Flota de Transportistas Registrados ({conductoresPana.length})
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {conductoresPana.map((c) => (
+                      <div
+                        key={c.id}
+                        style={{
+                          background: '#ffffff',
+                          borderRadius: '10px',
+                          border: '1px solid #e2e8f0',
+                          padding: '10px 12px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}
+                      >
+                        <div>
+                          <strong style={{ fontSize: '13px', color: '#1e293b', display: 'block' }}>{c.nombre}</strong>
+                          <span style={{ fontSize: '11px', color: '#64748b' }}>
+                            {c.tipoVehiculo === 'moto' ? '🛵 Moto' : c.tipoVehiculo === 'carro' ? '🚗 Carro' : '🚚 Carga'} • {c.modelo} ({c.placa}) • 📍 {c.parroquia}
+                          </span>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#16a34a', display: 'block' }}>
+                            ⭐ {c.calificacion || 5.0}
+                          </span>
+                          <span style={{ fontSize: '10px', color: '#2563eb' }}>{c.telefono}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
             <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '14px', marginBottom: '16px' }}>
               <strong style={{ color: '#1e3a8a', display: 'block', fontSize: '14px', marginBottom: '4px' }}>ℹ️ Nota de seguridad</strong>
               <p style={{ color: '#1e40af', fontSize: '13px', margin: 0, lineHeight: 1.4 }}>
@@ -4431,6 +4769,8 @@ function App() {
                 ));
               })()}
             </div>
+            </>
+            )}
           </section>
         ) : activeTab === 'emprendimientos' ? (
           <section className="emprendimientos-page">
@@ -6154,6 +6494,256 @@ function App() {
               </div>
             </div>
           )}
+          </div>
+        </div>
+      )}
+
+      {/* Botón Flotante Omnipresente "⚡ Comando Rápido" */}
+      <button
+        type="button"
+        onClick={() => {
+          vibrarHaptico();
+          setMostrarQuickCommand(true);
+        }}
+        style={{
+          position: 'fixed',
+          bottom: '84px',
+          right: '16px',
+          zIndex: 90,
+          background: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)',
+          color: '#ffffff',
+          border: 'none',
+          borderRadius: '30px',
+          padding: '10px 16px',
+          fontSize: '12px',
+          fontWeight: '700',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          boxShadow: '0 4px 16px rgba(13, 148, 136, 0.4)',
+          transition: 'transform 0.2s ease',
+        }}
+      >
+        <span>⚡</span> Comando Rápido
+      </button>
+
+      {/* Modal QuickCommand: Paleta Inteligente estilo Spotlight */}
+      {mostrarQuickCommand && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(6px)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'center',
+          padding: '24px 16px'
+        }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '20px',
+            width: '100%',
+            maxWidth: '440px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: '85vh',
+            animation: 'fadeIn 0.2s ease-out'
+          }}>
+            {/* Input de Búsqueda Instantánea */}
+            <div style={{ padding: '16px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '20px' }}>⚡</span>
+              <input
+                type="text"
+                autoFocus
+                value={quickCommandQuery}
+                onChange={(e) => setQuickCommandQuery(e.target.value)}
+                placeholder="Escribe: moto, parroquia, comida, donación..."
+                style={{
+                  flex: 1,
+                  border: 'none',
+                  outline: 'none',
+                  fontSize: '15px',
+                  color: '#1e293b',
+                  background: 'transparent'
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setMostrarQuickCommand(false)}
+                style={{
+                  background: '#f1f5f9',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '28px',
+                  height: '28px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  color: '#64748b'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Accesos Rápidos y Resultados Dinámicos */}
+            <div style={{ padding: '14px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <span style={{ fontSize: '10px', fontWeight: '800', letterSpacing: '0.8px', color: '#64748b', textTransform: 'uppercase' }}>
+                  🚀 Acciones Inmediatas
+                </span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginTop: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      vibrarHaptico();
+                      setMostrarQuickCommand(false);
+                      setVehiculoSeleccionado('moto');
+                      setPanaCategoriaServicio('viaje');
+                      setPanaSubTab('solicitar');
+                      setMostrarModalMotoPana(true);
+                    }}
+                    style={{
+                      background: '#ecfdf5',
+                      border: '1px solid #a7f3d0',
+                      borderRadius: '10px',
+                      padding: '10px',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <span style={{ fontSize: '20px' }}>🛵</span>
+                    <div>
+                      <strong style={{ fontSize: '12px', color: '#065f46', display: 'block' }}>MotoPana Express</strong>
+                      <span style={{ fontSize: '10px', color: '#047857' }}>Pedir traslado o delivery</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      vibrarHaptico();
+                      setMostrarQuickCommand(false);
+                      setVehiculoSeleccionado('camion');
+                      setPanaCategoriaServicio('mandadito');
+                      setPanaSubTab('solicitar');
+                      setMostrarModalMotoPana(true);
+                    }}
+                    style={{
+                      background: '#fffbeb',
+                      border: '1px solid #fde68a',
+                      borderRadius: '10px',
+                      padding: '10px',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <span style={{ fontSize: '20px' }}>🚚</span>
+                    <div>
+                      <strong style={{ fontSize: '12px', color: '#92400e', display: 'block' }}>PanaCarga Caracas</strong>
+                      <span style={{ fontSize: '10px', color: '#b45309' }}>Fletes y mudanzas</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Salto Instantáneo a Parroquias de Caracas */}
+              <div>
+                <span style={{ fontSize: '10px', fontWeight: '800', letterSpacing: '0.8px', color: '#64748b', textTransform: 'uppercase' }}>
+                  📍 Saltar a Parroquia (22 Parroquias)
+                </span>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px', maxHeight: '100px', overflowY: 'auto' }}>
+                  {parroquiasCaracas
+                    .filter((p) => !quickCommandQuery || p.toLowerCase().includes(quickCommandQuery.toLowerCase()))
+                    .slice(0, 10)
+                    .map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => {
+                          vibrarHaptico();
+                          setParroquiaSeleccionada(p);
+                          setMostrarQuickCommand(false);
+                          handleAction('territorio');
+                          mostrarToast(`📍 Parroquia cambiada a ${p}`);
+                        }}
+                        style={{
+                          background: parroquiaSeleccionada === p ? '#1d4ed8' : '#f1f5f9',
+                          color: parroquiaSeleccionada === p ? '#ffffff' : '#334155',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '4px 8px',
+                          fontSize: '11px',
+                          fontWeight: '600',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                </div>
+              </div>
+
+              {/* Accesos a Módulos y Utilidades */}
+              <div>
+                <span style={{ fontSize: '10px', fontWeight: '800', letterSpacing: '0.8px', color: '#64748b', textTransform: 'uppercase' }}>
+                  🧭 Accesos Directos
+                </span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginTop: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      vibrarHaptico();
+                      setMostrarQuickCommand(false);
+                      handleAction('emprendimientos');
+                    }}
+                    style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '8px 4px', fontSize: '11px', cursor: 'pointer', textAlign: 'center' }}
+                  >
+                    🛍️ Emprendimientos
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      vibrarHaptico();
+                      setMostrarQuickCommand(false);
+                      handleAction('eventos');
+                    }}
+                    style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '8px 4px', fontSize: '11px', cursor: 'pointer', textAlign: 'center' }}
+                  >
+                    📅 Eventos Caracas
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      vibrarHaptico();
+                      setMostrarQuickCommand(false);
+                      handleAction('donaciones');
+                    }}
+                    style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '8px 4px', fontSize: '11px', cursor: 'pointer', textAlign: 'center' }}
+                  >
+                    🤝 Aportes Comuna
+                  </button>
+                </div>
+              </div>
+
+              {/* Indicadores en Vivo */}
+              <div style={{ background: '#f1f5f9', borderRadius: '10px', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
+                <span style={{ color: '#475569' }}>💵 Dólar BCV: <strong>{indicadoresEconomicos.dolarBcv} Bs</strong></span>
+                <span style={{ color: '#475569' }}>💶 Euro: <strong>{indicadoresEconomicos.euroBcv} Bs</strong></span>
+              </div>
+            </div>
           </div>
         </div>
       )}

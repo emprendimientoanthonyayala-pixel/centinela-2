@@ -17,14 +17,135 @@
 }
 
 body.dark-mode {
-  --bg-main: #0f172a;
-  --shell-bg: #1e293b;
-  --card-bg: #0f172a;
+  --bg-main: #0b1120;
+  --shell-bg: #0f172a;
+  --card-bg: #1e293b;
   --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #cbd5e1;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
   --border-color: #334155;
   --accent-color: #2dd4bf;
+}
+
+/* Reglas de alto contraste y legibilidad para Modo Oscuro (Día / Noche) */
+body.dark-mode {
+  color: #f8fafc !important;
+}
+
+body.dark-mode .app-shell {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode h5,
+body.dark-mode h6 {
+  color: #f8fafc !important;
+}
+
+body.dark-mode .eyebrow,
+body.dark-mode .section-label {
+  color: #94a3b8 !important;
+}
+
+body.dark-mode p,
+body.dark-mode span,
+body.dark-mode small,
+body.dark-mode label {
+  color: inherit;
+}
+
+/* Forzar que contenedores y tarjetas con fondo blanco inline pasen a dark */
+body.dark-mode div[style*="background: #ffffff"],
+body.dark-mode div[style*="background:#ffffff"],
+body.dark-mode div[style*="background: white"],
+body.dark-mode div[style*="background:white"],
+body.dark-mode article,
+body.dark-mode .card,
+body.dark-mode .event-card,
+body.dark-mode .feed-card,
+body.dark-mode .emprendimiento-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+/* Textos oscuros inline específicos convertidos a colores legibles */
+body.dark-mode [style*="color: #1e293b"],
+body.dark-mode [style*="color:#1e293b"],
+body.dark-mode [style*="color: #142c43"],
+body.dark-mode [style*="color:#142c43"],
+body.dark-mode [style*="color: #0f172a"],
+body.dark-mode [style*="color:#0f172a"],
+body.dark-mode [style*="color: #263449"],
+body.dark-mode [style*="color:#263449"],
+body.dark-mode [style*="color: #334155"],
+body.dark-mode [style*="color:#334155"],
+body.dark-mode [style*="color: #1e3a8a"],
+body.dark-mode [style*="color:#1e3a8a"] {
+  color: #f8fafc !important;
+}
+
+body.dark-mode [style*="color: #475569"],
+body.dark-mode [style*="color:#475569"],
+body.dark-mode [style*="color: #5f6b7a"],
+body.dark-mode [style*="color:#5f6b7a"],
+body.dark-mode [style*="color: #64748b"],
+body.dark-mode [style*="color:#64748b"],
+body.dark-mode [style*="color: #6c8495"],
+body.dark-mode [style*="color:#6c8495"] {
+  color: #cbd5e1 !important;
+}
+
+/* Cajas y alertas informativas en modo oscuro */
+body.dark-mode div[style*="background: #eff6ff"],
+body.dark-mode div[style*="background:#eff6ff"] {
+  background: #172554 !important;
+  border-color: #1e40af !important;
+  color: #bfdbfe !important;
+}
+
+body.dark-mode div[style*="background: #f8fafc"],
+body.dark-mode div[style*="background:#f8fafc"] {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+/* Modales e inputs */
+body.dark-mode .modal-content,
+body.dark-mode div[style*="background: #ffffff; border-radius"],
+body.dark-mode div[style*="background: white; border-radius"] {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
+}
+
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* Resumen / summary items */
+body.dark-mode .summary-item {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+body.dark-mode .summary-item strong {
+  color: #38bdf8 !important;
+}
+body.dark-mode .summary-item span {
+  color: #cbd5e1 !important;
 }
 
 * {
