@@ -973,8 +973,102 @@ function App() {
   });
   const [adminFiltroParroquia, setAdminFiltroParroquia] = useState('todas');
   const [adminBusquedaTexto, setAdminBusquedaTexto] = useState('');
-  const [adminSubTab, setAdminSubTab] = useState('usuarios'); // 'usuarios' | 'panamovil'
+  const [adminSubTab, setAdminSubTab] = useState('usuarios'); // 'usuarios' | 'panamovil' | 'fondo' | 'estructura'
   const [adminFiltroPanaEstado, setAdminFiltroPanaEstado] = useState('todas');
+
+  // Datos editables del Fondo de Apoyo Comunitario
+  const [datosFondoApoyo, setDatosFondoApoyo] = useState(() => {
+    try {
+      const guardado = localStorage.getItem('centinela_datos_fondo_apoyo');
+      if (guardado) return JSON.parse(guardado);
+    } catch {}
+    return {
+      titulo: 'Apoya el Poder Popular',
+      subtitulo: 'Autonomía y fortalecimiento socioterritorial',
+      descripcionGeneral: 'Las contribuciones voluntarias financian insumos para jornadas comunitarias, recuperación de espacios públicos, logística de eventos populares y apoyo a emprendimientos comunales en las 22 parroquias de Caracas.',
+      pagoMovilBanco: 'Banco de Venezuela (0102)',
+      pagoMovilRif: 'J-50123456-7',
+      pagoMovilTelefono: '0412-5550199',
+      cuentaBancariaBanco: 'Banco de Venezuela',
+      cuentaBancariaNumero: '0102-0123-45-0000123456',
+      cuentaBancariaTitular: 'Fondo de Desarrollo Comunal Caracas',
+      criptoWallet: 'TX7kCommunityCaracasSupportTRC20Vol99',
+      criptoRed: 'USDT (TRC-20)'
+    };
+  });
+
+  // Estructura editable de Vocerías y Representaciones Adicionales
+  const [voceriasEstructura, setVoceriasEstructura] = useState(() => {
+    try {
+      const guardado = localStorage.getItem('centinela_vocerias_estructura');
+      if (guardado) return JSON.parse(guardado);
+    } catch {}
+    return voceriasEstructuraDefinicion.map((v) => ({
+      ...v,
+      principal: 'Responsable Parroquial Principal',
+      suplente: 'Responsable Parroquial Suplente',
+      contacto: 'voceria@centinela.org'
+    }));
+  });
+
+  const [representacionesAdicionales, setRepresentacionesAdicionales] = useState(() => {
+    try {
+      const guardado = localStorage.getItem('centinela_representaciones_adicionales');
+      if (guardado) return JSON.parse(guardado);
+    } catch {}
+    return representacionesAdicionalesDefinicion.map((r) => ({
+      ...r,
+      coordinador: 'Coordinador Asignado'
+    }));
+  });
+
+  // Estructura editable de Comisiones / Mesas de Trabajo
+  const [comisionesEstructura, setComisionesEstructura] = useState(() => {
+    try {
+      const guardado = localStorage.getItem('centinela_comisiones_estructura');
+      if (guardado) return JSON.parse(guardado);
+    } catch {}
+    return comisionesDefinicion.map((c) => ({
+      ...c,
+      coordinadorMesa: 'Vocero Coordinador de Mesa'
+    }));
+  });
+
+  const guardarDatosFondoApoyo = (nuevosDatos) => {
+    vibrarHaptico();
+    setDatosFondoApoyo(nuevosDatos);
+    try {
+      localStorage.setItem('centinela_datos_fondo_apoyo', JSON.stringify(nuevosDatos));
+    } catch {}
+    mostrarToast('✓ Datos del Fondo de Apoyo guardados con éxito');
+  };
+
+  const guardarVoceriasEstructura = (nuevasVocerias) => {
+    vibrarHaptico();
+    setVoceriasEstructura(nuevasVocerias);
+    try {
+      localStorage.setItem('centinela_vocerias_estructura', JSON.stringify(nuevasVocerias));
+    } catch {}
+    mostrarToast('✓ Estructura de Vocerías actualizada');
+  };
+
+  const guardarRepresentaciones = (nuevasReps) => {
+    vibrarHaptico();
+    setRepresentacionesAdicionales(nuevasReps);
+    try {
+      localStorage.setItem('centinela_representaciones_adicionales', JSON.stringify(nuevasReps));
+    } catch {}
+    mostrarToast('✓ Representaciones políticas actualizadas');
+  };
+
+  const guardarComisionesEstructura = (nuevasComisiones) => {
+    vibrarHaptico();
+    setComisionesEstructura(nuevasComisiones);
+    try {
+      localStorage.setItem('centinela_comisiones_estructura', JSON.stringify(nuevasComisiones));
+    } catch {}
+    mostrarToast('✓ Comisiones y Mesas de trabajo actualizadas');
+  };
   const [mostrarQuickCommand, setMostrarQuickCommand] = useState(false);
   const [quickCommandQuery, setQuickCommandQuery] = useState('');
   const [mostrarFormReporte, setMostrarFormReporte] = useState(false);
@@ -1649,7 +1743,7 @@ function App() {
   const handleAction = (tab) => {
     vibrarHaptico();
     const publicTabs = ['inicio', 'feed', 'emprendimientos', 'donaciones', 'eventos'];
-    if (!registroCompletado && !publicTabs.includes(tab)) {
+    if (!registroCompletado && !esSuperUsuario && !publicTabs.includes(tab)) {
       setMostrarModalRegistro(true);
       return;
     }
@@ -4201,19 +4295,24 @@ function App() {
             {/* Representaciones Adicionales en Vocerías */}
             <p className="section-label" style={{ marginTop: '12px' }}>COORDINACIONES Y REPRESENTACIONES ADICIONALES</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', margin: '10px 0 20px 0' }}>
-              {representacionesAdicionalesDefinicion.map((rep) => (
+              {representacionesAdicionales.map((rep) => (
                 <div key={rep.id} style={{ background: '#ffffff', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                   <span style={{ color: '#2563eb', fontWeight: 'bold', fontSize: '14px', display: 'block', marginBottom: '4px' }}>{rep.icon} {rep.nombre}</span>
                   <small style={{ color: '#64748b', fontSize: '11px', display: 'block' }}>{rep.descripcion}</small>
+                  {rep.coordinador && (
+                    <div style={{ marginTop: '6px', fontSize: '10px', color: '#10b981', fontWeight: '600' }}>
+                      👤 {rep.coordinador}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
 
             <p className="section-label">5 VOCERÍAS BASE (PRINCIPAL Y SUPLENTE)</p>
             <div className="vocerias-grid" style={{ marginTop: '10px' }}>
-              {voceriasEstructuraDefinicion.map((voceria) => (
+              {voceriasEstructura.map((voceria) => (
                 <article
-                  className={`voceria-card ${voceria.color}`}
+                  className={`voceria-card ${voceria.color || 'blue'}`}
                   key={voceria.id}
                 >
                   <div className="voceria-card-top">
@@ -4223,9 +4322,10 @@ function App() {
 
                   <p className="voceria-state">{parroquiaSeleccionada}</p>
                   <h3>{voceria.nombre}</h3>
-                  <p className="voceria-description">
-                    └── Principal y Suplente coordinando tareas en la parroquia.
-                  </p>
+                  <div style={{ fontSize: '11px', color: '#64748b', margin: '4px 0 8px 0', lineHeight: 1.4 }}>
+                    <div><strong>Principal:</strong> {voceria.principal}</div>
+                    <div><strong>Suplente:</strong> {voceria.suplente}</div>
+                  </div>
 
                   <div className="voceria-mesa">
                     <span className="mesa-icon">◎</span>
@@ -4258,9 +4358,9 @@ function App() {
             </div>
 
             <div className="mesas-list">
-              {comisionesDefinicion.map((com, index) => (
+              {comisionesEstructura.map((com, index) => (
                 <article className="mesa-row" key={com.id}>
-                  <div className={`mesa-number ${com.color}`}>
+                  <div className={`mesa-number ${com.color || 'blue'}`}>
                     {String(index + 1).padStart(2, '0')}
                   </div>
 
@@ -4268,6 +4368,11 @@ function App() {
                     <p>{parroquiaSeleccionada}</p>
                     <h3>{com.nombre}</h3>
                     <span>{com.descripcion}</span>
+                    {com.coordinadorMesa && (
+                      <small style={{ display: 'block', marginTop: '4px', color: '#059669', fontWeight: '600', fontSize: '11px' }}>
+                        👤 Coordinación: {com.coordinadorMesa}
+                      </small>
+                    )}
                   </div>
                 </article>
               ))}
@@ -4299,7 +4404,7 @@ function App() {
                   background: adminSubTab === 'usuarios' ? '#dbeafe' : '#ffffff',
                   color: adminSubTab === 'usuarios' ? '#1d4ed8' : '#475569',
                   fontWeight: adminSubTab === 'usuarios' ? '700' : '500',
-                  fontSize: '13px',
+                  fontSize: '12px',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -4307,7 +4412,7 @@ function App() {
                   gap: '6px'
                 }}
               >
-                <span>👥</span> Usuarios y Roles ({usuariosRegistrados.length})
+                <span>👥</span> Usuarios ({usuariosRegistrados.length})
               </button>
 
               <button
@@ -4320,7 +4425,7 @@ function App() {
                   background: adminSubTab === 'panamovil' ? '#ede9fe' : '#ffffff',
                   color: adminSubTab === 'panamovil' ? '#6d28d9' : '#475569',
                   fontWeight: adminSubTab === 'panamovil' ? '700' : '500',
-                  fontSize: '13px',
+                  fontSize: '12px',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -4328,7 +4433,49 @@ function App() {
                   gap: '6px'
                 }}
               >
-                <span>🛵</span> Pana Móvil & Mandaditos ({solicitudesPana.length})
+                <span>🛵</span> Pana Móvil ({solicitudesPana.length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { vibrarHaptico(); setAdminSubTab('fondo'); }}
+                style={{
+                  padding: '10px 8px',
+                  borderRadius: '10px',
+                  border: adminSubTab === 'fondo' ? '2px solid #eab308' : '1px solid #cbd5e1',
+                  background: adminSubTab === 'fondo' ? '#fef9c3' : '#ffffff',
+                  color: adminSubTab === 'fondo' ? '#a16207' : '#475569',
+                  fontWeight: adminSubTab === 'fondo' ? '700' : '500',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <span>💛</span> Fondo de Apoyo
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { vibrarHaptico(); setAdminSubTab('estructura'); }}
+                style={{
+                  padding: '10px 8px',
+                  borderRadius: '10px',
+                  border: adminSubTab === 'estructura' ? '2px solid #059669' : '1px solid #cbd5e1',
+                  background: adminSubTab === 'estructura' ? '#d1fae5' : '#ffffff',
+                  color: adminSubTab === 'estructura' ? '#047857' : '#475569',
+                  fontWeight: adminSubTab === 'estructura' ? '700' : '500',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <span>🏛</span> Vocerías y Mesas
               </button>
             </div>
 
@@ -4600,7 +4747,7 @@ function App() {
                   </div>
                 </div>
               </div>
-            ) : (
+            ) : adminSubTab === 'usuarios' ? (
               <>
             <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '14px', marginBottom: '16px' }}>
               <strong style={{ color: '#1e3a8a', display: 'block', fontSize: '14px', marginBottom: '4px' }}>ℹ️ Nota de seguridad</strong>
@@ -4770,6 +4917,402 @@ function App() {
               })()}
             </div>
             </>
+            ) : adminSubTab === 'fondo' ? (
+              /* Módulo de Edición del Fondo de Apoyo Comunitario */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{
+                  background: 'linear-gradient(135deg, #ca8a04 0%, #eab308 100%)',
+                  borderRadius: '16px',
+                  padding: '16px 18px',
+                  color: 'white',
+                  boxShadow: '0 4px 14px rgba(202, 138, 4, 0.25)'
+                }}>
+                  <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.8px', background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+                    Configuración Financiera Comunitaria
+                  </span>
+                  <h3 style={{ margin: '6px 0 4px 0', fontSize: '18px' }}>Fondo de Apoyo Comunitario</h3>
+                  <p style={{ margin: 0, fontSize: '12px', opacity: 0.95, lineHeight: 1.4 }}>
+                    Edita las cuentas bancarias, datos de Pago Móvil, titular y billetera USDT mostrados a la comunidad en la sección Donaciones.
+                  </p>
+                </div>
+
+                <div style={{ background: '#ffffff', borderRadius: '16px', padding: '18px', border: '1px solid #e2e8f0' }}>
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    guardarDatosFondoApoyo(datosFondoApoyo);
+                  }} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '4px' }}>
+                        Título de la Sección:
+                      </label>
+                      <input
+                        type="text"
+                        value={datosFondoApoyo.titulo}
+                        onChange={(e) => setDatosFondoApoyo({ ...datosFondoApoyo, titulo: e.target.value })}
+                        style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', boxSizing: 'border-box' }}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '4px' }}>
+                        Subtítulo / Lema:
+                      </label>
+                      <input
+                        type="text"
+                        value={datosFondoApoyo.subtitulo}
+                        onChange={(e) => setDatosFondoApoyo({ ...datosFondoApoyo, subtitulo: e.target.value })}
+                        style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', boxSizing: 'border-box' }}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '4px' }}>
+                        Descripción Informativa:
+                      </label>
+                      <textarea
+                        value={datosFondoApoyo.descripcionGeneral}
+                        onChange={(e) => setDatosFondoApoyo({ ...datosFondoApoyo, descripcionGeneral: e.target.value })}
+                        rows="3"
+                        style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', boxSizing: 'border-box' }}
+                        required
+                      />
+                    </div>
+
+                    <p className="section-label" style={{ margin: '6px 0 0 0' }}>📲 DATOS DE PAGO MÓVIL</p>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                      <div>
+                        <label style={{ fontSize: '11px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '3px' }}>Banco Pago Móvil:</label>
+                        <input
+                          type="text"
+                          value={datosFondoApoyo.pagoMovilBanco}
+                          onChange={(e) => setDatosFondoApoyo({ ...datosFondoApoyo, pagoMovilBanco: e.target.value })}
+                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '11px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '3px' }}>Cédula o RIF:</label>
+                        <input
+                          type="text"
+                          value={datosFondoApoyo.pagoMovilRif}
+                          onChange={(e) => setDatosFondoApoyo({ ...datosFondoApoyo, pagoMovilRif: e.target.value })}
+                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '11px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '3px' }}>Teléfono Pago Móvil:</label>
+                      <input
+                        type="text"
+                        value={datosFondoApoyo.pagoMovilTelefono}
+                        onChange={(e) => setDatosFondoApoyo({ ...datosFondoApoyo, pagoMovilTelefono: e.target.value })}
+                        style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
+                        required
+                      />
+                    </div>
+
+                    <p className="section-label" style={{ margin: '6px 0 0 0' }}>🏛 CUENTA CORRIENTE BANCARIA</p>
+
+                    <div>
+                      <label style={{ fontSize: '11px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '3px' }}>Banco Cuenta Corriente:</label>
+                      <input
+                        type="text"
+                        value={datosFondoApoyo.cuentaBancariaBanco}
+                        onChange={(e) => setDatosFondoApoyo({ ...datosFondoApoyo, cuentaBancariaBanco: e.target.value })}
+                        style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '11px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '3px' }}>Número de Cuenta (20 dígitos):</label>
+                      <input
+                        type="text"
+                        value={datosFondoApoyo.cuentaBancariaNumero}
+                        onChange={(e) => setDatosFondoApoyo({ ...datosFondoApoyo, cuentaBancariaNumero: e.target.value })}
+                        style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '11px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '3px' }}>Titular de la Cuenta:</label>
+                      <input
+                        type="text"
+                        value={datosFondoApoyo.cuentaBancariaTitular}
+                        onChange={(e) => setDatosFondoApoyo({ ...datosFondoApoyo, cuentaBancariaTitular: e.target.value })}
+                        style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
+                        required
+                      />
+                    </div>
+
+                    <p className="section-label" style={{ margin: '6px 0 0 0' }}>🪙 CRIPTOACTIVOS / USDT</p>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                      <div>
+                        <label style={{ fontSize: '11px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '3px' }}>Red Cripto:</label>
+                        <input
+                          type="text"
+                          value={datosFondoApoyo.criptoRed}
+                          onChange={(e) => setDatosFondoApoyo({ ...datosFondoApoyo, criptoRed: e.target.value })}
+                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '11px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '3px' }}>Dirección de Wallet:</label>
+                        <input
+                          type="text"
+                          value={datosFondoApoyo.criptoWallet}
+                          onChange={(e) => setDatosFondoApoyo({ ...datosFondoApoyo, criptoWallet: e.target.value })}
+                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      style={{
+                        background: '#eab308',
+                        color: '#713f12',
+                        border: 'none',
+                        borderRadius: '10px',
+                        padding: '12px',
+                        fontSize: '14px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        marginTop: '8px',
+                        boxShadow: '0 2px 8px rgba(234, 179, 8, 0.3)'
+                      }}
+                    >
+                      💾 Guardar y Publicar Datos del Fondo
+                    </button>
+                  </form>
+                </div>
+              </div>
+            ) : (
+              /* Módulo de Edición de Vocerías y Comisiones de Trabajo */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{
+                  background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                  borderRadius: '16px',
+                  padding: '16px 18px',
+                  color: 'white',
+                  boxShadow: '0 4px 14px rgba(5, 150, 105, 0.25)'
+                }}>
+                  <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.8px', background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+                    Estructura del Poder Popular
+                  </span>
+                  <h3 style={{ margin: '6px 0 4px 0', fontSize: '18px' }}>Gestión de Vocerías y Comisiones</h3>
+                  <p style={{ margin: 0, fontSize: '12px', opacity: 0.95, lineHeight: 1.4 }}>
+                    Personaliza nombres, voceros responsables y roles principales para las Vocerías Base, Representaciones y las 5 Mesas de Trabajo.
+                  </p>
+                </div>
+
+                {/* 5 Vocerías Base */}
+                <div style={{ background: '#ffffff', borderRadius: '16px', padding: '16px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h4 style={{ margin: 0, fontSize: '15px', color: '#1e293b' }}>5 Vocerías Base (Principal y Suplente)</h4>
+                    <span style={{ fontSize: '11px', background: '#dcfce7', color: '#16a34a', padding: '2px 8px', borderRadius: '6px', fontWeight: 'bold' }}>
+                      Activas
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {voceriasEstructura.map((voc, index) => (
+                      <div key={voc.id} style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '10px', padding: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '18px' }}>{voc.icon}</span>
+                          <input
+                            type="text"
+                            value={voc.nombre}
+                            onChange={(e) => {
+                              const updated = [...voceriasEstructura];
+                              updated[index].nombre = e.target.value;
+                              setVoceriasEstructura(updated);
+                            }}
+                            style={{ flex: 1, padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', fontWeight: '700' }}
+                          />
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                          <div>
+                            <label style={{ fontSize: '10px', color: '#64748b', display: 'block' }}>Vocero Principal:</label>
+                            <input
+                              type="text"
+                              value={voc.principal}
+                              onChange={(e) => {
+                                const updated = [...voceriasEstructura];
+                                updated[index].principal = e.target.value;
+                                setVoceriasEstructura(updated);
+                              }}
+                              style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '11px', boxSizing: 'border-box' }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ fontSize: '10px', color: '#64748b', display: 'block' }}>Vocero Suplente:</label>
+                            <input
+                              type="text"
+                              value={voc.suplente}
+                              onChange={(e) => {
+                                const updated = [...voceriasEstructura];
+                                updated[index].suplente = e.target.value;
+                                setVoceriasEstructura(updated);
+                              }}
+                              style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '11px', boxSizing: 'border-box' }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => guardarVoceriasEstructura(voceriasEstructura)}
+                    style={{
+                      width: '100%',
+                      background: '#059669',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '10px',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      marginTop: '12px'
+                    }}
+                  >
+                    💾 Guardar Vocerías Base
+                  </button>
+                </div>
+
+                {/* 4 Representaciones Adicionales */}
+                <div style={{ background: '#ffffff', borderRadius: '16px', padding: '16px', border: '1px solid #e2e8f0' }}>
+                  <h4 style={{ margin: '0 0 12px 0', fontSize: '15px', color: '#1e293b' }}>Representaciones y Coordinaciones Adicionales</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {representacionesAdicionales.map((rep, index) => (
+                      <div key={rep.id} style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '10px', padding: '10px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '8px', alignItems: 'center' }}>
+                          <div>
+                            <strong style={{ fontSize: '12px', color: '#1e293b', display: 'block' }}>{rep.icon} {rep.nombre}</strong>
+                            <span style={{ fontSize: '10px', color: '#64748b' }}>{rep.descripcion}</span>
+                          </div>
+                          <div>
+                            <label style={{ fontSize: '10px', color: '#64748b', display: 'block' }}>Responsable:</label>
+                            <input
+                              type="text"
+                              value={rep.coordinador}
+                              onChange={(e) => {
+                                const updated = [...representacionesAdicionales];
+                                updated[index].coordinador = e.target.value;
+                                setRepresentacionesAdicionales(updated);
+                              }}
+                              style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '11px', boxSizing: 'border-box' }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => guardarRepresentaciones(representacionesAdicionales)}
+                    style={{
+                      width: '100%',
+                      background: '#2563eb',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '10px',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      marginTop: '12px'
+                    }}
+                  >
+                    💾 Guardar Representaciones
+                  </button>
+                </div>
+
+                {/* 5 Comisiones / Mesas de Trabajo */}
+                <div style={{ background: '#ffffff', borderRadius: '16px', padding: '16px', border: '1px solid #e2e8f0' }}>
+                  <h4 style={{ margin: '0 0 12px 0', fontSize: '15px', color: '#1e293b' }}>5 Comisiones / Mesas de Trabajo</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {comisionesEstructura.map((com, index) => (
+                      <div key={com.id} style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '10px', padding: '12px' }}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '18px' }}>{com.icon}</span>
+                          <input
+                            type="text"
+                            value={com.nombre}
+                            onChange={(e) => {
+                              const updated = [...comisionesEstructura];
+                              updated[index].nombre = e.target.value;
+                              setComisionesEstructura(updated);
+                            }}
+                            style={{ flex: 1, padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', fontWeight: '700' }}
+                          />
+                        </div>
+
+                        <div style={{ marginBottom: '8px' }}>
+                          <label style={{ fontSize: '10px', color: '#64748b', display: 'block', marginBottom: '2px' }}>Descripción de la Mesa:</label>
+                          <textarea
+                            value={com.descripcion}
+                            onChange={(e) => {
+                              const updated = [...comisionesEstructura];
+                              updated[index].descripcion = e.target.value;
+                              setComisionesEstructura(updated);
+                            }}
+                            rows="2"
+                            style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '11px', boxSizing: 'border-box' }}
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ fontSize: '10px', color: '#64748b', display: 'block', marginBottom: '2px' }}>Coordinador(a) de la Comisión:</label>
+                          <input
+                            type="text"
+                            value={com.coordinadorMesa}
+                            onChange={(e) => {
+                              const updated = [...comisionesEstructura];
+                              updated[index].coordinadorMesa = e.target.value;
+                              setComisionesEstructura(updated);
+                            }}
+                            style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '11px', boxSizing: 'border-box' }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => guardarComisionesEstructura(comisionesEstructura)}
+                    style={{
+                      width: '100%',
+                      background: '#7c3aed',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '10px',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      marginTop: '12px'
+                    }}
+                  >
+                    💾 Guardar Comisiones y Mesas
+                  </button>
+                </div>
+              </div>
             )}
           </section>
         ) : activeTab === 'emprendimientos' ? (
@@ -5177,12 +5720,12 @@ function App() {
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '10px' }}>
                 <span style={{ fontSize: '32px' }}>🤝</span>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '16px' }}>Apoya el Poder Popular</h3>
-                  <small style={{ color: '#64748b' }}>Autonomía y fortalecimiento socioterritorial</small>
+                  <h3 style={{ margin: 0, fontSize: '16px' }}>{datosFondoApoyo.titulo || 'Apoya el Poder Popular'}</h3>
+                  <small style={{ color: '#64748b' }}>{datosFondoApoyo.subtitulo || 'Autonomía y fortalecimiento socioterritorial'}</small>
                 </div>
               </div>
               <p style={{ fontSize: '13px', color: '#475569', lineHeight: 1.5, margin: 0 }}>
-                Las contribuciones voluntarias financian insumos para jornadas comunitarias, recuperación de espacios públicos, logística de eventos populares y apoyo a emprendimientos comunales en las 22 parroquias de Caracas.
+                {datosFondoApoyo.descripcionGeneral}
               </p>
             </div>
 
@@ -5219,24 +5762,25 @@ function App() {
                   <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px' }}>
                     <strong style={{ fontSize: '13px', color: '#1e293b', display: 'block' }}>📲 Pago Móvil Comunitario</strong>
                     <div style={{ fontSize: '12px', color: '#475569', marginTop: '4px' }}>
-                      <div>• Banco: <strong>Banco de Venezuela (0102)</strong></div>
-                      <div>• Cédula / RIF: <strong>J-50123456-7</strong></div>
-                      <div>• Teléfono: <strong>0412-5550199</strong></div>
+                      <div>• Banco: <strong>{datosFondoApoyo.pagoMovilBanco}</strong></div>
+                      <div>• Cédula / RIF: <strong>{datosFondoApoyo.pagoMovilRif}</strong></div>
+                      <div>• Teléfono: <strong>{datosFondoApoyo.pagoMovilTelefono}</strong></div>
                     </div>
                   </div>
 
                   <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px' }}>
                     <strong style={{ fontSize: '13px', color: '#1e293b', display: 'block' }}>🏛 Cuenta Corriente Bancaria</strong>
                     <div style={{ fontSize: '12px', color: '#475569', marginTop: '4px' }}>
-                      <div>• Banco de Venezuela: <strong>0102-0123-45-0000123456</strong></div>
-                      <div>• Titular: <strong>Fondo de Desarrollo Comunal Caracas</strong></div>
+                      <div>• Banco: <strong>{datosFondoApoyo.cuentaBancariaBanco}</strong></div>
+                      <div>• Número: <strong>{datosFondoApoyo.cuentaBancariaNumero}</strong></div>
+                      <div>• Titular: <strong>{datosFondoApoyo.cuentaBancariaTitular}</strong></div>
                     </div>
                   </div>
 
                   <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px' }}>
-                    <strong style={{ fontSize: '13px', color: '#1e293b', display: 'block' }}>🪙 USDT (TRC-20) / Criptoactivos</strong>
+                    <strong style={{ fontSize: '13px', color: '#1e293b', display: 'block' }}>🪙 {datosFondoApoyo.criptoRed || 'USDT (TRC-20)'} / Criptoactivos</strong>
                     <div style={{ fontSize: '12px', color: '#475569', marginTop: '4px', wordBreak: 'break-all' }}>
-                      <code>TX7kCommunityCaracasSupportTRC20Vol99</code>
+                      <code>{datosFondoApoyo.criptoWallet}</code>
                     </div>
                   </div>
                 </div>
